@@ -5,8 +5,8 @@
 # Submitted 31 Mar 2019 
 # Analysis script 
 
-source('~/Desktop/HabitatAlteration/Code/HelperFunctions.R')
-source('~/Desktop/HabitatAlteration/Code/Forbes_Index.R') # Alroy 2018
+source('./Code/HelperFunctions.R')
+source('./Code/Forbes_Index.R') # Alroy 2018
 
 library("tidyverse")
 library("vegan")
@@ -17,12 +17,12 @@ library("stringi")
 # settings
 options(stringsAsFactors = FALSE)
 # abundance data (Neotropical bats and birds, raw abundance data)
-load("~/Desktop/HabitatAlteration/Data/PA1_raw_abund_all.RData")
+load("./Data/PA1_raw_abund_all.RData")
 PAn <- map(PAn, clean.empty) # remove empty rows.
 # species metadata
-load("~/Desktop/HabitatAlteration/Data/Species_metadata.RData")
+load("./Data/Species_metadata.RData")
 # site metadata 
-load("~/Desktop/HabitatAlteration/Data/sitedat_metadata.Rdata")
+load("./Data/sitedat_metadata.Rdata")
 
 # Site data #
 #load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/sitedat_meta_clim.RData")
