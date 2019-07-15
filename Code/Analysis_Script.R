@@ -185,6 +185,7 @@ PAnu <- map(PAnu, clean.empty)
   y <- map2(tables, ss1, function(x, y) map(x, ~resamp(., reps = reps, sites = y)))
   
   ## CAUTION: The following code is the rate-limiting step when there are many species in the input tables (e.g. more than ~150).
+  ## CAUTION: The following code will also hit the RAM limit on most computers.
   ## See below for two alternative ways to explore the results.
     out <- map(y, map, map, simpairs)  # FETmP calculations
   
@@ -204,8 +205,8 @@ PAnu <- map(PAnu, clean.empty)
   ## For the output of this analysis 
   # with reps = 100 (bird results are randomly subsampled to reduce data file size), 
   # load results/output tables with the following code: 
-  load("~/Desktop/HabitatAlteration/Results/out_bat_100r_PAn3.RData")
-  load("~/Desktop/HabitatAlteration/Results/out_bird_randsamp_100r_PAn3.RData")
+  load("./Results/out_bat_100r_PAn3.RData")
+  load("./Results/out_bird_randsamp_100r_PAn3_1.7m.RData")
   out <- rbind(out.bat, out.bird)
   ## ***NOTE*** the output tables take up roughly 6 gigabytes of memory. 
   
@@ -281,13 +282,15 @@ PAnu <- map(PAnu, clean.empty)
 #### Analysis of co-occurrence at altered habitats ####
   # bats
   gld <- c("N", "I", "F", "CI")  
-  t <- tables[[1]][[1]]  
-  pr.bats <- percent.occupancy.by.guild(t, gld, "bat")
-  
+  tab <- tables[[1]][[1]]
+  tab <- merge(tables[[1]][[1]], tables[[1]][[2]], by = 0) %>% namerows
+  pr.bat <- percent.occupancy.by.guild(tab, gld, "bat", sitedat) 
+
   # birds
-  gld <- c("N", "I", "F", "FG", "FI", "G", "IN")  
-  t <- tables[[2]][[1]]  
-  pr.birds <- percent.occupancy.by.guild(t, gld, "bird")
+  gld <- c("N", "I", "F", "FG", "FI", "G", "IN") 
+  tab <- tables[[2]][[1]]
+  tab <- merge(tables[[2]][[1]], tables[[2]][[2]], by = 0) %>% namerows
+  pr.bird <- percent.occupancy.by.guild(tab, gld, "bird", sitedat) 
   
   
   

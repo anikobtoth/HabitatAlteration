@@ -133,22 +133,22 @@ s <- spp %>% filter(rownames(.) %in% unlist(map(tables, map, rownames))) %>% gro
 
 ## Altered habitat types figure ########
 
-pbat <- ggplot(pr.bats, aes(x = altered_habitat, y = value, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
-  facet_wrap(variable~., nrow = 4, ncol = 1, scales = "free_y") + geom_jitter(width = 0.1, size = 0.3) +
-  panel_border(remove = F, colour = "black") + 
-  theme(axis.text.x = element_blank()) + labs(y = "Percent of species co-occurring")
+pbat <- ggplot(pr.bat, aes(x = altered_habitat, y = value*100, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
+  facet_wrap(variable~., nrow = 4, ncol = 1, scales = "free_y") + geom_jitter(width = 0.15, size = 0.3) +
+  panel_border(remove = F, colour = "black") + scale_fill_manual(values = c(gg_color_hue(9), "gray50")) +
+  theme(axis.text.x = element_blank()) + labs(y = "Percent of species co-occurring", x = "Habitat type")
 
-pbird <- ggplot(pr.birds, aes(x = altered_habitat, y = value, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
-  facet_wrap(variable~., nrow = 4, ncol = 2, scales = "free_y") + geom_jitter(width = 0.1, size = 0.3) +
+
+pbird <- ggplot(pr.bird, aes(x = altered_habitat, y = value*100, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
+  facet_wrap(variable~., nrow = 4, ncol = 2, scales = "free_y") + geom_jitter(width = 0.15, size = 0.3) +
   panel_border(remove = F, colour = "black") + 
-  theme(axis.text.x = element_blank()) + labs(y = "Percent of species co-occurring", fill = "Type of alteration") + 
-  scale_fill_manual(values = gg_color_hue(9), 
-                    limits = c("cropland", "disturbed forest", "fragment", "pasture", "plantation", "rural", "secondary forest", "suburban", "urban"),
-                    labels = c("cropland", "disturbed forest", "fragment", "pasture", "plantation", "rural", "secondary forest", "suburban", "urban"))
+  theme(axis.text.x = element_blank()) + labs(y = "Percent of species co-occurring", x = "Habitat type", fill = "Type of alteration") + 
+  scale_fill_manual(values = c(gg_color_hue(9), "gray50"), 
+                    limits = c("cropland", "disturbed forest", "fragment", "pasture", "plantation", "rural", "secondary forest", "suburban", "urban", "unaltered"),
+                    labels = c("cropland", "disturbed forest", "fragment", "pasture", "plantation", "rural", "secondary forest", "suburban", "urban", "unaltered"))
 
 plot_grid(pbird+ theme(legend.position = c(1, 0), legend.justification = c(1, 0), legend.text = element_text(size = 10)) + guides(fill=guide_legend(ncol=2)), 
-          pbat+theme(legend.position="none"), ncol = 2, rel_widths = c(1.9, 1))
-
+          pbat+theme(legend.position="none"), ncol = 2, rel_widths = c(1.9, 1), labels = c("Birds", "Bats"))
 #### SUPPLEMENTARY Boxplots (Figs 2-5 presented as boxplots instead of scatter plots) ######
 
 load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Results/d2_4xsummarytables.RData")

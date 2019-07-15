@@ -187,7 +187,7 @@ posnegzero <- function(x){
 }
 
 # Percent occupancy by guild
-percent.occupancy.by.guild <- function(t, gld, taxon){
+percent.occupancy.by.guild <- function(t, gld, taxon, sitedat){
   pr <- data.frame(row.names = colnames(t))
   for(i in 1:length(gld))  {
     temp <- t[rownames(t) %in% rownames(spp[which(spp$guild == gld[i] & spp$life.form == taxon),]), ] 
@@ -196,11 +196,16 @@ percent.occupancy.by.guild <- function(t, gld, taxon){
   }
   
   colnames(pr) <- gld
-  pr$altered_habitat <- sitedat$altered_habitat[sitedat$siteid %in% rownames(pr)]
-  
+  pr <- merge(pr, sitedat[,c("siteid", "altered_habitat")], by.x = 0, by.y = "siteid") %>% namerows
+
   prm <- melt(pr, id.vars = "altered_habitat")
-  prm$altered_habitat <- factor(prm$altered_habitat, levels = c("cropland", "disturbed forest", "fragment", "pasture", "plantation", "rural", "secondary forest", "suburban", "urban"))
+  prm$altered_habitat <- factor(prm$altered_habitat, levels = c("cropland", "disturbed forest", 
+                                                                "fragment", "pasture", 
+                                                                "plantation", "rural", 
+                                                                "secondary forest", "suburban", 
+                                                                "urban", "unaltered")) %>%
+    replace_na("unaltered")
   
-  return(prm)
+    return(prm)
 }
 
