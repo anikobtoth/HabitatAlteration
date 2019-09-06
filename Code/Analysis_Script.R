@@ -171,36 +171,48 @@ PAnu <- map(PAnu, clean.empty)
 #PAna <- PAn %>% map(~return(.[,!colnames(.) %in% unalt_sites]))
 
 ##### Functional Altered/unaltered analysis ####
-   # Format data
-  tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% map(map, ~t(.)) %>% map(map, clean.empty)
+# Format data
+tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% map(map, ~t(.)) %>% map(map, clean.empty)
+ss1 <- map(tables, map_int, ncol)  
+
+unalt <- purrr::map2(PAn, ss1, function(x, y) resamp(x, reps = 100, sites = y[1])) %>% purrr::map(map, clean.empty)
+alter <- purrr::map2(PAn, ss1, function(x, y) resamp(x, reps = 100, sites = y[2])) %>% purrr::map(map, clean.empty)
+
+      # parameters
+  # reps = 15 # how many subsamples?
+  # ss1 = map(tables, map_int, ncol) %>% 
+  #   map(min) %>% map(`/`, 1.2) %>% 
+  #   map(round, 0) # Size of the subsamples? (currently 5/6 of available sites in least sampled table)
   
-    # parameters
-  reps = 15 # how many subsamples?
-  ss1 = map(tables, map_int, ncol) %>% 
-    map(min) %>% map(`/`, 1.2) %>% 
-    map(round, 0) # Size of the subsamples? (currently 5/6 of available sites in least sampled table)
-  
-  ## Subsampling and co-occurrence calculations
-  out <- list()
-  y <- map2(tables, ss1, function(x, y) map(x, ~resamp(., reps = reps, sites = y)))
-  
+  # ## Subsampling and co-occurrence calculations
+  # out <- list()
+  # y <- map2(tables, ss1, function(x, y) map(x, ~resamp(., reps = reps, sites = y)))
+  # 
   ## CAUTION: The following code is the rate-limiting step when there are many species in the input tables (e.g. more than ~150).
   ## CAUTION: The following code will also hit the RAM limit on most computers.
   ## See below for two alternative ways to explore the results.
-    out <- map(y, map, map, simpairs)  # FETmP calculations
+    # out <- map(y, map, map, simpairs)  # FETmP calculations
   
-  ## The rate-limiting step can be parallelized on machines with multiple cores ##
-  cl <- makeCluster(detectCores()) 
-  clusterExport(cl, c("simpairs"))
-  y <- map2(tables, ss1, function(x, y) purrr::map(x, ~resamp(., reps = reps, sites = y)))
-  out <- lapply(y, lapply, function(x) parLapply(cl, x, fun = simpairs))
-  stopCluster(cl)
+  ## The rate-limiting step can be parallelized on machines with multiple cores ##     
+     cl <- makeCluster(detectCores()) 
+     clusterExport(cl, c("simpairs"))
+  ## 
+    out.unalt <- purrr::map(unalt, function(x) parLapply(cl, x, fun = "simpairs"))
+    out.alter <- purrr::map(alter, function(x) parLapply(cl, x, fun = "simpairs"))
+    # y <- map2(tables, ss1, function(x, y) purrr::map(x, ~resamp(., reps = reps, sites = y)))
+    # out <- lapply(y, lapply, function(x) parLapply(cl, x, fun = simpairs))
+    # stopCluster(cl)
+ 
+ ## New version
+ outu <- map2(out.unalt, unalt, map2, dist2edgelist) %>% map(bind_rows, .id = "subsample") %>% bind_rows("taxon")
+ outa <- map2(out.alter, alter, map2, dist2edgelist) %>% map(bind_rows, .id = "subsample") %>% bind_rows("taxon")
+ out <- bind_rows(list(unaltered = outu, altered = outa), .id = "status")
   
-  ### Collate results ###
-  out <- map2(out, y, map2, map2, dist2edgelist)
-  out <- map(out, map, bind_rows, .id = "subsample")
-  out <- map(out, bind_rows, .id = "status")
-  out <- bind_rows(out, .id = "taxon")
+ ### Collate results ###
+    # out <- map2(out, y, map2, map2, dist2edgelist)
+    # out <- map(out, map, bind_rows, .id = "subsample")
+    # out <- map(out, bind_rows, .id = "status")
+    # out <- bind_rows(out, .id = "taxon")
   
   ## For the output of this analysis 
   # with reps = 100 (bird results are randomly subsampled to reduce data file size), 
