@@ -2,7 +2,7 @@
 ##      functional diversity in Neotropical bats and birds.    ##### 
 ##                     Anikó B. Tóth                           ##
 
-# Submitted 31 Mar 2019 
+# Submitted 18 July 2019 
 # Analysis script 
 
 source('./Code/HelperFunctions.R')
