@@ -1,5 +1,5 @@
 ##    Habitat alteration reduces food competition and local    ###
-##      functional diversity in Neotropical bats and birds.    ##### 
+##      functional diversity in Neotropical bats and birds.    ### 
 ##                     Anikó B. Tóth                           ##
 
 # Submitted 31 Mar 2019 
@@ -12,6 +12,7 @@ library("tidyverse")
 library("vegan")
 library("reshape2")
 library("stringi")
+library("parallel")
 
 # Load Datasets ####
 # settings
@@ -156,7 +157,7 @@ for(j in 1:length(ord)){
   w[j] <- wilcox.test(d, obs)$p.value
 }
 
-# P-value of PCcA centroid shift
+# P-value of PCoA centroid shift
 w
 
 
@@ -172,22 +173,23 @@ PAnu <- map(PAnu, clean.empty)
 
 ##### Functional Altered/unaltered analysis ####
 # Format data
-tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% map(map, ~t(.)) %>% map(map, clean.empty)
+tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
+  map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
+# observed
+obs <- purrr::map(tables, ~purrr::map(., function(x) simpairs(x) %>% dist2edgelist(x))) %>%
+  purrr::map(bind_rows, .id = 'status') %>% bind_rows(.id = "taxon") %>% mutate(Taxon_status = paste(taxon, status, sep = "_"))
+
+# expected
 ss1 <- map(tables, map_int, ncol)  
+rps <- 100 
 
-unalt <- purrr::map2(PAn, ss1, function(x, y) resamp(x, reps = 100, sites = y[1])) %>% purrr::map(map, clean.empty)
-alter <- purrr::map2(PAn, ss1, function(x, y) resamp(x, reps = 100, sites = y[2])) %>% purrr::map(map, clean.empty)
+bat.a <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["altered"]) 
+bat.u <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["unaltered"])
+bird.a <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["altered"])
+bird.u <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["unaltered"])
 
-      # parameters
-  # reps = 15 # how many subsamples?
-  # ss1 = map(tables, map_int, ncol) %>% 
-  #   map(min) %>% map(`/`, 1.2) %>% 
-  #   map(round, 0) # Size of the subsamples? (currently 5/6 of available sites in least sampled table)
-  
-  # ## Subsampling and co-occurrence calculations
-  # out <- list()
-  # y <- map2(tables, ss1, function(x, y) map(x, ~resamp(., reps = reps, sites = y)))
-  # 
+input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_unaltered", "bird_altered", "bird_unaltered"))
+
   ## CAUTION: The following code is the rate-limiting step when there are many species in the input tables (e.g. more than ~150).
   ## CAUTION: The following code will also hit the RAM limit on most computers.
   ## See below for two alternative ways to explore the results.
@@ -195,31 +197,24 @@ alter <- purrr::map2(PAn, ss1, function(x, y) resamp(x, reps = 100, sites = y[2]
   
   ## The rate-limiting step can be parallelized on machines with multiple cores ##     
      cl <- makeCluster(detectCores()) 
-     clusterExport(cl, c("simpairs"))
+     clusterExport(cl, c("simpairs", "dist2edgelist"))
+     clusterEvalQ(cl, library(tidyverse))
   ## 
-    out.unalt <- purrr::map(unalt, function(x) parLapply(cl, x, fun = "simpairs"))
-    out.alter <- purrr::map(alter, function(x) parLapply(cl, x, fun = "simpairs"))
-    # y <- map2(tables, ss1, function(x, y) purrr::map(x, ~resamp(., reps = reps, sites = y)))
-    # out <- lapply(y, lapply, function(x) parLapply(cl, x, fun = simpairs))
-    # stopCluster(cl)
- 
- ## New version
- outu <- map2(out.unalt, unalt, map2, dist2edgelist) %>% map(bind_rows, .id = "subsample") %>% bind_rows("taxon")
- outa <- map2(out.alter, alter, map2, dist2edgelist) %>% map(bind_rows, .id = "subsample") %>% bind_rows("taxon")
- out <- bind_rows(list(unaltered = outu, altered = outa), .id = "status")
-  
+    
+   exp <- purrr::map(input, ~parLapply(cl, ., fun = function(x) simpairs(x) %>% dist2edgelist(x)) %>% 
+      bind_rows(.id = "subsample")) %>% bind_rows(.id = "Taxon_status")
+   exp$taxon <- word(exp$Taxon_status, 1, 1, sep = "_")
+   exp$status <- word(exp$Taxon_status, 2, 2, sep = "_")
+   
+   out <- bind_rows(list(expected = exp, observed = obs), .id = "type")
+     
  ### Collate results ###
-    # out <- map2(out, y, map2, map2, dist2edgelist)
-    # out <- map(out, map, bind_rows, .id = "subsample")
-    # out <- map(out, bind_rows, .id = "status")
-    # out <- bind_rows(out, .id = "taxon")
-  
-  ## For the output of this analysis 
+     ## For the output of this analysis 
   # with reps = 100 (bird results are randomly subsampled to reduce data file size), 
   # load results/output tables with the following code: 
   load("./Results/out_bat_100r_PAn3.RData")
   load("./Results/out_bird_randsamp_100r_PAn3_1.7m.RData")
-  out <- rbind(out.bat, out.bird)
+  
   ## ***NOTE*** the output tables take up roughly 6 gigabytes of memory. 
   
 #### Add diet and shared/unique categories #####
@@ -246,29 +241,43 @@ alter <- purrr::map2(PAn, ss1, function(x, y) resamp(x, reps = 100, sites = y[2]
   out$cat.group[out$cat.pair == "Unique-Unique"] <- "Unique"
   out$cat.group[out$cat.pair == "Unique-Shared"] <- "Unique"
   out$cat.group[out$cat.pair == "Shared-Shared"] <- "Shared"
+
+#### Results collated as summary tables from output ####  
   
-  
-  #### Results collated as summary tables from output ####
   # d1: overall [NOT PRESENTED IN MANUSCRIPT]
-  d1.prop.all <- out %>% group_by(subsample, taxon, status) %>% 
+  d1.prop.all <- out %>% group_by(subsample, Taxon_status, type) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), sd = sd(Z.Score), count = length(Z.Score))
-  d1.prop.cat <- out %>% group_by(subsample, taxon, status, cat.group) %>% 
+  d1.prop.cat <- out %>% group_by(subsample, Taxon_status, cat.group, type) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), sd = sd(Z.Score), count = length(Z.Score))
-  d1.mag.all <- out %>% group_by(subsample, taxon, status, posnegzero(Z.Score)) %>% 
+  d1.mag.all <- out %>% group_by(subsample, Taxon_status, posnegzero(Z.Score), type) %>% 
     summarise(`Mean magnitude` = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
-  d1.mag.cat <- out %>% group_by(subsample, taxon, status, cat.group, posnegzero(Z.Score)) %>% 
+  d1.mag.cat <- out %>% group_by(subsample, Taxon_status, cat.group, posnegzero(Z.Score), type) %>% 
     summarise(`Mean magnitude` = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
   
   # d2: Diet.match (same, related, and different pairs) [PRESENTED IN MAIN TEXT]
-  d2.prop.all <- na.omit(out) %>% group_by(subsample, taxon, diet.match, status) %>% 
-    summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  d2.prop.cat <- na.omit(out) %>% group_by(subsample, taxon, diet.match, status, cat.group) %>% 
-    summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  d2.mag.all <- na.omit(out) %>% group_by(subsample, taxon, diet.match, status, posnegzero(Z.Score)) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
-  d2.mag.cat <- na.omit(out) %>% group_by(subsample, taxon, diet.match, status, cat.group, posnegzero(Z.Score)) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
+    # proportion of agg:seg, overall by diet group
+    d2.prop.all <- out %>% group_by(subsample, Taxon_status, diet.match, type) %>% 
+      summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
+    
+    # proportion of agg:seg, by diet group and shared/unique
+    d2.prop.cat <- out %>% group_by(subsample, Taxon_status, diet.match, cat.group, type) %>% 
+      summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
+    
+    # magnitude of agg & seg, overall by diet group 
+    d2.mag.all <- out %>% group_by(subsample, Taxon_status, diet.match, posnegzero(Z.Score), type) %>% 
+      summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
+    
+    # magnitude of agg & seg, by diet group and shared/unique    
+    d2.mag.cat <- out %>% group_by(subsample, Taxon_status, diet.match, cat.group, posnegzero(Z.Score), type) %>% 
+      summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
   
+  # plots for d2
+  ggplot(d2.prop.all, aes(y = agg, fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_wrap(.~Taxon_status, scales = "free") 
+  ggplot(d2.prop.cat, aes(y = agg, fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_grid(cat.group~Taxon_status, scales = "free") 
+  ggplot(d2.mag.all, aes(y = abs(avmag), fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_grid(`posnegzero(Z.Score)`~Taxon_status, scales = "free") 
+  ggplot(d2.mag.cat, aes(y = abs(avmag), fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_grid(cat.group+`posnegzero(Z.Score)`~Taxon_status, scales = "free") 
+  
+   
   # d3: Within-guild analysis: Diet.pair == "Same" [PRESENTED IN SUPPLEMENT]
   d3.prop.all <- out[out$diet.match == "Same",] %>% na.omit() %>% group_by(subsample, taxon, diet.pair, diet.match, status) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
