@@ -271,13 +271,8 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
     d2.mag.cat <- out %>% group_by(subsample, Taxon_status, diet.match, cat.group, posnegzero(Z.Score), type) %>% 
       summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
   
-  # plots for d2
-  ggplot(d2.prop.all, aes(y = agg, fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_wrap(.~Taxon_status, scales = "free") 
-  ggplot(d2.prop.cat, aes(y = agg, fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_grid(cat.group~Taxon_status, scales = "free") 
-  ggplot(d2.mag.all, aes(y = abs(avmag), fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_grid(`posnegzero(Z.Score)`~Taxon_status, scales = "free") 
-  ggplot(d2.mag.cat, aes(y = abs(avmag), fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_grid(cat.group+`posnegzero(Z.Score)`~Taxon_status, scales = "free") 
-  
-   
+ 
+       
   # d3: Within-guild analysis: Diet.pair == "Same" [PRESENTED IN SUPPLEMENT]
   d3.prop.all <- out[out$diet.match == "Same",] %>% na.omit() %>% group_by(subsample, taxon, diet.pair, diet.match, status) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))

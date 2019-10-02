@@ -206,3 +206,122 @@ plot_grid(p1, p2, ncol = 1, rel_heights = c(1,1.5), labels = c("A", "B"))
 ##
 #
 
+
+
+
+### New scatterplot figures: obs/exp with unalt plotted against alt
+### DIET OVERLAP ####
+#ggplot(d2.prop.all %>% filter(!is.na(diet.match)), aes(y = agg, fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_wrap(.~Taxon_status, scales = "free") 
+
+colors3 <- c("#34008C", "#E8004D", "#E8AC00")
+## Proportion of aggregations
+ggplot(d2.prop.cat %>% filter(!is.na(diet.match)), aes(y = agg, fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_grid(cat.group~Taxon_status, scales = "free") 
+d <- d2.prop.cat
+
+d <- d %>% filter(!is.na(diet.match))
+o <- d[d$type == "observed",]
+e <- d[d$type == "expected",]
+m <- merge(e, o, by = c("Taxon_status", "diet.match", "cat.group"), all = T)
+pAgg <- m %>% select(Taxon_status, diet.match, cat.group, subsample = subsample.x, expected = agg.x, observed = agg.y) %>% 
+  mutate(obsDexp = observed/expected)
+pAgg$taxon <- word(pAgg$Taxon_status, 1, 1, sep = "_")
+pAgg$status <- word(pAgg$Taxon_status, 2, 2, sep = "_")
+
+obsexp <- dcast(subsample+taxon+diet.match+cat.group~status, value.var = 'obsDexp', data = pAgg)
+
+ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray30") +
+  geom_hline(yintercept = 1, col = "gray") +
+  geom_vline(xintercept = 1, col = "gray") +
+  #geom_point(size = 0.5) + 
+  stat_ellipse(geom= "polygon", alpha = 0.3) +
+  facet_grid(taxon~cat.group, scales = "fixed") + 
+  scale_colour_manual(values = colors3) +
+  scale_fill_manual(values = colors3)  
+
+# strength of associations
+#ggplot(d2.mag.all %>% filter(!is.na(diet.match)), aes(y = abs(avmag), fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_grid(`posnegzero(Z.Score)`~Taxon_status, scales = "free") 
+ggplot(d2.mag.cat %>% filter(!is.na(diet.match)), aes(y = abs(avmag), fill = type, x = diet.match)) + geom_boxplot(notch = T) + facet_grid(cat.group+`posnegzero(Z.Score)`~Taxon_status, scales = "free") 
+
+d <- d2.mag.cat
+
+d <- d %>% filter(!is.na(diet.match))
+o <- d[d$type == "observed",]
+e <- d[d$type == "expected",]
+m <- merge(e, o, by = c("Taxon_status", "diet.match", "cat.group", "posnegzero(Z.Score)"), all = T)
+avmag <- m %>% select(Taxon_status, diet.match, cat.group, `posnegzero(Z.Score)`, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
+  mutate(obsDexp = observed/expected)
+avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
+avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
+
+obsexp <- dcast(subsample+taxon+diet.match+cat.group+`posnegzero(Z.Score)`~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
+
+ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray30") +
+  geom_hline(yintercept = 1, col = "gray") +
+  geom_vline(xintercept = 1, col = "gray") +
+  #geom_point(size = 0.5) + 
+  stat_ellipse(geom= "polygon", alpha = 0.1) +
+  facet_grid(taxon+`posnegzero(Z.Score)`~cat.group, scales = "fixed") + 
+  scale_colour_manual(values = colors3) +
+  scale_fill_manual(values = colors3)  
+
+
+
+### GUILD-BY-GUILD #####
+# prop agg
+d <- d3.prop.cat
+d <- d %>% filter(!is.na(diet.pair))
+ keep <- d %>% group_by(diet.pair, Taxon_status) %>% summarise(avg = mean(count), mean(agg)) %>% filter(avg>15) 
+ keep <- names(table(keep$diet.pair)[table(keep$diet.pair) >1])
+ d <- d[d$diet.pair %in% keep,]
+
+o <- d[d$type == "observed",]
+e <- d[d$type == "expected",]
+m <- merge(e, o, by = c("Taxon_status", "diet.pair", "cat.group"), all = T)
+pAgg <- m %>% select(Taxon_status, diet.pair, cat.group, subsample = subsample.x, expected = agg.x, observed = agg.y) %>% 
+  mutate(obsDexp = observed/expected)
+pAgg$taxon <- word(pAgg$Taxon_status, 1, 1, sep = "_")
+pAgg$status <- word(pAgg$Taxon_status, 2, 2, sep = "_")
+
+obsexp <- dcast(subsample+taxon+diet.pair+cat.group~status, value.var = 'obsDexp', data = pAgg)
+obsexp <- obsexp %>% filter(is.finite(altered), is.finite(unaltered)) %>% na.omit()
+ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.pair, fill = diet.pair)) + 
+  geom_abline(slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray30") +
+  geom_hline(yintercept = 1, col = "gray") +
+  geom_vline(xintercept = 1, col = "gray") +
+  geom_point(size = 0.5) + 
+  stat_ellipse(geom= "polygon", alpha = 0.1) +
+  facet_grid(taxon~cat.group, scales = "fixed") + 
+  scale_colour_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70)) +
+  scale_fill_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70))
+
+## magnitude 
+d <- d3.mag.cat
+d <- d %>% filter(!is.na(diet.pair))
+keep <- d %>% group_by(diet.pair, Taxon_status) %>% summarise(avg = mean(count), mean(avmag)) %>% filter(avg>15) 
+keep <- names(table(keep$diet.pair)[table(keep$diet.pair) >1])
+d <- d[d$diet.pair %in% keep,]
+
+o <- d[d$type == "observed",]
+e <- d[d$type == "expected",]
+m <- merge(e, o, by = c("Taxon_status", "diet.pair", "cat.group", "posnegzero(Z.Score)"), all = T)
+
+avmag <- m %>% select(Taxon_status, diet.pair, cat.group, `posnegzero(Z.Score)`, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
+  mutate(obsDexp = observed/expected)
+avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
+avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
+
+obsexp <- dcast(subsample+taxon+diet.pair+cat.group+`posnegzero(Z.Score)`~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
+obsexp <- obsexp %>% filter(is.finite(altered), is.finite(unaltered)) %>% na.omit()
+
+ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.pair, fill = diet.pair)) + 
+  geom_abline(slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray30") +
+  geom_hline(yintercept = 1, col = "gray") +
+  geom_vline(xintercept = 1, col = "gray") +
+  geom_point(size = 0.5) + 
+  stat_ellipse(geom= "polygon", alpha = 0.1) +
+  facet_grid(taxon~cat.group, scales = "fixed") + 
+  scale_colour_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70)) +
+  scale_fill_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70))
+
