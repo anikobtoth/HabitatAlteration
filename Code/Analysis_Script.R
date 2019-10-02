@@ -181,9 +181,9 @@ obs <- purrr::map(tables, ~purrr::map(., function(x) simpairs(x) %>% dist2edgeli
 
 # expected
 ss1 <- map(tables, map_int, ncol)  
-rps <- 100 
+rps <- 1000 
 
-bat.a <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["altered"]) 
+nbat.a <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["altered"]) 
 bat.u <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["unaltered"])
 bird.a <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["altered"])
 bird.u <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["unaltered"])
@@ -279,23 +279,23 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   
    
   # d3: Within-guild analysis: Diet.pair == "Same" [PRESENTED IN SUPPLEMENT]
-  d3.prop.all <- out[out$diet.match == "Same",] %>% na.omit() %>% group_by(subsample, taxon, diet.pair, diet.match, status) %>% 
+  d3.prop.all <- out[out$diet.match == "Same",] %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  d3.prop.cat <- out[out$diet.match == "Same",] %>% na.omit() %>% group_by(subsample, taxon, diet.pair, diet.match, status, cat.group) %>% 
+  d3.prop.cat <- out[out$diet.match == "Same",] %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, cat.group) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  d3.mag.all <- out[out$diet.match == "Same",] %>% na.omit() %>% group_by(subsample, taxon, diet.pair, diet.match, status, posnegzero(Z.Score)) %>% 
+  d3.mag.all <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, posnegzero(Z.Score)) %>% 
     summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
-  d3.mag.cat <- out[out$diet.match == "Same",] %>% na.omit() %>% group_by(subsample, taxon, diet.pair, diet.match, status, posnegzero(Z.Score), cat.group) %>% 
+  d3.mag.cat <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, posnegzero(Z.Score), cat.group) %>% 
     summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
 
   # d4: Related pairs analysis: Diet.pair == "Related"  [NOT PRESENTED IN MANUSCRIPT]
-  d4.prop.all <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, taxon, diet.pair, diet.match, status) %>% 
+  d4.prop.all <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  d4.prop.cat <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, taxon, diet.pair, diet.match, status, cat.group) %>% 
+  d4.prop.cat <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, cat.group) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  d4.mag.all <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, taxon, diet.pair, diet.match, status, posnegzero(Z.Score)) %>% 
+  d4.mag.all <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, posnegzero(Z.Score)) %>% 
     summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
-  d4.mag.cat <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, taxon, diet.pair, diet.match, status, posnegzero(Z.Score), cat.group) %>% 
+  d4.mag.cat <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, posnegzero(Z.Score), cat.group) %>% 
     summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
   
 #
