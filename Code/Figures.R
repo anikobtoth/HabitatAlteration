@@ -262,7 +262,7 @@ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.mat
   geom_vline(xintercept = 1, col = "gray") +
   #geom_point(size = 0.5) + 
   stat_ellipse(geom= "polygon", alpha = 0.1) +
-  facet_grid(taxon+`posnegzero(Z.Score)`~cat.group, scales = "fixed") + 
+  facet_grid(cat.group+`posnegzero(Z.Score)`~taxon, scales = "fixed") + 
   scale_colour_manual(values = colors3) +
   scale_fill_manual(values = colors3)  
 
