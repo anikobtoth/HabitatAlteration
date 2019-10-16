@@ -187,17 +187,17 @@ ss.bat <- lapply(1:100, function(x) sample(c(rep(1, ss1$bat["altered"]), rep(2, 
 ss.bird <- lapply(1:100, function(x) sample(c(rep(1, ss1$bird["altered"]), rep(2, ss1$bird["unaltered"]))))
 # no singletons
 PAn.ns <- map(PAn, clean.empty, minrow = 2)
-
+# no replacement site subsampling
 bat.a <- lapply(ss.bat, function(x) PAn.ns[[1]][,which(x == 1)]) %>% lapply(clean.empty)
 bat.u <- lapply(ss.bat, function(x) PAn.ns[[1]][,which(x == 2)]) %>% lapply(clean.empty)
 bird.a <- lapply(ss.bird, function(x) PAn.ns[[2]][,which(x == 1)]) %>% lapply(clean.empty)
 bird.u <- lapply(ss.bird, function(x) PAn.ns[[2]][,which(x == 2)]) %>% lapply(clean.empty)
 
-# bat.a <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["altered"])
-# bat.u <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["unaltered"])
-# bird.a <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["altered"])
-# bird.u <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["unaltered"])
- 
+  # bat.a <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["altered"]) 
+  # bat.u <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["unaltered"])
+  # bird.a <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["altered"])
+  # bird.u <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["unaltered"])
+
 input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_unaltered", "bird_altered", "bird_unaltered"))
 
   ## CAUTION: The following code is the rate-limiting step when there are many species in the input tables (e.g. more than ~150).
