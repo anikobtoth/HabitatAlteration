@@ -183,11 +183,21 @@ obs <- purrr::map(tables, ~purrr::map(., function(x) simpairs(x) %>% dist2edgeli
 ss1 <- map(tables, map_int, ncol)  
 rps <- 100
 
-bat.a <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["altered"]) 
-bat.u <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["unaltered"])
-bird.a <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["altered"])
-bird.u <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["unaltered"])
+ss.bat <- lapply(1:100, function(x) sample(c(rep(1, ss1$bat["altered"]), rep(2, ss1$bat["unaltered"]))))
+ss.bird <- lapply(1:100, function(x) sample(c(rep(1, ss1$bird["altered"]), rep(2, ss1$bird["unaltered"]))))
+# no singletons
+PAn.ns <- map(PAn, clean.empty, minrow = 2)
 
+bat.a <- lapply(ss.bat, function(x) PAn.ns[[1]][,which(x == 1)]) %>% lapply(clean.empty)
+bat.u <- lapply(ss.bat, function(x) PAn.ns[[1]][,which(x == 2)]) %>% lapply(clean.empty)
+bird.a <- lapply(ss.bird, function(x) PAn.ns[[2]][,which(x == 1)]) %>% lapply(clean.empty)
+bird.u <- lapply(ss.bird, function(x) PAn.ns[[2]][,which(x == 2)]) %>% lapply(clean.empty)
+
+# bat.a <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["altered"])
+# bat.u <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["unaltered"])
+# bird.a <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["altered"])
+# bird.u <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["unaltered"])
+ 
 input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_unaltered", "bird_altered", "bird_unaltered"))
 
   ## CAUTION: The following code is the rate-limiting step when there are many species in the input tables (e.g. more than ~150).
@@ -212,8 +222,8 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
      ## For the output of this analysis 
   # with reps = 100 (bird results are randomly subsampled to reduce data file size), 
   # load results/output tables with the following code: 
-  load("./Results/out_bat_100r_PAn3.RData")
-  load("./Results/out_bird_randsamp_100r_PAn3_1.7m.RData")
+  #load("./Results/out_bat_100r_PAn3.RData")
+  #load("./Results/out_bird_randsamp_100r_PAn3_1.7m.RData")
   
   ## ***NOTE*** the output tables take up roughly 6 gigabytes of memory. 
   
