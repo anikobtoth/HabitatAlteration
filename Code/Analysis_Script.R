@@ -22,9 +22,9 @@ load("./Data/PA1_raw_abund_all.RData")
 PAn <- map(PAn, clean.empty) # remove empty rows.
 # species metadata
 load("./Data/Species_metadata.RData")
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/HabitatAlteration/Data/cosmo_species_cosmopolitan_score.RData") # cosmopolitan category 
 # site metadata 
 load("./Data/sitedat_metadata.Rdata")
-
 # Site data #
 #load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/sitedat_meta_clim.RData")
 
@@ -251,7 +251,19 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   out$cat.group[out$cat.pair == "Unique-Unique"] <- "Unique"
   out$cat.group[out$cat.pair == "Unique-Shared"] <- "Unique"
   out$cat.group[out$cat.pair == "Shared-Shared"] <- "Shared"
-
+  
+### Cosmopolitan/restricted groupings ####  
+  out$cosmo.Sp1 <- cosmo[out$Sp1,"group"]
+  out$cosmo.Sp2 <- cosmo[out$Sp2,"group"]
+  out$cosmo.pair <- paste(out$cosmo.Sp1, out$cosmo.Sp2, sep = "-")
+  
+  out$cosmo.pair[out$cosmo.pair == "cosmopolitan-restricted"] <- "restricted-cosmopolitan"
+  out$cosmo.pair[out$cosmo.pair == "synanthropic-cosmopolitan"] <- "cosmopolitan-synanthropic"
+  out$cosmo.pair[out$cosmo.pair == "synanthropic-restricted"] <- "restricted-synanthropic"
+  
+  out$cosmo.group[out$cosmo.Sp1 == out$cosmo.Sp2] <- 'Same'
+  out$cosmo.group[!out$cosmo.Sp1 == out$cosmo.Sp2] <- 'Different'
+  
 #### Results collated as summary tables from output ####  
   
   # d1: overall [NOT PRESENTED IN MANUSCRIPT]
@@ -259,10 +271,10 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), sd = sd(Z.Score), count = length(Z.Score))
   d1.prop.cat <- out %>% group_by(subsample, Taxon_status, cat.group, type) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), sd = sd(Z.Score), count = length(Z.Score))
-  d1.mag.all <- out %>% group_by(subsample, Taxon_status, posnegzero(Z.Score), type) %>% 
-    summarise(`Mean magnitude` = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
-  d1.mag.cat <- out %>% group_by(subsample, Taxon_status, cat.group, posnegzero(Z.Score), type) %>% 
-    summarise(`Mean magnitude` = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
+  d1.mag.all <- out %>% group_by(subsample, Taxon_status, pnz = posnegzero(Z.Score), type) %>% 
+    summarise(`Mean magnitude` = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
+  d1.mag.cat <- out %>% group_by(subsample, Taxon_status, cat.group, pnz = posnegzero(Z.Score), type) %>% 
+    summarise(`Mean magnitude` = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
   
   # d2: Diet.match (same, related, and different pairs) [PRESENTED IN MAIN TEXT]
     # proportion of agg:seg, overall by diet group
@@ -277,15 +289,15 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
       summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
     
     # magnitude of agg & seg, overall by diet group 
-    d2.mag.all <- out %>% group_by(subsample, Taxon_status, diet.match, posnegzero(Z.Score), type) %>% 
-      summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
+    d2.mag.all <- out %>% group_by(subsample, Taxon_status, diet.match, pnz = posnegzero(Z.Score), type) %>% 
+      summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
     
     # magnitude of agg & seg, by diet group and shared/unique    
-    d2.mag.cat <- out %>% group_by(subsample, Taxon_status, diet.match, cat.group, posnegzero(Z.Score), type) %>% 
-      summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
+    d2.mag.cat <- out %>% group_by(subsample, Taxon_status, diet.match, cat.group, pnz = posnegzero(Z.Score), type) %>% 
+      summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
   
-    d2.mag.catp <- out %>% group_by(subsample, Taxon_status, diet.match, cat.pair, posnegzero(Z.Score), type) %>% 
-      summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
+    d2.mag.catp <- out %>% group_by(subsample, Taxon_status, diet.match, cat.pair, pnz = posnegzero(Z.Score), type) %>% 
+      summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
        
   # d3: Within-guild analysis: Diet.pair == "Same" [PRESENTED IN SUPPLEMENT]
   d3.prop.all <- out[out$diet.match == "Same",] %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type) %>% 
@@ -295,24 +307,39 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   d3.prop.catp <- out[out$diet.match == "Same",] %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, cat.pair) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
   
-  d3.mag.all <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, posnegzero(Z.Score)) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
-  d3.mag.cat <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, posnegzero(Z.Score), cat.group) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
-  d3.mag.catp <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, posnegzero(Z.Score), cat.pair) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
+  d3.mag.all <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score)) %>% 
+    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
+  d3.mag.cat <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score), cat.group) %>% 
+    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
+  d3.mag.catp <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score), cat.pair) %>% 
+    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
   
   # d4: Related pairs analysis: Diet.pair == "Related"  [NOT PRESENTED IN MANUSCRIPT]
   d4.prop.all <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
   d4.prop.cat <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, cat.group) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  d4.mag.all <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, posnegzero(Z.Score)) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
-  d4.mag.cat <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, posnegzero(Z.Score), cat.group) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!`posnegzero(Z.Score)` == "ZERO")
+  d4.mag.all <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score)) %>% 
+    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
+  d4.mag.cat <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score), cat.group) %>% 
+    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
   
-#
+## d5: Diet.match (same, related, and different pairs) and cosmopolitan group
+ 
+  # proportion of agg:seg, by diet group and cosmopolitan/restricted
+  d5.prop.cat <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.group, type) %>% 
+    summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
+  
+  d5.prop.catp <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.pair, type) %>% 
+    summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
+  
+  # magnitude of agg & seg, by diet group and shared/unique    
+  d5.mag.cat <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.group, pnz = posnegzero(Z.Score), type) %>% 
+    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
+  
+  d5.mag.catp <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.pair, pnz = posnegzero(Z.Score), type) %>% 
+    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
+  
 
 #### Analysis of co-occurrence at altered habitats ####
   # bats
