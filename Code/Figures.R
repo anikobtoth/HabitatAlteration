@@ -10,6 +10,7 @@
 library(ggplot2)
 library(cowplot)
 library(scales)
+library(reshape2)
 
 ### Maps ####
 par(mfrow = c(2,2), mar = c(0,0,0,0), oma = c(1,1,1,1))
@@ -75,23 +76,23 @@ colors3 <- c("#34008C", "#E8004D", "#E8AC00")
   
   d <- d2.mag.cat
   d <- d[d$taxon == t,]
-  d$`posnegzero(Z.Score)` <- factor(d$`posnegzero(Z.Score)`, levels = c("Segregation", "Aggregation"))
+  d$pnz <- factor(d$pnz, levels = c("Segregation", "Aggregation"))
   
-  d2 <- dcast(subsample+taxon+diet.match+`posnegzero(Z.Score)`+cat.group~status, value.var = 'avmag', data = d)
+  d2 <- dcast(subsample+taxon+diet.match+pnz+cat.group~status, value.var = 'avmag', data = d)
   
   p2 <- ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.match)) + geom_point(size = 0.8) + 
-    facet_wrap(cat.group~`posnegzero(Z.Score)`, scales = "free") + panel_border(remove = F, col = "gray30") + 
+    facet_wrap(cat.group~pnz, scales = "free") + panel_border(remove = F, col = "gray30") + 
     geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray35") +
     scale_colour_manual(values = colors3)+ labs(col = "Diet Overlap")
   
   d <- d2.mag.all
   d <- d[d$taxon == t,]
-  d$`posnegzero(Z.Score)` <- factor(d$`posnegzero(Z.Score)`, levels = c("Segregation", "Aggregation"))
+  d$pnz <- factor(d$pnz, levels = c("Segregation", "Aggregation"))
   
-  d2 <- dcast(subsample+taxon+diet.match+`posnegzero(Z.Score)`~status, value.var = 'avmag', data = d)
+  d2 <- dcast(subsample+taxon+diet.match+pnz~status, value.var = 'avmag', data = d)
   
   p1 <- ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.match)) + geom_point(size = 0.8) + 
-    facet_wrap(`posnegzero(Z.Score)`~., scales = "free") + panel_border(remove = F, col = "gray30") + 
+    facet_wrap(pnz~., scales = "free") + panel_border(remove = F, col = "gray30") + 
     geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray35") +
     scale_colour_manual(values = colors3)+ labs(col = "Diet Overlap")
   
@@ -120,10 +121,10 @@ ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.pair)) + geom_point() +
 # magnitude of aggregations and segregations.
 d <- d3.mag.cat
 d <- d[d$taxon == t & d$diet.pair %in% keep,]
-d2 <- dcast(subsample+taxon+diet.pair+diet.match+`posnegzero(Z.Score)`+cat.group~status, value.var = 'avmag', data = d)
+d2 <- dcast(subsample+taxon+diet.pair+diet.match+pnz+cat.group~status, value.var = 'avmag', data = d)
 
 ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.pair)) + geom_point(size = 0.5) + 
-  facet_wrap(`posnegzero(Z.Score)`~cat.group, scales = "free") + panel_border(remove = F) + 
+  facet_wrap(pnz~cat.group, scales = "free") + panel_border(remove = F) + 
   geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray30") +
   scale_colour_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70))
 
@@ -218,17 +219,19 @@ colors3 <- c("#34008C", "#E8004D", "#E8AC00")
 specs <- list(geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray30"),
                 geom_hline(yintercept = 1, col = "gray"),
                 geom_vline(xintercept = 1, col = "gray"),
-                stat_ellipse(geom= "polygon", alpha = 0.3),
-                geom_point(size = 0.5), 
+                stat_ellipse(geom= "polygon", alpha = 0.3, aes(col = diet.match.2, fill = diet.match.2)),
+                geom_point(aes(col = diet.match.2, fill = diet.match.2), size = 0.5), 
                 geom_point(aes(x = 1, y = 1), col = "black", size = 1.2),
                 scale_colour_manual(values = colors3),
                 scale_fill_manual(values = colors3),
-                scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
-                              labels = trans_format("log10", math_format(10^.x))), 
-                scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
-                              labels = trans_format("log10", math_format(10^.x)))
+                theme(legend.position = "none"),
+                geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
+                #scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                #              labels = trans_format("log10", math_format(10^.x))), 
+                #scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                #              labels = trans_format("log10", math_format(10^.x)))
 )
-## Proportion of aggregations
+## Proportion of aggregations ####
 ## all ####
 d <- d2.prop.all
 d <- d %>% filter(!is.na(diet.match))
@@ -260,7 +263,7 @@ pAgg$status <- word(pAgg$Taxon_status, 2, 2, sep = "_")
 
 obsexp <- dcast(subsample+taxon+diet.match+cat.group~status, value.var = 'obsDexp', data = pAgg)
 
- ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
+ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
  specs+
  facet_wrap(taxon~cat.group, scales = "fixed")  
 
@@ -278,28 +281,33 @@ obsexp <- dcast(subsample+taxon+diet.match+cat.group~status, value.var = 'obsDex
  
  obsexp <- dcast(subsample+taxon+diet.match+cat.pair~status, value.var = 'obsDexp', data = pAgg)
  
- ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
+ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
   specs+  
   facet_wrap(taxon~cat.pair, scales = "free") 
  
-# strength of associations
+# strength of associations ####
 # all ####
 d <- d2.mag.all
 
-d <- d %>% filter(!is.na(diet.match))
+d <- d %>% filter(!is.na(diet.match.2))
 o <- d[d$type == "observed",]
 e <- d[d$type == "expected",]
-m <- merge(e, o, by = c("Taxon_status", "diet.match", "posnegzero(Z.Score)"), all = T)
-avmag <- m %>% select(Taxon_status, diet.match, `posnegzero(Z.Score)`, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
+m <- merge(e, o, by = c("Taxon_status", "diet.match.2", "pnz"), all = T)
+avmag <- m %>% select(Taxon_status, diet.match.2, pnz, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
   mutate(obsDexp = observed/expected)
 avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
 avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
 
-obsexp <- dcast(subsample+taxon+diet.match+`posnegzero(Z.Score)`~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
+obsexp <- dcast(subsample+taxon+diet.match.2+pnz~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
 
-ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
+anno <- obsexp %>% group_by(taxon, pnz) %>% 
+  summarise() %>% ungroup() %>% 
+  mutate(label = paste0("  ", LETTERS[1:4]), x = -Inf, y = Inf)
+
+ggplot(obsexp, aes(x = unaltered, y = altered)) +
   specs +
-  facet_wrap(`posnegzero(Z.Score)`~taxon, scales = "free") 
+  facet_wrap(status~taxon, scales = "free")
+  
   
 
 # cat.group ####
@@ -308,17 +316,17 @@ d <- d2.mag.cat
 d <- d %>% filter(!is.na(diet.match))
 o <- d[d$type == "observed",]
 e <- d[d$type == "expected",]
-m <- merge(e, o, by = c("Taxon_status", "diet.match", "cat.group", "posnegzero(Z.Score)"), all = T)
-avmag <- m %>% select(Taxon_status, diet.match, cat.group, `posnegzero(Z.Score)`, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
+m <- merge(e, o, by = c("Taxon_status", "diet.match", "cat.group", "pnz"), all = T)
+avmag <- m %>% select(Taxon_status, diet.match, cat.group, pnz, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
   mutate(obsDexp = observed/expected)
 avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
 avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
 
-obsexp <- dcast(subsample+taxon+diet.match+cat.group+`posnegzero(Z.Score)`~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
+obsexp <- dcast(subsample+taxon+diet.match+cat.group+pnz~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
 
 ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
  specs+
- facet_wrap(cat.group+`posnegzero(Z.Score)`~taxon, scales = "free")
+ facet_wrap(cat.group+pnz~taxon, scales = "free")
 
 # cat.pair ####
 
@@ -327,17 +335,17 @@ d <- d2.mag.catp
 d <- d %>% filter(!is.na(diet.match))
 o <- d[d$type == "observed",]
 e <- d[d$type == "expected",]
-m <- merge(e, o, by = c("Taxon_status", "diet.match", "cat.pair", "posnegzero(Z.Score)"), all = T)
-avmag <- m %>% select(Taxon_status, diet.match, cat.pair, `posnegzero(Z.Score)`, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
+m <- merge(e, o, by = c("Taxon_status", "diet.match", "cat.pair", "pnz"), all = T)
+avmag <- m %>% select(Taxon_status, diet.match, cat.pair, pnz, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
   mutate(obsDexp = observed/expected)
 avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
 avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
 
-obsexp <- dcast(subsample+taxon+diet.match+cat.pair+`posnegzero(Z.Score)`~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
+obsexp <- dcast(subsample+taxon+diet.match+cat.pair+pnz~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
 
 ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
   specs+ 
-  facet_wrap(cat.pair+taxon~`posnegzero(Z.Score)`, scales = "free") 
+  facet_wrap(cat.pair+taxon~pnz, scales = "free") 
 
 ### GUILD-BY-GUILD #####
 # prop agg
@@ -376,14 +384,14 @@ d <- d[d$diet.pair %in% keep,]
 
 o <- d[d$type == "observed",]
 e <- d[d$type == "expected",]
-m <- merge(e, o, by = c("Taxon_status", "diet.pair", "cat.group", "posnegzero(Z.Score)"), all = T)
+m <- merge(e, o, by = c("Taxon_status", "diet.pair", "cat.group", "pnz"), all = T)
 
-avmag <- m %>% select(Taxon_status, diet.pair, cat.group, `posnegzero(Z.Score)`, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
+avmag <- m %>% select(Taxon_status, diet.pair, cat.group, pnz, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
   mutate(obsDexp = observed/expected)
 avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
 avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
 
-obsexp <- dcast(subsample+taxon+diet.pair+cat.group+`posnegzero(Z.Score)`~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
+obsexp <- dcast(subsample+taxon+diet.pair+cat.group+pnz~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
 obsexp <- obsexp %>% filter(is.finite(altered), is.finite(unaltered)) %>% na.omit()
 
 ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.pair, fill = diet.pair)) + 
@@ -392,7 +400,7 @@ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.pair, fill = diet.pair
   geom_vline(xintercept = 1, col = "gray") +
   geom_point(size = 0.5) + 
   stat_ellipse(geom= "polygon", alpha = 0.1) +
-  facet_grid(taxon+`posnegzero(Z.Score)`~cat.group, scales = "free") + 
+  facet_grid(taxon+pnz~cat.group, scales = "free") + 
   scale_colour_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70)) +
   scale_fill_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70))
 
