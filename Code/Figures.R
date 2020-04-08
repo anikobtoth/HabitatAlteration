@@ -41,8 +41,7 @@ specs <- list(geom_hline(yintercept = 1, col = "gray"),
               #geom_point(aes(x = 1, y = 1), col = "black", size = 1.2),
               scale_colour_manual(values = colors2),
               scale_fill_manual(values = colors2),
-              theme(legend.position = "none"),
-              geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
+              theme(legend.position = "none")
 )
 # FIGURE 2: Mag.all ####
 d <- d2.mag.all
@@ -63,8 +62,8 @@ anno <- obsexp %>% group_by(taxon, pnz) %>%
   mutate(label = paste0("  ", LETTERS[1:4]), x = -Inf, y = Inf)
 
 ggplot(obsexp, aes(x = unaltered, y = altered)) +
-  specs +
-  facet_wrap(pnz~taxon, scales = "free")
+  specs + facet_wrap(pnz~taxon, scales = "free") +
+  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
 
 # FIGURE 3: Mag shared/unique cat.pair ####
 
@@ -104,6 +103,7 @@ avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
 avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
 
 obsexp <- dcast(subsample+taxon+diet.match+cosmo.pair+pnz~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
+obsexp$ cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
 n <- expand.grid(unique(obsexp$pnz), unique(obsexp$cosmo.pair)) %>% mutate(n = paste(.$Var2, .$Var1, sep = "_")) %>% pull(n) %>% expand.grid(unique(obsexp$taxon)) %>% mutate(n = paste(.$Var2, .$Var1, sep = "_")) %>% pull(n)
 b <- besttest(obsexp, split.var = "diet.match.2", taxon, cosmo.pair, pnz) %>% purrr::map(setNames, n)
 b <- purrr::map(b, ~.[!sapply(., is_null)])
@@ -114,17 +114,16 @@ anno <- obsexp %>% filter(taxon == "bat") %>% group_by(pnz, cosmo.pair) %>%
   mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
 
 ggplot(obsexp %>% filter(taxon == "bat"), aes(x = unaltered, y = altered)) + 
-  specs+ 
-  facet_wrap(pnz~cosmo.pair, scales = "free", ncol = 6, nrow = 2) 
-
+  specs+ facet_wrap(pnz~cosmo.pair, scales = "free", ncol = 6, nrow = 2) +
+  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
 
 anno <- obsexp %>% filter(taxon == "bird") %>% group_by(pnz, cosmo.pair) %>% 
   summarise() %>% ungroup() %>% 
   mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
 
 ggplot(obsexp %>% filter(taxon == "bird"), aes(x = unaltered, y = altered)) + 
-  specs+ 
-  facet_wrap(pnz~cosmo.pair, scales = "free", ncol = 6, nrow = 2) 
+  specs+ facet_wrap(pnz~cosmo.pair, scales = "free", ncol = 6, nrow = 2)+
+  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
 ##  SUPPLEMENT 

@@ -22,7 +22,7 @@ load("./Data/PA1_raw_abund_all.RData")
 PAn <- map(PAn, clean.empty) # remove empty rows.
 # species metadata
 load("./Data/Species_metadata.RData")
-load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/HabitatAlteration/Data/cosmo_species_cosmopolitan_score.RData") # cosmopolitan category 
+load("./Data/cosmo_species_cosmopolitan_score.RData") # cosmopolitan category 
 # site metadata 
 load("./Data/sitedat_metadata.Rdata")
 # Site data #
@@ -248,13 +248,13 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   out$cat.group[out$cat.pair == "Shared-Shared"] <- "Shared"
   
 ### Cosmopolitan/restricted groupings #  
-  out$cosmo.Sp1 <- cosmo[out$Sp1,"group"]
-  out$cosmo.Sp2 <- cosmo[out$Sp2,"group"]
+  out$cosmo.Sp1 <- cosmo[out$Sp1,"group_abbr"]
+  out$cosmo.Sp2 <- cosmo[out$Sp2,"group_abbr"]
   out$cosmo.pair <- paste(out$cosmo.Sp1, out$cosmo.Sp2, sep = "-")
   
-  out$cosmo.pair[out$cosmo.pair == "cosmopolitan-restricted"] <- "restricted-cosmopolitan"
-  out$cosmo.pair[out$cosmo.pair == "synanthropic-cosmopolitan"] <- "cosmopolitan-synanthropic"
-  out$cosmo.pair[out$cosmo.pair == "synanthropic-restricted"] <- "restricted-synanthropic"
+  out$cosmo.pair[out$cosmo.pair == "cosmo-restr"] <- "restr-cosmo"
+  out$cosmo.pair[out$cosmo.pair == "synan-cosmo"] <- "cosmo-synan"
+  out$cosmo.pair[out$cosmo.pair == "synan-restr"] <- "restr-synan"
   
 #### Results collated as summary tables from output ####  
   
