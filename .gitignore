@@ -27,3 +27,9 @@ rsconnect/
 .Rproj.user
 Results/
 Rplots.pdf
+
+## Knit documents
+*.docx
+*.html
+Manuscript/Coauthors
+Manuscript/1.ProceedingsB
