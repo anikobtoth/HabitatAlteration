@@ -1,0 +1,358 @@
+---
+title: Habitat alteration reduces food competition and local functional diversity in Neotropical bats and birds
+author:
+  - "Anikó B. Tóth"
+  - "S. Kathleen Lyons"
+  - "John Alroy"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  bookdown::word_document2: default
+  bookdown::html_document2: default
+bibliography: References.bib
+csl: proceedings-b.csl
+
+---
+
+*Affiliations:*
+
+^1^ Department of Biological Sciences, Macquarie University, New South Wales 2109, Australia
+
+^2^ School of Biological Sciences, University of Nebraska-Lincoln, Lincoln, Nebraska 68588, USA
+
+
+Abstract
+
+Anthropogenic habitat destruction is one of the greatest threats facing biodiversity. It is increasingly recognized that conservation and monitoring efforts should target not just species but communities and ecosystems. Traditional measures of communities include species richness and beta diversity, but they are somewhat limited because species must become extirpated or extinct before changes can be observed. Co-occurrence analysis is an increasingly popular method that can be used to detect more subtle changes in community structure. We calculated richness and beta-diversity for Neotropical assemblages of birds and bats at altered and unaltered sites. We also calculated co-occurrence scores for all possible pairs of species in each assemblage. Using a comparative approach, we quantified how habitat alteration affected patterns of co-occurrence in pairs with varying degrees of diet overlap. We found that pairs with the same diets co-occurred more in altered habitats, while pairs with related or different diets co-occurred less, even though alpha diversity and composition were not significantly different. Our results suggest that altered habitats provide abundant food sources at predictable places and times, reducing the incidence of exclusion and causing aggregation within particular dietary groups. However, this also means that sites are less likely to support multiple species from several dietary groups, compromising functional diversity and possibly functional redundancy.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+library(ggplot2)
+library(cowplot)
+library(tidyverse)
+library(igraph)
+library(reshape2)
+library(vegan)
+library(sp)
+
+source('~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_files/Code/Ch3_Functions.R')
+source('~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Code/Forbes_Index.R')
+source('~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Code/Squares.R')
+
+# species metadata
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/spp_species_metadata.Rdata")
+
+## Richness results
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Results/squares_chao_richness_raw.RData")
+
+# Site data #
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/metaALL_site_metadata.RData")
+
+taxa = c("bat", "bird")
+
+unalt_sites <- metaALL[metaALL$altered_habitat == "",]$sample_no
+unalt_sites <- paste("X", unalt_sites, sep = "")
+
+```
+
+
+### Main text: 
+
+#### Introduction
+
+The destructive effect of human activities on the biosphere is of global concern. It is increasingly recognised that its effects extend many thousands of years into the past [@Lyons2016; @Maezumi2018], across the entire planet [@Sanderson2002; @Ellis2008], and will continue to be felt many human lifetimes into the future []. Its effects are so pervasive that almost no aspects of ecology remain unaffected (Ellis centennial paper). In order to help mitigate the effect of human activities and steer conservation initiatives, a pressing objective for ecologists is to understand the formation of spatial patterns in species distributions, biodiversity, and abundance. 
+
+It is generally accepted that where species are found, and in what abundances, is driven by the historical and present interplay of three main factors: dispersal abilities (can the species physically access a place?), climate (can the species survive in that place?), and biotic interactions (can the species reliably coexist with other species using the place, or else prevail over any incumbent competitors?). For many years, ecologists believed that biotic interactions influence the abundance and composition of species at local scales, whereas abiotic factors such as dispersal barriers and climatic conditions were responsible for regional and continental patterns. However, evidence has begun to accumulate that the effects of biotic interactions scale up to measurably influence community assembly at much larger spatial scales [@Araujo2007; a JSDM paper]. The same appears to be true for biotic processes occurring over geological timescales, as mounting evidence demonstrates that interactions such as competition and facilitation can be instrumental in spatial patterns over thousands of years [@Toth2019], as well as the diversification and extinction of entire clades [@Condamine2019]. 
+
+The impact of human activities complicates the modern community assembly process, both directly by changing the composition of species on the landscape, and indirectly by changing aspects of the three original driving mechanisms. Directly, humans translocate invasive species[], remove forests for timber or to make way for alternative land uses [simAmazonica paper], and facilitate wholesale extinctions [a Lyons paper]. It has been shown that pre-Columbian agricultural practices changed the composition of plants in Amazonia by encouraging the dominance of edible plants [@Maezumi2018]. Several papers document decreases in diversity, increases in homogenization [@Dornelas2014, @Toth2014], and reduced abundance of myriad taxa. Changes in composition add and remove potential biotic interactions from a system, and can eventually compromise ecosystem function, particularly when it results in homogenization [@Magurran2018].
+
+Humans also indirectly influence community assembly via climate change [greenhouse gas emissions] and modification of dispersal processes [fragmentation, digging, infrastructure, etc]. Interestingly, the effects of human disturbance on the third process, biotic interactions between other organisms (aside from the straightforward removal or addition of potential interaction partners), has seldom been explicitly and empirically assessed in the ecological literature. However, there is evidence that human disturbance decouples predator-prey interactions [@Rodewald2011], increases competition for pollinators [@Holzschuh2011], and simplified interaction networks [@Haddad2000].
+The question of shifting biotic interactions is as critical as it is elusive. The degree to which biotic interactions have been disrupted is one of the five criteria proposed by Keith (2015) for assessing the risk level of ecosystems, and has been adopted by the IUCN Red List of Ecosystems [@Keith2015]. Humans produce pollution, change the spatial allocation of resources, genetically modify organisms, and engineer novel ecological niches, all of which has the potential to effect the dynamics of biotic interactions and thus the composition of assemblages living in proximity to human-altered areas. 
+
+Unfortunately, biotic interactions are difficult to monitor directly, meaning that quantitative methods to measure their effects are sorely needed. Co-occurrence analysis allows for a nuanced look at differences in community assembly across space or time [@Blois2013]. It quantifies the extent to which species occur together more often than expected (aggregation) or less often than expected (segregation) by chance. This approach has been used for decades [@Diamond1975], and has recently been used to examine community assembly of species under human disturbance [@Lane2014; @Kay2017], changing climate conditions [@Araújo2007], across environmental gradients [@Bar-Massada2017], and across ecological [@Tulloch2016] and geological timescales [@Lyons2016]. Although associations based on co-occurrence analysis do not necessarily detect biotic interactions [@Freilich2014], they represent the spatial pattern resulting from the interacting effects of climate, dispersal, biotic interactions, and human impacts. By incorporating information about climate (e.g. [@Toth2019; @Blois2014]), functional ecology (e.g. [@Smith2016]), or human disturbance, co-occurrence can be used to infer changes in biotic interactions. 
+
+Competition is a commonly recognised biotic interaction that is backed up by a foundation in ecological theory. Although it has not escaped substantial criticism, the notion that competition is an important driver of community assembly amassed much empirical support in its early years [@Schoener1983], and evidence has continued to mount. A considerable proportion of this body of literature is devoted to tropical birds [@Terborgh1975; @Remsen1995; @Jankowski2010; @Freed2014; @Weinstein2016], but competition in other taxa, such as primates [@Kamilar2011], has also been examined. Based on competition theory, we expect competing species to either coexist in a dynamic equillibrium or to exclude one another, i.e., be found together less often than species which do not compete [@Kamilar2011]. Studies evaluating the effects of human disturbance on the outcome of interspecific competition, however, are scarce. 
+
+In this paper, we evaluate the effect of habitat alteration on the spatial outcome of competition for food in Neotropical birds and bats. We begin by examining the alpha richness and beta diversity of communities of Neotropical birds and bats under altered versus unaltered conditions. Then, we calculate pairwise species co-occurrence scores to evaluate changes in community structure under habitat alteration, using unaltered sites as controls. Using categorical information about preferred diet, we ask whether co-occurrence patterns are different for pairs of species that compete for food sources versus those that do not, and whether this changes under anthropogenically altered habitat conditions. 
+
+#### Materials and Methods
+
+```{r, echo = FALSE}
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/PAn_raw_abund_all_mr0c1.RData")
+```
+
+Abundance data were dowloaded from the Ecological Register (http://ecoregister.org) on 30 July 2018 for mistnetted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). Samples were combined if they were within the same 11.1 km equal-area grid cell, sourced from the same study, and represented the same habitat and alteration category. We also dowloaded Register metadata for the species and sites in the abundance tables, including coordinates for sites and dietary guild assignments for species. Guild assignments were based on recently published primary literature. Four bird sites from altered habitats were added to improve the spatial coverage of this category [@Flores2001; @Arteaga2002; @Vidaurre2006; @Villegas2010]. Sampling and reporting was standard across the samples, as all were mist-netted samples with consistent mesh size, harp net samples were excluded, and almost all nets were placed at ground level. The data consisted of `r sum(PAn[["bat"]])` bat and `r sum(PAn[['bird']])` bird individuals from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
+
+
+```{r}
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/PAn_match_pa_all_mr1c3.RData")
+```
+
+*__Richness and Beta diversity.__* We estimated richness for bats and birds in altered and unaltered sites using the squares diversity extrapolator [@Alroy2018] and Chao1 [@Chao1984] on the raw abundance data for all sites. The status of each site was based on the 'altered.habitat' field in the site metadata, which is empty if the site is unaltered and filled with land use category if the site is altered. Altered sites included cropland, disturbed forest, fragment, pasture, plantation, rural, secondary forest, suburban, and urban categories, and none of them had enough sites to be evaluated individually. The abundance data were converted to a presence-absence format. The spatial coverage of altered sites was a subset of the larger spatial area covered by unaltered sites. To minimize the effects of biogeography on our results, we removed unaltered sites that were farther from the nearest altered site than the most isolated altered site was from its nearest unaltered site (see supplement), resulting in comparable spatial coverage for both site types. The resulting dataset had `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. We then calculated the beta diversity between all pairs of sites for bats and birds separately and plotted the distributions of values, separating them into groups by each pair’s habitat: altered-altered, unaltered-unaltered, and unaltered-altered. We used the modified Forbes similarity index [@Forbes1907; @Alroy2015] as the similarity measure for beta diversity. Finally, we ran a principal coordinates analysis (PCoA) on the sites using the R function cmdscale in the stats package to check for compositional shifts between altered and unaltered habitats. We used Forbes distances (one minus Forbes similarity values) in ordination analyses because this approach has been shown to minimize sampling biases and outperforms the widely-used Dice-Sorenson coefficient [@Alroy2015a]. We tested for significant shifts in the site centroids on the two primary PCoA axes using a permutation test. 
+
+*__Co-occurrence analysis.__* We separated the presence-absence data into altered and unaltered habitat types. The final dataset was comprised of `r nrow(PAn[['bat']])` bat and `r nrow(PAn[['bird']])` bird species in `r ncol(PAnu[['bat']])` and `r ncol(PAnu[['bird']])` unaltered and `r ncol(PAna[['bat']])` and `r ncol(PAna[['bird']])` altered sites, respectively. 
+We calculated the co-occurrence score of every pairwise combination of species using the mid-P variant of Fisher's Exact Test [@Kallio2011]. To generate expected distributions for statistical tests, we ran the same analysis again but randomised the sites between altered and unaltered categories, and repeated the randomisation 100 times. We analysed the the ratio of average observed to expected co-occurrence scores across subsamples to obtain our results. 
+
+*__Functional Analysis.__* We used dietary information for bats and birds from the Ecological Register to analyse our co-occurrence results (Table S1). We selected all pairs with complete dietary information and classified them as competing or non-competing. Competing pairs had to share primary and secondary sources of food, but the order of these could be reversed (e.g., a frugivore-nectarivore and a nectarivore-frugivore). Non-competing pairs had at least one non-shared food source (e.g., frugivores and insectivore-frugivores), or no shared food sources. Although species in the same dietary guilds are not necessarily competing, pairs with high dietary overlap have a higher probability of experiencing competition for food, while pairs in differing guilds have no chance of competing for food. Therefore, this comparison evaluates whether habitat alteration changes the spatial outcomes of food competition from the patterns observed in unaltered habitats.
+
+```{r, echo = FALSE}
+# calculate number of species per guild (in the functional analysis)
+s <- spp %>% filter(rownames(.) %in% unlist(map(PAn, rownames))) %>% group_by(life.form, guild) %>% dplyr::summarise(count = length(guild))
+
+```
+
+When analysing associations, it is helpful to picture the distribution of association strengths as falling along a continuum of co-occurrence between segregated and aggregated pairs, with random or weakly associated pairs in the middle. Segregated pairs co-occur less than expected and receive negative weights while aggregated pairs co-occur more than expected and receive positive weights. In this framework, a net change in co-occurrence across altered versus unaltered sites can create several patterns: (a) an increase in the proportion and strength of aggregations indicates more co-occurrence; (b) an increase in the proportion and strength of segregations indicates less co-occurrence; (c) increase in the strength of both aggregations and segregations and signals that species are more tightly linked to the occurrence of their pairs; and (d) a decrease in the strength of all associations indicates that pairs are closer to being randomly distributed with respect to one another. Complex restructuring of links can also lead to other combinations that lack a clear pattern. The net difference in co-occurrence patterns associated with altered versus unaltered habitats can suggest biological mechanisms for the shifts in co-occurrence. 
+For instance, reduced co-occurrence in competing pairs compared to non-competing pairs suggests that competitive exclusion has increased, because fewer species that share resources are co-occurring. Increased co-occurrence of competing pairs means that particular altered sites (i.e., those that provide the requisite dietary resource) can support the coexistence of more species in the same dietary group more often. Tighter co-occurrence can be interpreted as indicating that species form clusters, likely due to an increase in the spatial segregation of food resources introduced by habitat alteration (e.g., pastures provide an abundance of one type of food and plantations provide other types). Relaxed associations indicate that the spatial structure of food resources is less defined in altered habitats, and species are dispersing more randomly or becoming very widespread.
+
+For each analysis, we report differences in the proportion and strength of aggregations and segregations between altered and unaltered habitats. To further explore species associations, we distinguish between shifts in association strengths driven by pairs that are shared between site types and pairs that are unique to one site type. Comparing the co-occurrence patterns of unique species between altered and unaltered sites can elucidate whether species exclusive to altered sites are filling similar or different structural roles as species that have potentially been extirpated from altered sites, although failure to sample may explain many such absences. Comparisons of shared species co-occurrences, on the other hand, measure differences that are not caused by local extirpation, sampling failure, or turnover between unaltered and altered sites, but by changes in occupancy across sites. In our results, we present the ratio of the observed to expected measurement variable (i.e. the proportion or average magnitude of pairs), with unaltered results plotted against altered results in a scatterplot where each point represents an iteration of the randomisation. We include 95% confidence ellipses and rug plots to help interpret the plots. 
+
+#### Results 
+```{r, echo = FALSE}
+# richness - p values
+psqu <- squares %>% group_by(taxon) %>% summarise(w=wilcox.test(richness~status, paired=FALSE)$p.value) %>% ungroup() %>% select(w)
+
+pcha <- chao %>% group_by(taxon) %>% summarise(w=wilcox.test(richness~status, paired=FALSE)$p.value) %>% ungroup() %>% select(w)
+
+# beta-diversity
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/PAn_match_pa_all_mr1c3.RData") 
+beta <- beta.types(PAn, unalt_sites, taxa)
+  # p-values
+pbeta <- beta %>% filter(unalt.pair != "Unaltered-Altered") %>% group_by(taxon) %>% summarise(w=wilcox.test(Z.Score~unalt.pair, paired=FALSE)$p.value) %>% ungroup() %>% select(w)
+
+# occupancy calculations
+occ <- map(PAn[taxa], t)  %>% map(data.frame) %>% map(~split(., rownames(.) %in% unalt_sites)) %>% 
+  map(map, ~colSums(.)/nrow(.)) %>% map(map, data.frame) %>% map(~merge(.[[1]], .[[2]], by = 0)) %>% map(setNames, c("name", "altered", "unaltered")) %>% bind_rows(.id = "taxon")
+docc <- occ %>% group_by(taxon) %>% summarise(
+  declined = length(which(altered < unaltered)), 
+  increased = length(which(unaltered < altered)), 
+  extirpated = length(which(altered == 0 & unaltered > 0)), 
+  appeared = length(which(altered > 0 & unaltered == 0)), 
+  shared = length(which(altered > 0 & unaltered > 0)), 
+  total = length(altered))
+```
+
+
+*__Richness and Beta Diversity.__* Based on Chao 1 and squares, altered sites have unchanged alpha richness compared to unaltered sites (squares p-values  = `r round(psqu[1,],3)` and `r round(psqu[2,],3)`, and Chao 1 p-values  = `r round(pcha[1,], 3)` and `r round(pcha[2,], 3)` for bats and birds, respectively). Average richness for bat samples in unaltered habitats was 
+`r squares %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bat" & .$status == "Unaltered",3]} %>% round(2)` (squares) and 
+`r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bat" & .$status == "Unaltered",3]} %>% round(2)` (Chao1), and this changed to 
+`r squares %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bat" & .$status == "Altered",3]} %>% round(2)` (squares) and 
+`r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bat" & .$status == "Altered",3]} %>% round(2)` (Chao 1) in altered habitats. Average richness for bird samples  was 
+`r squares %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bird" & .$status == "Unaltered",3]} %>% round(2)` (squares) and 
+`r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bird" & .$status == "Unaltered",3]} %>% round(2)` (Chao 1) in unaltered habitats, and 
+`r squares %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bird" & .$status == "Altered",3]} %>% round(2)` (squares) and 
+`r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bird" & .$status == "Altered",3]} %>% round(2)` (Chao 1) in altered habitats. 
+For bats and birds, respectively, 
+`r round(docc[1,3] / docc[1,7]*100)`% and 
+`r round(docc[2,3] / docc[2,7]*100)`% of species increased their occupancies in altered habitats, and of these, 
+`r round(docc[1,5] / docc[1,3]*100)`% and 
+`r round(docc[2,5] / docc[2,3]*100)`%, respectively, appeared only in altered habitats. Overall, however, 
+`r round(docc[1,2] / docc[1,7]*100)`% of all bat and 
+`r round(docc[2,2] / docc[2,7]*100)`% of all bird species decreased their occupancies in altered habitats, and of these, 
+`r round(docc[1,4] / docc[1,2]*100)`% and 
+`r round(docc[2,4] / docc[2,2]*100)`% disappeared altogether. There are a relatively large number of species that were sampled only in altered habitats (13% of bats and 27% of birds). These species likely do exist in unaltered habitats. However, as we took measures to standardize sampling between altered and unaltered sites, these species may represent a group whose abundances have been substantially increased in altered sites, such as vampire bats [@Delpietro1992]. The converse may be true for some species that only occur in unaltered sites.
+
+Altered sites had the lowest beta-diversity in bats, decreasing significantly from unaltered sites (p = `r round(pbeta[1,], 3)`). Birds did not exhibit a significant change in beta-diversity between habitat types (p = `r round(pbeta[2,], 3)`). Bats had on average about four times higher similarity across sites, indicating that spatial turnover in birds is much higher and suggesting the two taxa have very different community structures. This is unsurprising because Neotropical bats frequently have geographic ranges spanning almost the entire realm, unlike Neotropical birds.
+
+```{r, echo = FALSE}
+
+# composition PCoA
+
+dist <- map(PAn[taxa], forbesMatrix) %>% map(as.dist, upper = F) %>% map(~return(1-.)) 
+ord <- map(dist, cmdscale, k = 2) %>% map(data.frame)
+ord <- map(ord, ~merge(., y = metaALL[,c(8:16)], all.x = T, all.y = F, by.x = 0, by.y = "siteid"))
+
+# Significance test on centroid
+w <- numeric()
+for(j in 1:length(ord)){
+i <- ord[[j]]
+d <- numeric()
+  for(r in 1:1000){
+    i$rand = round(runif(n = nrow(i), min = 0, max = 1), 0)
+    cent <- i %>% group_by(rand) %>% dplyr::summarise(x = mean(X1), y = mean(X2))
+    d[r] <- spDists(as.matrix(cent[,c(2:3)]))[2]
+  }
+  cent <- i %>% group_by(status) %>% dplyr::summarise(x = mean(X1), y = mean(X2))
+  obs <- spDists(as.matrix(cent[,c(2:3)]))[2]
+  w[j] <- wilcox.test(d, obs)$p.value
+}
+
+w <- round(w, 3)
+```
+
+
+Figure 1 depicts the altered and unaltered sites plotted by the first two principal coordinates. The permutation tests detected no significant compositional differences between altered and unaltered sites (p-values = `r w[1]` for bats and `r w[2]` for birds). This indicates that the considerable faunal turnover observed across altered and unaltered sites is not atypical, even across sites in the same category.
+
+*__Functional Co-occurrence Analysis.__*
+Both bats and birds were affected by competition for food, as demonstrated by the differences between competing and non-competing pairs (yellow vs blue ovals, Figs. 2-5). Although competition did not always affect the same aspect of associations, all of the subgroups of pairs we examined exhibited significant differences between competing and non-competing pairs in at least one measured variable. 
+
+Overall, in unaltered habitats, bats had weaker aggregations and stronger segregations (Fig. 2B) within competing pairs than non-competing pairs. In other words, they exhibited a tendency toward competitive exclusion. In altered habitats, however, aggregations of competing pairs became stronger on average than those of non-competing pairs, meaning habitat alteration reversed the effect of food competition on species aggregations (Fig. 2A). Birds exhibited a similar reversal in the strength of aggregations between unaltered and altered habitats (Fig. 2C). Alteration does not seem to have a strong effect on the strength of segregations (Fig. 2B, 2D). 
+
+
+*__Functional Co-occurrence Analysis-- Bats.__* 
+At unaltered sites, bat pairs have stronger aggregations the more their diet overlaps, with same-guild pairs exhibiting particularly strong aggregations. The pattern is stronger at altered sites, where different- and related-diet pairs have weaker or unchanged aggregation strength, while same-guild pairs have eve stronger aggregations.  Segregation strength is approximately equal across different, related, and same-diet pairs in unaltered sites. Altered sites exhibit stronger segregations in all three diet overlap categories, but especially in same-guild pairs, and this pattern is driven by unique pairs (i.e., pairs unique to altered habitats segregate more strongly than pairs unique to unaltered habitats, such that compositional turnover between altered and unaltered habitats drives the increase in segregation strength).
+
+*__Functional Co-occurrence Analysis-- Birds.__* At unaltered sites, bird pairs with different diets segregate most often and related-guild pairs aggregate most often. This pattern is driven by both shared and unique pairs. Bird pairs are more likely to aggregate across the board in altered sites versus unaltered sites, but the relationship between diet overlap categories does not change. Shared pairs in particular tend to aggregate more at altered sites than unaltered sites, and the likelihood of aggregation increases with dietary overlap. 
+
+Alteration causes weaker co-occurrence (stronger segregations and/or weaker aggregations) in different-guild and related-guild pairs, particularly in unique pairs. Pairs that share at least one food source co-occur more strongly (stronger aggregations and weaker segregations) in altered versus unaltered sites. The difference in the response of diet categories to alteration is driven by pairs unique to each site type (i.e., changes in community assembly associated with faunal turnover), because shared pairs, which tend to occur more commonly, actually have more co-occurrences in all diet overlap categories, which is different from the pattern in the overall data.
+
+*__Functional Co-occurrence Analysis-- Comparison.__* In summary, both bat and bird pairs exhibit more co-occurrence (more aggregations as well as stronger aggregations) in altered habitats than unaltered habitats when sharing food sources, and less co-occurrence when not sharing food sources. Although habitat alteration does not substantially alter the general relationships between diet-overlap groups in either taxon, it causes the existing patterns in bats to become stronger. Finally, unique pairs (i.e., pairs occurring in only one habitat type because of compositional turnover) are more likely to dominate the overall patterns. 
+
+
+#### Discussion
+
+In this study we examined the effect of habitat alteration on the community assembly of Neotropical bats and birds. Unaltered and altered habitats did not differ significantly in species richness, nor did we find differences in composition between unaltered and altered habitats. This suggests that biogeographic location is more important in determining compositional turnover than habitat alteration. However, beta diversity was lower in altered habitats for bats, similar to the results of Kay _et al._ [-@Kay2017] for lizards in Australia. This paper therefore joins a long parade of studies showing that habitat alteration can cause homogenisation rather than reducing richness [@Toth2014; @Dornelas2014; @McKinney2006; @McKinney1999; @Trentanovi2013; @Knop2015]. We found this pattern even though our altered sites encompassed a wide variety of habitat types ranging from urban to secondary forest. Such homogenisation is typically driven by the expansion of a few cosmopolitan species while rare and sensitive species are extirpated [@McKinney1999; @Toth2014]. 
+
+Differences in association strength between altered and unaltered sites were largely dominated by reduced co-occurrence (stronger segregations and weaker aggregations) in the presence of alteration, except in pairs that shared the same diet sources. Previous studies have focused on the number or proportion of significant aggregations and segregations, showing a decrease in the incidence of aggregations in mammals [@Lyons2016; @Smith2016] and fossil pollen [@Lyons2016; @Blois2014] in the presence of disturbance. Similarly, a loss of aggregations is seen in modern Australian lizards [@Kay2017] in modified sites and birds in forest plantings [@Lane2014]. Unlike most previous work, we evaluated both the incidence and the strength of associations using all associations, not just those above a significance threshold. Although our results are compatible with previous findings, our investigation makes it clear that the picture is more complex than a loss of aggregations. Bat pairs had fewer aggregations in altered versus unaltered habitats and these aggregations were also weaker, except in same-guild pairs. Bird pairs had more aggregations, but these were again weaker in all except same-guild pairs. 
+
+Our functional analysis hints at an explanation for the observed differences. In birds, the relationship between different-, related-, and same-guild pairs is similar between altered versus unaltered habitats, but all groups have a higher incidence of aggregation in altered habitats. This suggests that some other variable, such as breeding territories, is more instrumental than diet in structuring bird communities in the wild. The fact that bat pairs had more and stronger segregations irrespective of dietary overlap suggests that altered habitats increase the incidence of exclusion, but this is not driven by competition for food. Food resource sharing does influence the effect of habitat alteration on aggregations, however, because aggregations are stronger in same-diet pairs and weaker in the others, increasing the existing difference between them in both taxa. 
+
+Even in unaltered habitats, same-guild bat pairs aggregate much more strongly than different-guild pairs (Fig. 7), suggesting that far from excluding one another, competing species of bats are able to coexist easily in the wild. We do not believe this result is a sampling artefact because the Ecological Register intentionally excludes literature that did not fully document bat faunas because, for example, it only discussed phyllostomids. If our pattern is real, it makes sense because bats often share roosts with other species [@Swift1983] and have been shown to partition microhabitats and foraging times [@Aldridge1987; @Nicholls], which allows them to overlap broadly on the trophic dimension [@Kingston2000]. The changes associated with habitat alteration actually enhance this pattern, suggesting that certain properties of altered habitats actively aggregate particular diet guilds in space (e.g. to particular types of sites) or in time (e.g. seasonal fruiting of a particular tree that is frequently planted). Birds segregate much more often than bats in general, but co-occurrence is nonetheless stronger for same-guild pairs in altered habitats, suggesting that a similar mechanism may be in play for both taxa. 
+
+Strong aggregations form when species occur together at a relatively small number of sites and are both absent from other sites. Vampire bats have been shown to feed preferentially on the blood of livestock [@Delpietro1992; @Bobrowiec2015], suggesting they co-occur in farms and ranches [@Becker2018], even though they are relatively rare in the wild. Although there are only a few species of sanguinivore bats in our data, carnivorous bats (22 species) co-occur disproportionately in plantations and forest fragments. Frugivorous bats (69 species) co-occur primarily in plantations and rural sites, suburban sites support the highest proportion of insectivore bats (80 species), and nectarivores (21 species) co-occur disproportionately in plantations (see supplement and Fig. S6). Different-guild pairs might segregate due to this spatial structure in food resources, and likewise for related-guild pairs, if their non-shared food resources are not available in the same sites. Interestingly, insectivores and nectarivores disproportionately segregate, suggesting that competitive exclusion is stronger in altered habitats for these feeding guilds, but also that insect and nectar food resources may be available in a broader range of altered site types.
+
+The overall differences in the data are often dominated by the pattern established by unique pairs. This means that species pairs sampled only in altered habitats do not substitute the community structural roles of pairs that have been extirpated and remain only in unaltered habitats. In particular, pairs unique to altered habitats appear to co-occur less often than their counterparts in unaltered habitats, partially driving the stronger segregations and weaker aggregations in the different- and related-diet categories for both taxa. This is despite the fact that pairs conserved between the two habitat types often aggregate more in altered habitats. 
+
+Our findings suggest that exclusion from interspecific competition for food is weaker or absent in altered sites compared to unaltered sites, probably due the predictability and reliability of abundant food sources. However, they also indicate that species apparently segregate by dietary guild to a greater extent than in unaltered sites, and this may reduce the functional diversity of local communities in altered habitats, because it reduces the co-occurrence of pairs with different diets. It is possible that the aggregation of one dietary group at a site reduces functional diversity and redundancy of other guilds for that site through competition for other resources, such as roosting sites, breeding territory, or foraging time.
+
+#### Conclusion
+
+ Our approach confirms that there are indeed marked differences in the community assembly of bats and birds as a result of habitat alteration, even though richness and habitat composition were not significantly different. Most pairs that share food sources exhibit stronger aggregations in altered habitats, suggesting that changes in community assembly are more strongly influenced by the spatial distribution of food resources in altered sites than in the wild. This implies that habitat alteration reduces competitive exclusion for food, particularly in bats. Unfortunately, this leads to reduced co-occurrence of functionally diverse pairs, as evidenced by the decreasing co-occurrence of pairs with different food sources. This is consistent with previous work suggesting that human disturbances are reducing aggregations in non-volant mammals [@Lyons2016] and reptiles [@Kay2017]. Reduced competition and less exclusion between species with similar diets ultimately results in the loss of functional diversity at altered sites.
+
+#### Acknowledgements 
+The authors would like to thank the members of the Macquarie University Paleobiology Lab, whose discussions helped facilitate the improvement of this manuscript. ABT was supported by an IMQRES scholarship at Macquarie University. 
+
+### Figures
+
+```{r echo=FALSE, include = T, fig.height=4, fig.width=9, ord}
+#load PAn with all species but sites pruned for biogeographic match
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/PAn_match_pa_all_mr1c3.RData")
+
+dist <- map(PAn[taxa], forbesMatrix) %>% map(as.dist, upper = F) %>% map(~return(1-.))
+ord <- map(dist, cmdscale, k = 5) %>% map(data.frame)
+ord <- map(ord, ~merge(., y = metaALL[,c(8:16)], all.x = T, all.y = F, by.x = 0, by.y = "siteid"))
+
+  #ordinations, colored by alteration type
+  p1 <- ggplot(ord[[1]], aes(x = X1, y = X2, col = status)) + geom_point() + labs(x = "Comp1", y = "Comp2", col = "alteration") + theme(axis.text = element_text(size = 12)) + labs(col = "status") + 
+    scale_colour_manual(values = c("red", "dodgerblue")) + panel_border(remove = FALSE, col = "black")
+  p2 <- ggplot(ord[[2]], aes(x = X1, y = X2, col = status)) + geom_point() + labs(x = "Comp1", y = "Comp2", col = "alteration") + theme(axis.text = element_text(size = 12)) + labs(col = "status") + 
+    scale_colour_manual(values = c("red", "dodgerblue")) + panel_border(remove = FALSE, col = "black")
+  p <- plot_grid(p1+theme(legend.position = "none"), 
+                 p2+theme(legend.position = "none", axis.title.y = element_blank()), ncol = 2, labels = c("A", "B"), 
+                 align = "lr")
+  plot_grid(p, get_legend(p1), rel_widths = c(1, .2))
+
+```
+
+__Figure 1.__ Principal coordinates analysis of altered and unaltered sites for bats (A) and birds (B). There is no significant difference between the composition of altered and unaltered sites for either taxon, based on a permutation test of the site type centroids (p-values = `r w[1]` and `r w[2]` for bats and birds, respectively). 
+
+```{r}
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Results/d2_4xsummarytables.RData")
+colors3 <- c("#34008C", "#E8004D", "#E8AC00")
+```
+
+
+```{r, echo=FALSE, include = T, fig.height=4, fig.width=6}
+t <- "bat"
+# proportion
+d <- data.frame(d2.prop.all)
+d <- d[d$taxon == t,]
+
+d2 <- dcast(subsample+taxon+diet.match~status, value.var = 'agg', data = d)
+
+ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.match)) + geom_point(size = 1.2) + 
+  panel_border(remove = F, col = "black") + 
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray30") +
+  scale_colour_manual(values = colors3) + labs(col = "Diet Overlap") +
+  theme(legend.title = element_text(size = 12))
+
+```
+
+__Figure 2.__ Proportion aggregated pairs in altered versus unaltered habitats for pairs of bats, separated based on degree of dietary overlap. The dashed line is the line of unity. The points represent subsamples. Samples falling above the line had a higher proportion aggregations in altered habitats, and samples falling below the line had a lower proportion of aggregations in altered habitats than unaltered habitats.
+
+```{r, echo=FALSE, include = T, fig.height=9, fig.width=7.8}
+d <- d2.mag.cat
+d <- d[d$taxon == t,]
+d$`posnegzero(Z.Score)` <- factor(d$`posnegzero(Z.Score)`, levels = c("Segregation", "Aggregation"))
+
+d2 <- dcast(subsample+taxon+diet.match+`posnegzero(Z.Score)`+cat.group~status, value.var = 'avmag', data = d)
+
+p2 <- ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.match)) + geom_point(size = 1.2) + 
+  facet_wrap(cat.group~`posnegzero(Z.Score)`, scales = "free") + panel_border(remove = F, col = "black") + 
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray35") +
+  scale_colour_manual(values = colors3)+ labs(col = "Diet Overlap")
+
+## all
+d <- d2.mag.all
+d <- d[d$taxon == t,]
+d$`posnegzero(Z.Score)` <- factor(d$`posnegzero(Z.Score)`, levels = c("Segregation", "Aggregation"))
+
+d2 <- dcast(subsample+taxon+diet.match+`posnegzero(Z.Score)`~status, value.var = 'avmag', data = d)
+
+p1 <- ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.match)) + geom_point(size = 1.2) + 
+  facet_wrap(`posnegzero(Z.Score)`~., scales = "free") + panel_border(remove = F, col = "black") + 
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray35") +
+  scale_colour_manual(values = colors3)+ labs(col = "Diet Overlap")
+
+p0 <- plot_grid(p1 + theme(legend.position = "none", axis.title.x = element_blank()) ,
+          p2 + theme(legend.position = "none"), rel_heights = c(1, 1.85), ncol = 1, labels = c("A", "B"))
+
+plot_grid(p0, get_legend(p1), rel_widths = c(1, 0.25))
+```
+
+__Figure 3.__ Mean magnitude of aggregations and segregations in pairs of bats, grouped based on degree of dietary overlap, with altered sites plotted against unaltered sites. The points represent subsamples. The dashed line is the line of unity. Samples falling below the line exhibit less co-occurrence (stronger segregations or weaker aggregations) in altered sites, while samples falling above the line exhibit more co-occurrence (stronger aggregations or weaker segregations) in altered sites compared to unaltered sites.
+
+```{r, echo=FALSE, include = T, fig.height=4, fig.width=6}
+t <- "bird"
+# proportion
+d <- data.frame(d2.prop.all)
+d <- d[d$taxon == t,]
+
+d2 <- dcast(subsample+taxon+diet.match~status, value.var = 'agg', data = d)
+
+ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.match)) + geom_point(size = 1.2) + 
+  panel_border(remove = F, col = "black") + 
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray35") +
+  scale_colour_manual(values = colors3) + labs(col = "Diet Overlap") +
+  theme(legend.title = element_text(size = 12))
+
+```
+
+__Figure 4.__ Proportion aggregated pairs in altered versus unaltered habitats for pairs of birds, separated based on degree of dietary overlap. The dashed line is the line of unity. The points represent subsamples. 
+
+```{r, echo=FALSE, include = T, fig.height=9, fig.width=7.8}
+d <- d2.mag.cat
+d <- d[d$taxon == t,]
+d$`posnegzero(Z.Score)` <- factor(d$`posnegzero(Z.Score)`, levels = c("Segregation", "Aggregation"))
+
+d2 <- dcast(subsample+taxon+diet.match+`posnegzero(Z.Score)`+cat.group~status, value.var = 'avmag', data = d)
+
+p2 <- ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.match)) + geom_point(size = 1.2) + 
+  facet_wrap(cat.group~`posnegzero(Z.Score)`, scales = "free") + panel_border(remove = F, col = "black") + 
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray35") +
+  scale_colour_manual(values = colors3)+ labs(col = "Diet Overlap")
+
+## all
+d <- d2.mag.all
+d <- d[d$taxon == t,]
+d$`posnegzero(Z.Score)` <- factor(d$`posnegzero(Z.Score)`, levels = c("Segregation", "Aggregation"))
+
+d2 <- dcast(subsample+taxon+diet.match+`posnegzero(Z.Score)`~status, value.var = 'avmag', data = d)
+
+p1 <- ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.match)) + geom_point(size = 1.2) + 
+  facet_wrap(`posnegzero(Z.Score)`~., scales = "free") + panel_border(remove = F, col = "black") + 
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray35") +
+  scale_colour_manual(values = colors3)+ labs(col = "Diet Overlap")
+
+p0 <- plot_grid(p1 + theme(legend.position = "none", axis.title.x = element_blank()) ,
+                p2 + theme(legend.position = "none"), rel_heights = c(1, 1.85), ncol = 1, labels = c("A", "B"))
+
+plot_grid(p0, get_legend(p1), rel_widths = c(1, 0.25))
+```
+
+__Figure 5.__ Mean magnitude of aggregations and segregations in pairs of birds, grouped based on degree of dietary overlap, with altered sites plotted against unaltered sites. The points represent subsamples. The dashed line is the line of unity. 
+
+
+## References
+
+
+

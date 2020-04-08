@@ -1,0 +1,315 @@
+---
+title: Habitat alteration reduces food competition and local functional diversity in Neotropical bats and birds.
+author:
+  - "Anikó B. Tóth"
+  - "S. Kathleen Lyons"
+  - "John Alroy"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  bookdown::word_document2: default
+  bookdown::html_document2: default
+bibliography: References.bib
+csl: ecology-letters.csl
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source('~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_files/Code/Ch3_Functions.R')
+library(tidyverse)
+library(cowplot)
+library(reshape2)
+```
+
+### Methods
+
+*__Biogeographic correction__* The geographic layout of sites can influence the results of co-occurrence analysis. For instance, if sites are clustered in two regions with no sites in between, there is a good chance that the co-occurrence structure of the assemblage will reflect this clustered layout by exhibiting strong aggregations within the clusters and segregations between clusters. Ideally, we would like to have even sampling over our entire study area, but when this is not possible, we must at least make sure that any comparisons are not influenced by geographic sampling bias. One way to achieve this is to ensure that the sites used to calculate co-occurrences have roughly the same geographic coverage when comparing co-occurrences across different types of sites or time periods.
+
+In this paper, the study extent covers Central and South America south of the Tropic of Cancer. This includes large swathes of the Amazon in Brazil where there are no samples in altered habitats. As a result, the unaltered sites cover more area than the altered sites, and the geographic coverage of the latter is nested within that of the former. To correct for these biases, we removed the unaltered sites covering areas that were not covered by altered sites using the following algorithm. (1) We measured the distance to the closest altered site for all unaltered sites and vice versa. (2) We found the altered site farthest from its closest unaltered site. (3) We removed all unaltered sites whose closest altered neighbour was farther than the the distance in step 2. Note that this approach only works because the geographic coverages is nested; site types that are offset in space would require a different approach. Our final sites are plotted in Fig. S1.
+
+
+*__Guild-by-guild analysis.__* The main text of this study compares pairs that have the same diet, related diets, and different diets. To understand the differences between individual dietary guilds in terms of response to habitat alteration, we used our co-occurrence results for same-diet pairs to compute the proportion and strength of aggregations and segregations within each dietary guild separately. This analysis can shed light on which dietary guilds are strongly affected by alterations and which dietary guilds are responsible for the overall patterns. Because some guilds are poorly represented, we restricted this analysis to dietary guilds that have an average of at least 50 pairs per subsample per habitat type in total (counting both shared and unique pairs), which is roughly equivalent to at least 10 species showing up regularly in each habitat in each subsample. We plotted the proportion and magnitude of associations of species in altered habitats against those in unaltered habitats.
+
+*__Analysis of alteration types.__* To gain more insight into the aggregation of same-guild pairs in altered habitats, we calculated the percent of species in each guild that co-occur at individual sites (e.g., 5% of bat carnivore species occur at site A, etc.). We plotted the sites by alteration type to examine the influence of alteration on species aggregation. Although we do not have enough sites of each alteration type to draw any definitive conclusions, this analysis can suggest reasons why certain guilds might co-occur more in altered sites and provide questions for future research.
+
+### Results
+*__Guild-by-guild analysis.__* Same-guild pairs in different dietary categories unsurprisingly showed a variety of responses to habitat alteration. As expected, the largest guilds dominated the overall pattern. In bats, insectivores and frugivores are the largest guilds. In altered sites, both guilds showed a higher proportion of segregations for shared pairs but a higher proportion of aggregations for unique pairs (Fig. S6). Bat carnivore pairs aggregated more than pairs in any other guild in unaltered sites, but their aggregations were substantially less prevalent in altered sites. Nectarivores aggregated less than the other guilds in unaltered sites, but aggregations were more common in altered sites. Although frugivores and insectivores have stronger aggregations in altered sites versus unaltered sites, which drives the overall pattern, both unique nectarivores and shared carnivores had weaker aggregations. Stronger average segregations observed in altered sites are mainly driven by nectarivores and unique insectivores (i.e., turnover in insectivore species: Fig. S7).
+
+In birds, the largest guilds were insectivores and frugivore-insectivore mixed feeders. Insectivores showed no difference in proportion of aggregations to segregations, but frugivore-insectivore pairs had more aggregations in altered habitats (Fig S8). Two other guilds, granivores and nectarivores, also tended toward more aggregations in altered habitats, and the opposite was true for the three remaining guilds (frugivores, frugivore-granivores, and insectivore-nectarivores). Interestingly, almost every bird guild showed overall less co-occurrence (stronger segregations or weaker aggregations) in altered sites, particularly in unique pairs (Fig S9). Only insectivore and nectarivore bird pairs tended toward more co-occurrence (stronger aggregations and weaker segregations) with any consistency, and this trend in insectivores dominates the overall pattern, due to the large number of insectivore bird species.
+
+*__Analysis of alteration types.__* Many of our alteration categories included only one or two sites, which is insufficient to draw definitive conclusions about how bat and bird guilds aggregate over the altered landscape. However, our results, plotted in Figure S10, suggest that plantations are an important aggregation point for bats, particularly frugivores and nectarivores. Although only two suburban sites are included, these sites both contain more than 15% of bat insectivores, and very few other species. The data for site types are even sparser for birds, but the primary habitat types are forest fragment, secondary forest, disturbed forest, and plantation. These site types vary in their importance to individual bird guilds. Birds with fruit or nectar in their diets co-occurred in plantations and fragments, while insectivores were most strongly aggregated in secondary forest. Disturbed forest typically contained a low percentage of each dietary guild. Secondary forest and forest fragment sites appear more instrumental for the co-occurrence of same-guild birds than bats (Fig. S10).
+
+## Discussion
+The results of the guild-by-guild analysis show that the increase in co-occurrence between same-guild pairs is not universal across all dietary guilds. In fact, much of the analysis is dominated by the patterns of insectivore pairs in both taxa. As insectivores are the most speciose guild in both bats and birds (by far in the latter), the prevalence of insectivore-based patterns in the data should be considered biologically relevant. However, functional diversity depends upon the co-occurrence of a variety of taxa, and functional redundance depends on the ability of many same-guild taxa to co-occur. Based on this analysis, many guilds from both taxa have lost the ability to form strong, frequent aggregations, suggesting that functional redundancy at altered sites is being lost for particular functional groups.
+
+Our main analyses suggest that different-guild and even related-guild pairs co-occur more weakly at altered sites. We interpret this to mean that functional diversity, i.e. the ability of species with diverse functional roles to coexist, has been reduced at altered sites in the Neotropics. According to the guild-by-guild analysis, functional redundancy for many groups may also be affected. 
+
+### Supplementary Figures
+
+```{r, echo = FALSE, include = TRUE, fig.height=5.5, fig.width = 7}
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/coords.Rdata")
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/original_coords.Rdata")
+
+par(mfrow = c(2,2), mar = c(0,0,0,0), oma = c(1,1,1,1))
+
+maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
+points(latitude~longitude, orig_coords1$bat, pch = 16, cex=.7, col = "dodgerblue")
+points(latitude~longitude, orig_coords2$bat, pch = 16, cex=.7, col = "red")
+mtext("Bats-original sites", side = 3, line = 1)
+box()
+
+maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
+points(latitude~longitude, orig_coords1$bird, pch = 16, cex=.7, col = "dodgerblue")
+points(latitude~longitude, orig_coords2$bird, pch = 16, cex=.7, col = "red")
+mtext("Birds-original sites", side = 3, line = 1)
+box()
+
+maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
+points(latitude~longitude, coords1$bat, pch = 16, cex=.7, col = "dodgerblue")
+points(latitude~longitude, coords2$bat, pch = 16, cex=.7, col = "red")
+mtext("Bats-included sites", side = 3, line = 1)
+box()
+
+maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
+points(latitude~longitude, coords1$bird, pch = 16, cex=.7, col = "dodgerblue")
+points(latitude~longitude, coords2$bird, pch = 16, cex=.7, col = "red")
+mtext("Birds-included sites", side = 3, line = 1)
+box()
+
+
+```
+
+__Figure S1.__ Maps of Neotropical bat and bird sites before (top) and after (bottom) biogeographic matching procedure, with altered sites represented in red and unaltered sites represented in blue.
+
+
+```{r, echo = F, message = FALSE, include = TRUE, fig.height=4, fig.width=8}
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Results/d2_4xsummarytables.RData")
+specs <- list(scale_fill_manual(values = c("red", "dodgerblue")),  
+              theme(legend.position = "none", axis.text = element_text(size = 12)))
+
+
+d <- data.frame(d2.prop.all)
+d$all <- "All"
+  p1 <- ggplot(d[d$taxon == "bat",], aes(y = agg, x = status, fill = status)) + geom_boxplot(notch = T) + 
+    facet_grid(diet.match~all, scales = "free") + specs + coord_flip() + labs(y = "proportion aggregated") + 
+    panel_border(remove = FALSE)
+  
+d <- data.frame(d2.prop.cat)
+d$cat.group <- factor(d$cat.group, levels = c("Unique", "Shared"))
+sp <- d %>% group_by(taxon, status, diet.match, cat.group) %>% summarise(N = mean(count)) %>% filter(taxon == "bat", status == "Unaltered")
+sa <- d %>% group_by(taxon, status, diet.match, cat.group) %>% summarise(N = mean(count)) %>% filter(taxon == "bat", status == "Altered")
+p2 <- ggplot(d[d$taxon == "bat",], aes(y = agg, x = status, fill = status)) + geom_boxplot(notch = T, width = 0.5, outlier.size = 0.4) + 
+    facet_grid(diet.match~cat.group, scales = "free") + specs + coord_flip() + labs(y = "proportion aggregated")  +
+  annotate("text", label = expression(paste(bar(N), " =")), size = 3, x = Inf, y = Inf, hjust = 2.5, vjust = 1.2) +
+  annotate("text", label = round(sp$N), size = 3, x = Inf, y = Inf, hjust = 1, vjust = 1.4 ) + 
+  annotate("text", label = expression(paste(bar(N), " =")), size = 3, x = -Inf, y = Inf, hjust = 2.5, vjust = -0.8) +
+  annotate("text", label = round(sa$N), size = 3, x = -Inf, y = Inf, hjust = 1, vjust = -1) + 
+  panel_border(remove = FALSE)
+
+plot_grid(p1, p2+theme(axis.text.y = element_blank(), axis.title.y = element_blank()), rel_widths = c(2,3),  labels = c("A", "B"), label_x = c(0.94, 0.96))
+
+```
+
+__Figure S2.__  Percent aggregated pairs in altered and unaltered habitats for bats, separated by the degree to which diets are shared by each species pair. Each group is further separated based on whether it is found in both altered and unaltered habitats (shared) or only in one (unique), distinguishing between community change that is or is not driven by compositional turnover. Points represent subsamples, and the average number of pairs per subsample in each category is displayed within each panel.
+
+```{r, echo = F, message = FALSE,include = TRUE, fig.height=7, fig.width = 10}
+d <- data.frame(d2.mag.all)
+d$posnegzero.Z.Score. <- factor(d$posnegzero.Z.Score., levels = c("Segregation", "Aggregation"))
+p1 <- ggplot(d[d$taxon == 'bat',], aes(y = avmag, x = status, fill = status)) + geom_boxplot(notch = T) + 
+    facet_grid(diet.match~posnegzero.Z.Score., scales = "free_x") + 
+    ggtitle("All") + coord_flip() + specs + panel_border(remove = FALSE) +
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm"), axis.title.x = element_blank()) 
+
+  
+d <- data.frame(d2.mag.cat)
+d$posnegzero.Z.Score. <- factor(d$posnegzero.Z.Score., levels = c("Segregation", "Aggregation"))
+sp <- d %>% group_by(taxon, status, diet.match, posnegzero.Z.Score., cat.group) %>% summarise(N = mean(count)) %>% filter(taxon == "bat", status == "Unaltered")
+sa <- d %>% group_by(taxon, status, diet.match, posnegzero.Z.Score., cat.group) %>% summarise(N = mean(count)) %>% filter(taxon == "bat", status == "Altered")
+
+p2 <- ggplot(d[d$taxon == 'bat',], aes(y = avmag, x = status, fill = status)) + 
+    geom_boxplot(notch = T, width = 0.5, outlier.size = 0.4) + facet_grid(diet.match~posnegzero.Z.Score.+cat.group, scales = "free") + 
+    ggtitle("Components") + specs + coord_flip() + labs(y = "Mean strength") +
+    theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) + panel_border(remove = FALSE) +
+    annotate("text", label = expression(paste(bar(N), " =")), size = 3, x = Inf, y = Inf, hjust = 2.5, vjust = 1.2) +
+    annotate("text", label = round(sp$N), size = 3, x = Inf, y = Inf, hjust = 1, vjust = 1.4 ) + 
+  annotate("text", label = expression(paste(bar(N), " =")), size = 3, x = -Inf, y = Inf, hjust = 2.5, vjust = -0.8) +
+  annotate("text", label = round(sa$N), size = 3, x = -Inf, y = Inf, hjust = 1, vjust = -1)
+  
+plot_grid(p1, p2, ncol = 1, rel_heights = c(1,1.5), labels = c("A", "B"))  
+
+
+```
+
+__Figure S3.__  Strength of aggregations and segregations in altered (gray) and unaltered (green) habitats for bats, separated by the degree to which diets are shared by each species pair (A). Each group is further separated based on whether it is found in both altered and unaltered habitats (shared) or only in one (unique), distinguishing between community change that is or is not driven by compositional turnover (B). Points toward the right represent stronger aggregations or weaker segregations, which is an increase in co-occurrence. Points toward the left represent stronger segregations or weaker aggregations, which constitutes a decrease in co-occurrence.
+
+```{r, echo = F, message = FALSE, include = TRUE, fig.height=4, fig.width = 8}
+d <- data.frame(d2.prop.all)
+d$all <- "All"
+  p1 <- ggplot(d[d$taxon == "bird",], aes(y = agg, x = status, fill = status)) + geom_boxplot(notch = T) + 
+    facet_grid(diet.match~all, scales = "free") + specs + coord_flip() + labs(y = "proportion aggregated") + 
+    panel_border(remove = FALSE)
+  
+d <- data.frame(d2.prop.cat)
+d$cat.group <- factor(d$cat.group, levels = c("Unique", "Shared"))
+sp <- d %>% group_by(taxon, status, diet.match, cat.group) %>% summarise(N = mean(count)) %>% filter(taxon == "bird", status == "Unaltered")
+sa <- d %>% group_by(taxon, status, diet.match, cat.group) %>% summarise(N = mean(count)) %>% filter(taxon == "bird", status == "Altered")
+p2 <- ggplot(d[d$taxon == "bird",], aes(y = agg, x = status, fill = status)) + 
+  geom_boxplot(notch = T, width = 0.5, outlier.size = 0.4) + facet_grid(diet.match~cat.group, scales = "free") + 
+  specs + coord_flip() + labs(y = "proportion aggregated")  +
+  annotate("text", label = expression(paste(bar(N), " =")), size = 3, x = Inf, y = Inf, hjust = 2.7, vjust = 1.2) +
+  annotate("text", label = round(sp$N), size = 3, x = Inf, y = Inf, hjust = 1, vjust = 1.4 ) + 
+  annotate("text", label = expression(paste(bar(N), " =")), size = 3, x = -Inf, y = Inf, hjust = 2.7, vjust = -0.8) +
+  annotate("text", label = round(sa$N), size = 3, x = -Inf, y = Inf, hjust = 1, vjust = -1) + 
+  panel_border(remove = FALSE)
+
+plot_grid(p1, p2+theme(axis.text.y = element_blank(), axis.title.y = element_blank()), rel_widths = c(2,3),  labels = c("A", "B"), label_x = c(0.94, 0.96))
+
+```
+
+__Figure S4.__   Percent aggregated pairs in altered and unaltered habitats for birds, separated by the degree to which diets are shared by each species pair. See caption of Fig. S2 for details. 
+
+```{r, echo = F, message = FALSE, include = TRUE, fig.width = 9, fig.height=7}
+d <- data.frame(d2.mag.all)
+d$posnegzero.Z.Score. <- factor(d$posnegzero.Z.Score., levels = c("Segregation", "Aggregation"))
+p1 <- ggplot(d[d$taxon == 'bird',], aes(y = avmag, x = status, fill = status)) + geom_boxplot(notch = T) + 
+    facet_grid(diet.match~posnegzero.Z.Score., scales = "free_x") + 
+    ggtitle("All") + coord_flip() + specs + panel_border(remove = FALSE) +
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm"), axis.title.x = element_blank()) 
+
+  
+d <- data.frame(d2.mag.cat)
+d$posnegzero.Z.Score. <- factor(d$posnegzero.Z.Score., levels = c("Segregation", "Aggregation"))
+sp <- d %>% group_by(taxon, status, diet.match, posnegzero.Z.Score., cat.group) %>% summarise(N = mean(count)) %>% filter(taxon == "bird", status == "Unaltered")
+sa <- d %>% group_by(taxon, status, diet.match, posnegzero.Z.Score., cat.group) %>% summarise(N = mean(count)) %>% filter(taxon == "bird", status == "Altered")
+
+p2 <- ggplot(d[d$taxon == 'bird',], aes(y = avmag, x = status, fill = status)) + 
+    geom_boxplot(notch = T, width = 0.5, outlier.size = 0.4) + facet_grid(diet.match~posnegzero.Z.Score.+cat.group, scales = "free") + ggtitle("Components") + specs + coord_flip() + labs(y = "Mean strength") +
+    theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) + panel_border(remove = FALSE) +
+    annotate("text", label = expression(paste(bar(N), " =")), size = 3, x = Inf, y = Inf, hjust = 2.7, vjust = 1.2) +
+    annotate("text", label = round(sp$N), size = 3, x = Inf, y = Inf, hjust = 1, vjust = 1.4 ) + 
+  annotate("text", label = expression(paste(bar(N), " =")), size = 3, x = -Inf, y = Inf, hjust = 2.7, vjust = -0.8) +
+  annotate("text", label = round(sa$N), size = 3, x = -Inf, y = Inf, hjust = 1, vjust = -1)
+  
+plot_grid(p1, p2, ncol = 1, rel_heights = c(1,1.5), labels = c("A", "B"))  
+
+```
+
+__Figure S5.__ Strength of aggregations and segregations in altered and unaltered habitats for birds, separated by the degree of shared dietary sources between the species pair. See caption of Fig. S3 for details. 
+
+
+
+```{r, echo = FALSE}
+specs <- list(scale_fill_discrete(h = c(250, 130), c = c(20, 100), l = c(40, 50)),  
+              theme(legend.position = "none", 
+                    axis.text = element_text(size = 12), 
+                    strip.text = element_text(size = 12)))
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Results/d3_4xsummarytables.RData")
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Results/d4_4xsummarytables.RData")
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, include = TRUE, fig.height = 4, fig.width = 6}
+t <- 'bat'
+
+d <- tofac(data.frame(d3.prop.all))
+d <- d[d$taxon == t,]
+keep <- d %>% group_by(diet.pair, status) %>% summarise(avg = mean(count), mean(agg)) %>% filter(avg>50)
+keep <- names(table(keep$diet.pair)[table(keep$diet.pair) >1])
+d <- d[d$diet.pair %in% keep,]
+d2 <- dcast(subsample+taxon+diet.pair+diet.match~status, value.var = 'agg', data = d)
+d3 <- dcast(subsample+taxon+diet.pair+diet.match~status, value.var = 'count', data = d)
+# proportion aggregated
+ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.pair)) + 
+  geom_point(size = 0.5) + 
+  panel_border(remove = F) + 
+  geom_abline(mapping = NULL, data = NULL, 
+              slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray30") + 
+  labs(col = "Guild") + 
+  scale_colour_manual(values = c("#0B2161","#8258FA", "#A5DF00", "#F78181"))
+
+```
+
+__Figure S6.__ Proportion of pairs that are aggregated in altered versus unaltered habitats for pairs of bats that have the same dietary sources, by guild. The dashed line is the line of unity. The points represent the appropriate pairs from the subsamples (i.e. each subsample is plotted four times, once for its pairs in each guild). Samples falling above the line have a higher proportion of aggregations in altered habitats, and samples falling below the line have a lower proportion of aggregations in altered habitats. Key: CI = carnivore-insectivore; F = frugivore; I = insectivore; N = nectarivore.
+
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, include = TRUE, fig.height = 8, fig.width = 9}
+d <- d3.mag.cat
+d <- d[d$taxon == t & d$diet.pair %in% keep,]
+
+d2 <- dcast(subsample+taxon+diet.pair+diet.match+`posnegzero(Z.Score)`+cat.group~status, value.var = 'avmag', data = d)
+
+ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.pair)) + geom_point(size = 0.5) + 
+  facet_wrap(`posnegzero(Z.Score)`~cat.group, scales = "free") + panel_border(remove = F) + geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray30") + labs(col = "Guild") + 
+  scale_colour_manual(values = c("#0B2161","#8258FA", "#A5DF00", "#F78181"))
+
+
+```
+
+__Figure S7.__ Mean magnitude of aggregations and segregations in pairs of bat species that share the same dietary sources, grouped into diet categories, with altered subsamples plotted against unaltered subsamples. The points represent subsamples. The dashed line is the line of unity. Samples falling below the line exhibit less co-occurrence (stronger segregations or weaker aggregations) in altered sites, while samples falling above the line exhibit more co-occurrence (stronger aggregations or weaker segregations) in altered sites compared to unaltered sites. Key: CI = carnivore-insectivore; F = frugivore; I = insectivore; N = nectarivore. 
+
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, include = TRUE, fig.height = 5, fig.width = 6}
+t <- 'bird'
+
+d <- d3.prop.all
+d <- d[d$taxon == t,]
+keep <- d %>% group_by(diet.pair, status) %>% summarise(avg = mean(count), mean(agg)) %>% filter(avg>50)
+keep <- names(table(keep$diet.pair)[table(keep$diet.pair) >1])
+d <- d[d$diet.pair %in% keep,]
+d2 <- dcast(subsample+taxon+diet.pair+diet.match~status, value.var = 'agg', data = d)
+d3 <- dcast(subsample+taxon+diet.pair+diet.match~status, value.var = 'count', data = d)
+# proportion aggregated
+ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.pair)) + 
+  geom_point(size = 0.5) + 
+  panel_border(remove = F) + 
+  geom_abline(mapping = NULL, data = NULL, 
+              slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray30") + 
+  labs(col = "Guild") + 
+  scale_colour_hue(h = c(270, 20, 330, 60, 300, 110, 216), 
+                   c = 100, 
+                   l = c(50, 60, 90, 50, 80, 85, 70))
+
+
+```
+
+__Figure S8.__ Proportion of aggregated pairs in altered versus unaltered habitats for pairs of bird species that have the same dietary sources, by guild. The dashed line is the line of unity. The points represent each dietary guild within subsamples (i.e. each subsample is plotted seven times, once for its pairs in each guild). Subsamples falling above the line have a higher proportion aggregations in altered habitats, and samples falling below the line have a lower proportion of aggregations in altered habitats. Key: C = carnivore; F = frugivore; G = granivore; I = insectivore; N = nectarivore; multiple letters indicate mixed feeders.
+ 
+
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, include = TRUE, fig.height = 8, fig.width = 9}
+
+d <- d3.mag.cat
+d <- d[d$taxon == t & d$diet.pair %in% keep,]
+
+d2 <- dcast(subsample+taxon+diet.pair+diet.match+`posnegzero(Z.Score)`+cat.group~status, value.var = 'avmag', data = d)
+
+ggplot(d2, aes(x = Unaltered, y = Altered, col = diet.pair)) + geom_point(size = 0.5) + 
+  facet_wrap(`posnegzero(Z.Score)`~cat.group, scales = "free") + panel_border(remove = F) + geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0, show.legend = NA, lty = 2, col = "gray30") + labs(col = "Guild") + 
+  scale_colour_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70))
+
+```
+
+__Figure S9.__ Mean magnitude of aggregations and segregations in pairs of bird species that share the same dietary sources, grouped into diet categories, with altered subsamples plotted against unaltered subsamples. The dashed line is the line of unity. The points represent subsamples. Subsamples falling below the line exhibit less co-occurrence (stronger segregations or weaker aggregations) in altered sites, while subsamples falling above the line exhibit more co-occurrence (stronger aggregations or weaker segregations) in altered sites compared to unaltered sites. Key: C = carnivore; F = frugivore; I = insectivore; N = nectarivore; and S = sanguinivore. Multiple letters indicate mixed feeders.
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, include = TRUE, fig.height = 8, fig.width = 10}
+load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Results/pr_bats_birds_percent_spp_supported_by_sites.RData")
+
+pbat <- ggplot(pr.bats, aes(x = altered_habitat, y = value, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
+  facet_wrap(variable~., nrow = 4, ncol = 1, scales = "free_y") + geom_jitter(width = 0.1, size = 0.3) +
+  panel_border(remove = F, colour = "black") + 
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank()) + labs(y = "Percent of species co-occurring")
+
+pbird <- ggplot(pr.birds, aes(x = altered_habitat, y = value, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
+  facet_wrap(variable~., nrow = 4, ncol = 2, scales = "free_y") + geom_jitter(width = 0.1, size = 0.3) +
+  panel_border(remove = F, colour = "black") + 
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank()) + labs(y = "Percent of species co-occurring", fill = "Type of alteration") + 
+  scale_fill_manual(values = gg_color_hue(9), 
+                    limits = c("cropland", "disturbed forest", "fragment", "pasture", "plantation", "rural", "secondary forest", "suburban", "urban"),
+                    labels = c("cropland", "disturbed forest", "fragment", "pasture", "plantation", "rural", "secondary forest", "suburban", "urban"))
+
+plot_grid(pbird+ theme(legend.position = c(1, 0), legend.justification = c(1, 0), legend.text = element_text(size = 10)) + guides(fill=guide_legend(ncol=2)), 
+          pbat+theme(legend.position="none"), ncol = 2, rel_widths = c(1.9, 1), labels = c("Birds", "Bats"))
+
+```
+
+__Figure S10.__ Percent of species in bird (left and center) and bat (right) guilds, represented by panels, that co-occur at individual altered sites by type of alteration. Each point is an altered site. There are no bird sites in the suburban category. Key to panels: C = carnivore; F = frugivore; I = insectivore; N = nectarivore; and G = granivore. Multiple letters indicate mixed feeders.
