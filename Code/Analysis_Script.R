@@ -227,18 +227,13 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   
   ## ***NOTE*** the output tables take up roughly 6 gigabytes of memory. 
   
-#### Add diet and shared/unique categories #####
+#### Add categorical data #####
   out$diet.Sp1 <- spp[out$Sp1,"guild"]
   out$diet.Sp2 <- spp[out$Sp2,"guild"]
-  out$diet.pair <- map2(out$diet.Sp1, out$diet.Sp2, function(x, y) c(x,y)) %>% map(sort) %>% map(paste, collapse = "-") %>% unlist()
-  related <- c("C-CI", "CI-IG", "NF-NI", "I-NI", "CI-NI", "CI-I", "CI-FI", "CI-IN","F-FN", "FI-NF", "FI-NI", 
-              "FN-IN", "FI-I", "FI-FN", "FI-IN", "FN-N", "FG-FI", "FG-FN", "FG-IG", "FI-IG", "FG-G", "I-IN", "IN-N", 
-              "N-NI", "N-NF", "F-FI", "FG-NF", "F-FG", "G-IG", "I-IG","IG-IN")  # pairs that share one diet source.
-  out$diet.match <- as.numeric(out$diet.Sp1 == out$diet.Sp2)*2
-  out$diet.match[out$diet.pair %in% related] <- 1
+  #out$diet.pair <- map2(out$diet.Sp1, out$diet.Sp2, function(x, y) c(x,y)) %>% map(sort) %>% map(paste, collapse = "-") %>% unlist()
+  out$diet.match <- as.numeric(out$diet.Sp1 == out$diet.Sp2)
   out$diet.match[out$diet.match == 0] <- "Different"
-  out$diet.match[out$diet.match == 1] <- "Related"
-  out$diet.match[out$diet.match == 2] <- "Same"
+  out$diet.match[out$diet.match == 1] <- "Same"
   
   out$cat.Sp1[out$Sp1 %in% uniquesp] <- "Unique"
   out$cat.Sp1[out$Sp1 %in% sharedsp] <- "Shared"
@@ -252,7 +247,7 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   out$cat.group[out$cat.pair == "Unique-Shared"] <- "Unique"
   out$cat.group[out$cat.pair == "Shared-Shared"] <- "Shared"
   
-### Cosmopolitan/restricted groupings ####  
+### Cosmopolitan/restricted groupings #  
   out$cosmo.Sp1 <- cosmo[out$Sp1,"group"]
   out$cosmo.Sp2 <- cosmo[out$Sp2,"group"]
   out$cosmo.pair <- paste(out$cosmo.Sp1, out$cosmo.Sp2, sep = "-")
@@ -261,12 +256,9 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   out$cosmo.pair[out$cosmo.pair == "synanthropic-cosmopolitan"] <- "cosmopolitan-synanthropic"
   out$cosmo.pair[out$cosmo.pair == "synanthropic-restricted"] <- "restricted-synanthropic"
   
-  out$cosmo.group[out$cosmo.Sp1 == out$cosmo.Sp2] <- 'Same'
-  out$cosmo.group[!out$cosmo.Sp1 == out$cosmo.Sp2] <- 'Different'
-  
 #### Results collated as summary tables from output ####  
   
-  # d1: overall [NOT PRESENTED IN MANUSCRIPT]
+# d1: overall [NOT PRESENTED IN MANUSCRIPT] #####
   d1.prop.all <- out %>% group_by(subsample, Taxon_status, type) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), sd = sd(Z.Score), count = length(Z.Score))
   d1.prop.cat <- out %>% group_by(subsample, Taxon_status, cat.group, type) %>% 
@@ -276,71 +268,46 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   d1.mag.cat <- out %>% group_by(subsample, Taxon_status, cat.group, pnz = posnegzero(Z.Score), type) %>% 
     summarise(`Mean magnitude` = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
   
-  # d2: Diet.match (same, related, and different pairs) [PRESENTED IN MAIN TEXT]
-    # proportion of agg:seg, overall by diet group
-    d2.prop.all <- out %>% group_by(subsample, Taxon_status, diet.match, type) %>% 
-      summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-    
-    # proportion of agg:seg, by diet group and shared/unique
-    d2.prop.cat <- out %>% group_by(subsample, Taxon_status, diet.match, cat.group, type) %>% 
-      summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-    
-    d2.prop.catp <- out %>% group_by(subsample, Taxon_status, diet.match, cat.pair, type) %>% 
-      summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-    
+# d2: Diet.match (competing and non-competing pairs)  ####
+  # MAGNITUDES [PRESENTED IN MAIN TEXT]
     # magnitude of agg & seg, overall by diet group 
     d2.mag.all <- out %>% group_by(subsample, Taxon_status, diet.match, pnz = posnegzero(Z.Score), type) %>% 
       summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
     
     # magnitude of agg & seg, by diet group and shared/unique    
-    d2.mag.cat <- out %>% group_by(subsample, Taxon_status, diet.match, cat.group, pnz = posnegzero(Z.Score), type) %>% 
-      summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
-  
     d2.mag.catp <- out %>% group_by(subsample, Taxon_status, diet.match, cat.pair, pnz = posnegzero(Z.Score), type) %>% 
       summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
-       
-  # d3: Within-guild analysis: Diet.pair == "Same" [PRESENTED IN SUPPLEMENT]
+    
+    # magnitude of agg & seg, by diet group and synanthropic/cosmpolitan/restricted  
+    d5.mag.catp <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.pair, pnz = posnegzero(Z.Score), type) %>% 
+      summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
+    
+   # PROPORTIONS [PRESENTED IN SUPPLEMENT]  
+    # proportion of agg:seg, overall by diet group
+    d2.prop.all <- out %>% group_by(subsample, Taxon_status, diet.match, type) %>% 
+      summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
+    
+    # proportion of agg:seg, by diet group and shared/unique
+    d2.prop.catp <- out %>% group_by(subsample, Taxon_status, diet.match, cat.pair, type) %>% 
+      summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
+    
+    # proportion of agg:seg, by diet group and synanthropic/cosmopolitan/restricted
+    d5.prop.catp <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.pair, type) %>% 
+      summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
+    
+          
+# d3: Within-guild analysis: Diet.pair == "Same" [NOT PRESENTED IN MANUSCRIPT] ####
+  d3.mag.all <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score)) %>% 
+    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
+  d3.mag.catp <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score), cat.pair) %>% 
+    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
+    
   d3.prop.all <- out[out$diet.match == "Same",] %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type) %>% 
-    summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  d3.prop.cat <- out[out$diet.match == "Same",] %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, cat.group) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
   d3.prop.catp <- out[out$diet.match == "Same",] %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, cat.pair) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
   
-  d3.mag.all <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score)) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
-  d3.mag.cat <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score), cat.group) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
-  d3.mag.catp <- out[out$diet.match == "Same",]  %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score), cat.pair) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
   
-  # d4: Related pairs analysis: Diet.pair == "Related"  [NOT PRESENTED IN MANUSCRIPT]
-  d4.prop.all <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type) %>% 
-    summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  d4.prop.cat <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, cat.group) %>% 
-    summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  d4.mag.all <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score)) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
-  d4.mag.cat <- out[out$diet.match == "Related",] %>% na.omit() %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, pnz = posnegzero(Z.Score), cat.group) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
-  
-## d5: Diet.match (same, related, and different pairs) and cosmopolitan group
- 
-  # proportion of agg:seg, by diet group and cosmopolitan/restricted
-  d5.prop.cat <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.group, type) %>% 
-    summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  
-  d5.prop.catp <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.pair, type) %>% 
-    summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
-  
-  # magnitude of agg & seg, by diet group and shared/unique    
-  d5.mag.cat <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.group, pnz = posnegzero(Z.Score), type) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
-  
-  d5.mag.catp <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.pair, pnz = posnegzero(Z.Score), type) %>% 
-    summarise(avmag = mean(Z.Score), count = length(Z.Score)) %>% filter(!pnz == "ZERO")
-  
-
 #### Analysis of co-occurrence at altered habitats ####
   # bats
   gld <- c("N", "I", "F", "CI")  
@@ -355,4 +322,6 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   pr.bird <- percent.occupancy.by.guild(tab, gld, "bird", sitedat) 
   
   
-  
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
+#~~~~~~~~~~~~~~~~~~END OF SCRIPT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
