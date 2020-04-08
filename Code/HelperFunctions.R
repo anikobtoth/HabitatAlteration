@@ -1,5 +1,5 @@
-library("sp")
-
+library(sp)
+library(BEST)
 ##### DATA MANIPULATION #####
 ### Change character vectors in df to factors
 tofac <- function(df){
@@ -208,4 +208,27 @@ percent.occupancy.by.guild <- function(t, gld, taxon, sitedat){
   
     return(prm)
 }
+
+# Randomization significance test ######
+
+besttest <- function(obsexp, split.var,  ...){
+  group.vars <- enquos(...)
+  alt <- obsexp %>% split(.[split.var]) %>% 
+    purrr::map(~group_by(., !!! group.vars)) %>%
+    purrr::map(~group_map(.,~pull(., altered))) 
+    
+  unalt <- obsexp %>% split(.[split.var]) %>% 
+    purrr::map(~group_by(., !!! group.vars)) %>%
+    purrr::map(~group_map(.,~pull(., unaltered))) 
+  b <- list(unalt = map2(unalt$Different, unalt$Same, 
+                         function(x, y) if(all(x) != 0 && all(y) != 0 && length(x[!is.na(x)]) > 1 && length(y[!is.na(y)]) > 1) {
+                           return(BESTmcmc(x, y))
+                           } else {return(NULL)}), 
+            alt   = map2(alt$Different, alt$Same, 
+                         function(x, y) if(all(x) != 0 && all(y) != 0 && length(x[!is.na(x)]) > 1 && length(y[!is.na(y)]) > 1) {
+                           return(BESTmcmc(x, y))
+                           } else {return(NULL)}))
+  return(b)
+}
+
 
