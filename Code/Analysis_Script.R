@@ -29,8 +29,7 @@ load("./Data/sitedat_metadata.Rdata")
 #load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/sitedat_meta_clim.RData")
 
 neotropics <- sitedat[sitedat$ecozone %in% c("Neotropic"),]$siteid
-unalt_sites <- sitedat[sitedat$altered_habitat == "",]$sample_no 
-unalt_sites <- paste("X", unalt_sites, sep = "")
+unalt_sites <- sitedat[sitedat$altered_habitat == "",]$siteid 
 sitedat$status[sitedat$altered_habitat == ""] <- "Unaltered" 
 sitedat$status[!sitedat$altered_habitat == ""] <- "Altered" 
 
@@ -165,11 +164,6 @@ w
   # Remove empty rows from altered and unaltered tables
 PAna <- map(PAna, clean.empty) 
 PAnu <- map(PAnu, clean.empty)
-
-  # Limit PAn to shared species. Uncomment to run analysis on shared pairs only. 
-#PAn  <- map2(PAn, map2(lapply(PAna, rownames), lapply(PAnu, rownames), function(x, y) x[which(x %in% y)]), function(x,y) return(x[y,]))
-#PAnu <- PAn %>% map(~return(.[,colnames(.) %in% unalt_sites]))
-#PAna <- PAn %>% map(~return(.[,!colnames(.) %in% unalt_sites]))
 
 ##### Functional Altered/unaltered analysis ####
 # Format data
