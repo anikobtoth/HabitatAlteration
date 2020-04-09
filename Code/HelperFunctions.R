@@ -1,5 +1,7 @@
 library(sp)
 library(BEST)
+library(BayesianFirstAid)
+
 ##### DATA MANIPULATION #####
 ### Change character vectors in df to factors
 tofac <- function(df){
@@ -231,4 +233,23 @@ besttest <- function(obsexp, split.var,  ...){
   return(b)
 }
 
-
+bayesPairedTtest <- function(obsexp, split.var,  ...){
+  group.vars <- enquos(...)
+  alt <- obsexp %>% split(.[split.var]) %>% 
+    purrr::map(~group_by(., !!! group.vars)) %>%
+    purrr::map(~group_map(.,~pull(., altered))) 
+  
+  unalt <- obsexp %>% split(.[split.var]) %>% 
+    purrr::map(~group_by(., !!! group.vars)) %>%
+    purrr::map(~group_map(.,~pull(., unaltered))) 
+  
+  b <- list(unalt = map2(unalt$Different, unalt$Same, 
+                       function(x, y) if(all(x) != 0 && all(y) != 0 && length(x[!is.na(x)]) > 1 && length(y[!is.na(y)]) > 1) {
+                         return(bayes.t.test(x, y, paired = TRUE))
+                       } else {return(NULL)}), 
+          alt   = map2(alt$Different, alt$Same, 
+                       function(x, y) if(all(x) != 0 && all(y) != 0 && length(x[!is.na(x)]) > 1 && length(y[!is.na(y)]) > 1) {
+                         return(bayes.t.test(x, y, paired = TRUE))
+                       } else {return(NULL)}))
+   return(b)
+}
