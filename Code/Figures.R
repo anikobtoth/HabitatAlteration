@@ -14,7 +14,7 @@ library(reshape2)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
 ##  MAIN TEXT 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 ### Figure 1: PCoA ####
 #ordinations, colored by alteration type
@@ -38,7 +38,6 @@ specs <- list(geom_hline(yintercept = 1, col = "gray"),
               stat_ellipse(geom= "polygon", alpha = 0.3, aes(col = diet.match, fill = diet.match)),
               geom_point(aes(col = diet.match, fill = diet.match), size = 0.5), 
               geom_rug(aes(col = diet.match), alpha = 0.5),
-              #geom_point(aes(x = 1, y = 1), col = "black", size = 1.2),
               scale_colour_manual(values = colors2),
               scale_fill_manual(values = colors2),
               theme(legend.position = "none")
@@ -56,6 +55,10 @@ avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
 avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
 
 obsexp <- dcast(subsample+taxon+diet.match+pnz~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
+n <- expand.grid(unique(obsexp$pnz), unique(obsexp$taxon)) %>% mutate(n = paste(.$Var2, .$Var1, sep = "_")) %>% pull(n)
+b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz) %>% purrr::map(setNames, n)
+b <- purrr::map(b, ~.[!sapply(., is_null)])
+s <- b %>% purrr::map(~purrr::map_dbl(., ~summary(.) %>% as.data.frame() %>% pull(`%>comp`) %>% `[`(1)))
 
 anno <- obsexp %>% group_by(taxon, pnz) %>% 
   summarise() %>% ungroup() %>% 
@@ -79,17 +82,23 @@ avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
 avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
 
 obsexp <- dcast(subsample+taxon+diet.match+cat.pair+pnz~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
+# bayesian paired t-test on competing and non-competing pairs
+n <- expand.grid(unique(obsexp$pnz), unique(obsexp$cat.pair)) %>% mutate(n = paste(.$Var2, .$Var1, sep = "_")) %>% pull(n) %>% expand.grid(unique(obsexp$taxon)) %>% mutate(n = paste(.$Var2, .$Var1, sep = "_")) %>% pull(n)
+b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cat.pair, pnz) %>% purrr::map(setNames, n)
+b <- purrr::map(b, ~.[!sapply(., is_null)])
+s <- b %>% purrr::map(~purrr::map_dbl(., ~summary(.) %>% as.data.frame() %>% pull(`%>comp`) %>% `[`(1)))
 
-anno <- obsexp %>% group_by(taxon, pnz, cat.pair) %>% 
+anno <- obsexp %>% group_by(cat.pair, taxon, pnz) %>% 
   summarise() %>% ungroup() %>% 
   mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
 
 ggplot(obsexp, aes(x = unaltered, y = altered)) + 
-  specs+ 
-  facet_wrap(cat.pair+taxon~pnz, scales = "free") 
+  specs+ facet_wrap(cat.pair+taxon~pnz, scales = "free") +
+  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
 
 
-# FIGURE 4: Mag syn/cosmo/restr cosmo.pair ####
+
+# FIGURES 4 and 5: Mag syn/cosmo/restr cosmo.pair ####
 
 d <- d5.mag.catp
 
@@ -104,10 +113,11 @@ avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
 
 obsexp <- dcast(subsample+taxon+diet.match+cosmo.pair+pnz~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
 obsexp$ cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
+ # bayesian paired t-test on competing and non-competing pairs
 n <- expand.grid(unique(obsexp$pnz), unique(obsexp$cosmo.pair)) %>% mutate(n = paste(.$Var2, .$Var1, sep = "_")) %>% pull(n) %>% expand.grid(unique(obsexp$taxon)) %>% mutate(n = paste(.$Var2, .$Var1, sep = "_")) %>% pull(n)
-b <- besttest(obsexp, split.var = "diet.match.2", taxon, cosmo.pair, pnz) %>% purrr::map(setNames, n)
+b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cosmo.pair, pnz) %>% purrr::map(setNames, n)
 b <- purrr::map(b, ~.[!sapply(., is_null)])
-s <- b %>% purrr::map(~purrr::map_dbl(., ~summary(.) %>% as.data.frame() %>% pull(`%>compVal`) %>% `[`(3)))
+s <- b %>% purrr::map(~purrr::map_dbl(., ~summary(.) %>% as.data.frame() %>% pull(`%>comp`) %>% `[`(1)))
 
 anno <- obsexp %>% filter(taxon == "bat") %>% group_by(pnz, cosmo.pair) %>% 
   summarise() %>% ungroup() %>% 
@@ -127,7 +137,7 @@ ggplot(obsexp %>% filter(taxon == "bird"), aes(x = unaltered, y = altered)) +
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
 ##  SUPPLEMENT 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 ### FIGURE S1: Maps ####
 par(mfrow = c(2,2), mar = c(0,0,0,0), oma = c(1,1,1,1))
@@ -171,6 +181,10 @@ pAgg$taxon <- word(pAgg$Taxon_status, 1, 1, sep = "_")
 pAgg$status <- word(pAgg$Taxon_status, 2, 2, sep = "_")
 
 obsexp <- dcast(subsample+taxon+diet.match~status, value.var = 'obsDexp', data = pAgg)
+n <- unique(obsexp$taxon)
+b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon) %>% purrr::map(setNames, n)
+b <- purrr::map(b, ~.[!sapply(., is_null)])
+s <- b %>% purrr::map(~purrr::map_dbl(., ~summary(.) %>% as.data.frame() %>% pull(`%>comp`) %>% `[`(1)))
 
 ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
   specs+ 
@@ -189,6 +203,12 @@ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.mat
  pAgg$status <- word(pAgg$Taxon_status, 2, 2, sep = "_")
  
  obsexp <- dcast(subsample+taxon+diet.match+cat.pair~status, value.var = 'obsDexp', data = pAgg)
+ n <- expand.grid(unique(obsexp$cat.pair), unique(obsexp$taxon)) %>% mutate(n = paste(.$Var2, .$Var1, sep = "_")) %>% pull(n)
+ b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cat.pair) %>% purrr::map(setNames, n)
+ b <- purrr::map(b, ~.[!sapply(., is_null)])
+ s <- b %>% purrr::map(~purrr::map_dbl(., ~summary(.) %>% as.data.frame() %>% pull(`%>comp`) %>% `[`(1)))
+ 
+ 
  
 ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
   specs+  
@@ -197,23 +217,23 @@ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.mat
 ## FIGURE S5: Prop syn/cosmo/rest cosmo.pair #### 
 d <- d5.prop.catp
 
-d <- d %>% filter(!is.na(diet.match.2))
+d <- d %>% filter(!is.na(diet.match))
 o <- d[d$type == "observed",]
 e <- d[d$type == "expected",]
-m <- merge(e, o, by = c("Taxon_status", "diet.match.2", "cosmo.pair"), all = T)
-pAgg <- m %>% select(Taxon_status, diet.match.2, cosmo.pair, subsample = subsample.x, expected = agg.x, observed = agg.y) %>% 
+m <- merge(e, o, by = c("Taxon_status", "diet.match", "cosmo.pair"), all = T)
+pAgg <- m %>% select(Taxon_status, diet.match, cosmo.pair, subsample = subsample.x, expected = agg.x, observed = agg.y) %>% 
   mutate(obsDexp = observed/expected)
 pAgg$taxon <- word(pAgg$Taxon_status, 1, 1, sep = "_")
 pAgg$status <- word(pAgg$Taxon_status, 2, 2, sep = "_")
 
-obsexp <- dcast(subsample+taxon+diet.match.2+cosmo.pair~status, value.var = 'obsDexp', data = pAgg)
+obsexp <- dcast(subsample+taxon+diet.match+cosmo.pair~status, value.var = 'obsDexp', data = pAgg)
 
 n <- expand.grid(unique(obsexp$cosmo.pair), unique(obsexp$taxon)) %>% mutate(n = paste(.$Var2, .$Var1, sep = "_")) %>% pull(n)
-b <- besttest(obsexp, split.var = "diet.match.2", taxon, cosmo.pair) %>% purrr::map(setNames, n)
+b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cosmo.pair) %>% purrr::map(setNames, n)
 b <- purrr::map(b, ~.[!sapply(., is_null)])
 s <- b %>% purrr::map(~purrr::map_dbl(., ~summary(.) %>% as.matrix() %>% as.data.frame() %>% pull(`%>compVal`) %>% `[`(3)))
 
-ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match.2, fill = diet.match.2)) + 
+ggplot(obsexp, aes(x = unaltered, y = altered)) + 
   specs+  
   facet_wrap(taxon~cosmo.pair, scales = "free") 
 
