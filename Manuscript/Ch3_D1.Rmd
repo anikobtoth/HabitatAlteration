@@ -297,17 +297,9 @@ specs <- list(geom_hline(yintercept = 1, col = "gray"),
 # Agg/seg strength in bird and bat pairs
 
 d <- d2.mag.all
-
-d <- d %>% filter(!is.na(diet.match))
-o <- d[d$type == "observed",]
-e <- d[d$type == "expected",]
-m <- merge(e, o, by = c("Taxon_status", "diet.match", "pnz"), all = T)
-avmag <- m %>% select(Taxon_status, diet.match, pnz, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
-  mutate(obsDexp = observed/expected)
-avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
-avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
-
-obsexp <- dcast(subsample+taxon+diet.match+pnz~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
+# prepare data
+obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, pnz)
+ #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz)
 
 anno <- obsexp %>% group_by(taxon, pnz) %>% 
   summarise() %>% ungroup() %>% 
@@ -324,18 +316,11 @@ __Figure 2.__ Strength of aggregations and segregations in bat and bird pairs. E
 ```{r, echo=FALSE, include = T, fig.height=8, fig.width=8}
 ## Shared/Unique
 d <- d2.mag.catp
+obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cat.pair, pnz)
 
-d <- d %>% filter(!is.na(diet.match))
-o <- d[d$type == "observed",]
-e <- d[d$type == "expected",]
-m <- merge(e, o, by = c("Taxon_status", "diet.match", "cat.pair", "pnz"), all = T)
-avmag <- m %>% select(Taxon_status, diet.match, cat.pair, pnz, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
-  mutate(obsDexp = observed/expected)
-avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
-avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
-
-obsexp <- dcast(subsample+taxon+diet.match+cat.pair+pnz~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
-
+# bayesian paired t-test on competing and non-competing pairs
+   # b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cat.pair, pnz)
+ 
 anno <- obsexp %>% group_by(cat.pair, taxon, pnz) %>% 
   summarise() %>% ungroup() %>% 
   mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
@@ -352,22 +337,10 @@ __Figure 3.__ Strength of aggregations and segregations comparing competing (yel
 # Synanthropic/Cosmopolitan/Restricted
 
 d <- d5.mag.catp
-
-d <- d %>% filter(!is.na(diet.match))
-o <- d[d$type == "observed",]
-e <- d[d$type == "expected",]
-m <- merge(e, o, by = c("Taxon_status", "diet.match", "cosmo.pair", "pnz"), all = T)
-avmag <- m %>% select(Taxon_status, diet.match, cosmo.pair, pnz, subsample = subsample.x, expected = avmag.x, observed = avmag.y) %>% 
-  mutate(obsDexp = observed/expected)
-avmag$taxon <- word(avmag$Taxon_status, 1, 1, sep = "_")
-avmag$status <- word(avmag$Taxon_status, 2, 2, sep = "_")
-
-obsexp <- dcast(subsample+taxon+diet.match+cosmo.pair+pnz~status, value.var = 'obsDexp', data = avmag, fun.aggregate = median)
-obsexp$ cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
-#n <- expand.grid(unique(obsexp$pnz), unique(obsexp$cosmo.pair)) %>% mutate(n = paste(.$Var2, .$Var1, sep = "_")) %>% pull(n) %>% expand.grid(unique(obsexp$taxon)) %>% mutate(n = paste(.$Var2, .$Var1, sep = "_")) %>% pull(n)
-#b <- besttest(obsexp, split.var = "diet.match", taxon, cosmo.pair, pnz) %>% purrr::map(setNames, n)
-#b <- purrr::map(b, ~.[!sapply(., is_null)])
-#s <- b %>% purrr::map(~purrr::map_dbl(., ~summary(.) %>% as.data.frame() %>% pull(`%>compVal`) %>% `[`(3)))
+obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cosmo.pair, pnz)
+obsexp$cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
+ # bayesian paired t-test on competing and non-competing pairs
+  # b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cosmo.pair, pnz)
 
 anno <- obsexp %>% filter(taxon == "bat") %>% group_by(pnz, cosmo.pair) %>% 
   summarise() %>% ungroup() %>% 
@@ -376,6 +349,7 @@ anno <- obsexp %>% filter(taxon == "bat") %>% group_by(pnz, cosmo.pair) %>%
 ggplot(obsexp %>% filter(taxon == "bat"), aes(x = unaltered, y = altered)) + 
   specs+ facet_wrap(pnz~cosmo.pair, scales = "free", ncol = 6, nrow = 2) +
   geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
+
 
 ```
 
