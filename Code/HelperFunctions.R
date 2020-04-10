@@ -1,6 +1,7 @@
 library(sp)
 library(BEST)
 library(BayesianFirstAid)
+library(rlang)
 
 ##### DATA MANIPULATION #####
 ### Change character vectors in df to factors
@@ -67,6 +68,29 @@ matchbiogeo <- function(coords1, coords2) {
     
     return(list(keep1, keep2)) }
   }
+
+
+# Prepare for plotting - observed to expected ratios
+
+obsDexp <- function(d, split.var, data.var, ...){
+  group.vars <- enquos(...)
+  xvar<- quo(!! sym(paste0(data.var, ".x"))) 
+  yvar<- quo(!! sym(paste0(data.var, ".y"))) 
+  
+  quos_text <- function(qs) {
+    unlist(lapply(seq_along(qs), function(i) quo_text(qs[[i]])))}
+  
+  d <- d %>% filter(!is.na(diet.match)) %>% split(.[split.var])
+  m <- full_join(d[[1]], d[[2]], by = quos_text(group.vars))
+ 
+  obsexp <- m %>% select(!!!group.vars, subsample = subsample.x, expected = !!xvar, observed = !!yvar) %>% 
+    mutate(obsDexp = observed/expected) %>% 
+    separate(Taxon_status, c("taxon", "status"), sep = "_") %>%
+    select(-observed, -expected) %>% 
+    spread(status, value = obsDexp)
+  return(obsexp)
+}
+
 
 ##### ANALYSES ######
 # FETmP
@@ -235,21 +259,18 @@ besttest <- function(obsexp, split.var,  ...){
 
 bayesPairedTtest <- function(obsexp, split.var,  ...){
   group.vars <- enquos(...)
-  alt <- obsexp %>% split(.[split.var]) %>% 
-    purrr::map(~group_by(., !!! group.vars)) %>%
-    purrr::map(~group_map(.,~pull(., altered))) 
   
-  unalt <- obsexp %>% split(.[split.var]) %>% 
-    purrr::map(~group_by(., !!! group.vars)) %>%
-    purrr::map(~group_map(.,~pull(., unaltered))) 
-  
-  b <- list(unalt = map2(unalt$Different, unalt$Same, 
-                       function(x, y) if(all(x) != 0 && all(y) != 0 && length(x[!is.na(x)]) > 1 && length(y[!is.na(y)]) > 1) {
-                         return(bayes.t.test(x, y, paired = TRUE))
-                       } else {return(NULL)}), 
-          alt   = map2(alt$Different, alt$Same, 
-                       function(x, y) if(all(x) != 0 && all(y) != 0 && length(x[!is.na(x)]) > 1 && length(y[!is.na(y)]) > 1) {
-                         return(bayes.t.test(x, y, paired = TRUE))
-                       } else {return(NULL)}))
-   return(b)
+  data <- melt(obsexp) %>% spread(!!split.var, value)
+  n <- data %>% group_by(., !!! group.vars, variable) %>% summarise(placeholder = "") %>% unite(name, sep = "_") %>% pull(name)
+  b <- data %>% group_by(., !!! group.vars, variable) %>% 
+  group_map(~if(length(.$Different[!is.na(.$Different)]) > 1 && 
+                 length(.$Same[!is.na(.$Same)]) > 1) {
+    bayes.t.test(.$Different, .$Same, paired = TRUE)}
+    else{return(NULL)}, keep = TRUE) %>% setNames(n)
+  b <- purrr::map(b, ~.[!sapply(., is_null)])
+  return(b)
 }
+
+
+
+
