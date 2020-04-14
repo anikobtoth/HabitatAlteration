@@ -45,7 +45,7 @@ specs <- list(geom_hline(yintercept = 1, col = "gray"),
 # FIGURE 2: Mag.all ####
 d <- d2.mag.all
 obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, pnz)
- b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz)
+ #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz)
 
 anno <- obsexp %>% group_by(taxon, pnz) %>% 
   summarise() %>% ungroup() %>% 
@@ -61,7 +61,7 @@ d <- d2.mag.catp
 obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cat.pair, pnz)
 
 # bayesian paired t-test on competing and non-competing pairs
-   # b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cat.pair, pnz)
+ b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cat.pair, pnz)
  
 anno <- obsexp %>% group_by(cat.pair, taxon, pnz) %>% 
   summarise() %>% ungroup() %>% 
@@ -77,7 +77,7 @@ d <- d5.mag.catp
 obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cosmo.pair, pnz)
 obsexp$cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
  # bayesian paired t-test on competing and non-competing pairs
-  # b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cosmo.pair, pnz)
+ b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cosmo.pair, pnz)
 
 anno <- obsexp %>% filter(taxon == "bat") %>% group_by(pnz, cosmo.pair) %>% 
   summarise() %>% ungroup() %>% 
@@ -128,7 +128,24 @@ box()
 
 
 ### FIGURE S2: Explanation for plots #####
-## TODO
+meansx = c(0.8, 1, 1.2, 1.2, 1.2, 1, 0.8, 0.8)
+meansy = c(0.8, 0.8, 0.8, 1, 1.2, 1.2, 1.2, 1 )
+d <- map2(meansx, meansy, function(x, y) data.frame(unaltered=rnorm(n= 100, mean = x, sd = 0.2), altered = rnorm(n = 100, mean = y, sd = 0.2))) %>% 
+  setNames(c("bl", "bc", "br", "mr", "tr", "tc", "tl", "ml")) %>% bind_rows(.id = "cluster")
+d$group[d$cluster %in% c("bl", "tr")] <- "Both-Unchanged"
+d$group[d$cluster %in% c("br", "tl")] <- "Both-Reversed"
+d$group[d$cluster %in% c("bc", "tc")] <- "Altered"
+d$group[d$cluster %in% c("mr", "ml")] <- "Unaltered"
+
+d$diet[d$cluster %in% c("bc", "br", "bl", "ml")] <- "Different"
+d$diet[d$cluster %in% c("mr", "tc", "tl", "tr")] <- "Same"
+
+ggplot(d, aes(x = unaltered, y = altered)) + 
+  geom_point(aes(col = diet, fill = diet), size = 0.8) + stat_ellipse(geom= "polygon", alpha = 0.3, aes(col = diet, fill = diet)) + 
+  facet_wrap(~group, scales = "free") +
+  geom_rug(aes(col = diet), alpha = 0.5) + scale_color_manual(values = colors2) +
+  scale_fill_manual(values = colors2)
+
 ## FIGURE S3: Prop.all ####
 d <- d2.prop.all
 obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match)
@@ -151,11 +168,11 @@ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.mat
 d <- d5.prop.catp
 obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match, cosmo.pair)
  b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cosmo.pair)
-
+ 
+obsexp$cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
 ggplot(obsexp, aes(x = unaltered, y = altered)) + 
   specs+  
-  facet_wrap(taxon~cosmo.pair, scales = "free") 
-
+  facet_wrap(taxon~cosmo.pair, scales = "free", ncol = 6, nrow = 2) 
 
 ## FIGURE S6: Altered habitat types ########
 
@@ -236,6 +253,7 @@ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.pair, fill = diet.pair
   scale_colour_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70)) +
   scale_fill_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70))
 
-#####
+# TABLE S1: Sig tests ####
+## TODO
 #####
 #####
