@@ -149,11 +149,11 @@ ggplot(d, aes(x = unaltered, y = altered)) +
 ## FIGURE S3: Prop.all ####
 d <- d2.prop.all
 obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match)
- b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon)
+ #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon)
 
 ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
   specs+ 
-  facet_grid(taxon~., scales = "fixed") 
+  facet_grid(taxon~., scales = "fixed") + geom_abline(slope = 1, intercept = 0, lty = 2, col = "gray")
 
 ## FIGURE S4: Prop shared/unique cat.pair #### 
 d <- d2.prop.catp
