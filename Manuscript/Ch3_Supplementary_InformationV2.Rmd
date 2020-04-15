@@ -7,7 +7,6 @@ author:
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
   bookdown::word_document2: default
-  bookdown::html_document2: default
 bibliography: References.bib
 csl: ecology-letters.csl
 ---
@@ -101,7 +100,7 @@ specs <- list(geom_hline(yintercept = 1, col = "gray"),
 ```
 
 
-```{r, echo = F, message = FALSE, include = TRUE, fig.height=4, fig.width=8}
+```{r, echo = F, message = FALSE, include = TRUE, fig.height=4, fig.width=4}
 meansx = c(0.8, 1, 1.2, 1.2, 1.2, 1, 0.8, 0.8)
 meansy = c(0.8, 0.8, 0.8, 1, 1.2, 1.2, 1.2, 1 )
 d <- map2(meansx, meansy, function(x, y) data.frame(unaltered=rnorm(n= 100, mean = x, sd = 0.2), altered = rnorm(n = 100, mean = y, sd = 0.2))) %>% 
@@ -118,7 +117,7 @@ ggplot(d, aes(x = unaltered, y = altered)) +
   geom_point(aes(col = diet, fill = diet), size = 0.8) + stat_ellipse(geom= "polygon", alpha = 0.3, aes(col = diet, fill = diet)) + 
   facet_wrap(~group, scales = "free") +
   geom_rug(aes(col = diet), alpha = 0.5) + scale_color_manual(values = colors2) +
-  scale_fill_manual(values = colors2)
+  scale_fill_manual(values = colors2) + theme(legend.position = "none")
 ```
 
 __Figure S2.__ Hypothetical scenarios of association differences in competing vs non-competing pairs. In each panel, competing and non-competing pairs (yellow and dark blue features, respectively) are offset on either the x-axis (unaltered sites), the y-axis (altered sites), or both. When there is an offset on both axes, it is possible for the altered axis to exhibit the same relationship as the unaltered axis (bottom left), or the opposite relationship (top right). Habitat alteration may also create an offset when unaltered sites have none (top left), or they can remove a pattern that is exhibited in unaltered sites (bottom right). A fifth possible scenario, no offset between the ellipses, is not shown, and indicates no effect of competition in either type of site. 
@@ -150,7 +149,7 @@ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.mat
 
 __Figure S4.__  Proportion of aggregations comparing competing (yellow) and non-competing (dark blue) pairs when separated into shared-shared (left), shared-unique (middle), and unique-unique (right) pairs. Results from altered sites are plotted against results from unaltered sites. Refer to Fig. S2 and caption of Fig. S3 for more information.
 
-```{r, echo = F, message = FALSE, include = TRUE, fig.width = 9, fig.height=4}
+```{r, echo = F, message = FALSE, include = TRUE, fig.width = 9, fig.height=4, warning=FALSE}
 d <- d5.prop.catp
 obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match, cosmo.pair)
  #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cosmo.pair)
@@ -187,3 +186,12 @@ plot_grid(pbird+ theme(legend.position = c(1, 0), legend.justification = c(1, 0)
 ```
 
 __Figure S6.__ Percent of species in bird (left and center) and bat (right) guilds, represented by panels, that co-occur at individual altered sites by type of alteration. Each point is an altered site. There are no bird sites in the suburban category. Key to panels: C = carnivore; F = frugivore; I = insectivore; N = nectarivore; and G = granivore. Multiple letters indicate mixed feeders.
+
+__Table S1.__ Posterior distributions of difference in means, difference in standard deviation, and effect size derived from Bayesian paired t-tests. Tests compared the distribution of observed-to-expected ratios for competing and non-competing pairs, and values were paired by the randomization run that produced them. P-values are two tailed: competing pairs had significantly greater values than non-competing pairs when the P-value < 0.025 and significantly smaller values when the P-value > 0.0975.
+```{r, echo = FALSE}
+load("../Results/Bayes_Paired_Ttests/sigtests_summary_table.RData")
+knitr::kable(sigtests)
+
+```
+
+
