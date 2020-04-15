@@ -1,7 +1,6 @@
 ##    Habitat alteration reduces food competition and local    ###
 ##      functional diversity in Neotropical bats and birds.    ##### 
 ##                     Anikó B. Tóth                           ##
-
 # Submitted 1. Apr 2019 
 # Figures script
 # All figure scripts will run if Analysis_Script.R is run first;
@@ -61,7 +60,7 @@ d <- d2.mag.catp
 obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cat.pair, pnz)
 
 # bayesian paired t-test on competing and non-competing pairs
- b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cat.pair, pnz)
+ b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cat.pair)
  
 anno <- obsexp %>% group_by(cat.pair, taxon, pnz) %>% 
   summarise() %>% ungroup() %>% 
@@ -75,10 +74,10 @@ ggplot(obsexp, aes(x = unaltered, y = altered)) +
 
 d <- d5.mag.catp
 obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cosmo.pair, pnz)
-obsexp$cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
  # bayesian paired t-test on competing and non-competing pairs
- b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cosmo.pair, pnz)
+ b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cosmo.pair)
 
+obsexp$cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
 anno <- obsexp %>% filter(taxon == "bat") %>% group_by(pnz, cosmo.pair) %>% 
   summarise() %>% ungroup() %>% 
   mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
@@ -157,8 +156,9 @@ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.mat
 
 ## FIGURE S4: Prop shared/unique cat.pair #### 
 d <- d2.prop.catp
-obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match, cat.pair)
-  b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cat.pair)
+obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match, cat.pair) %>% 
+  mutate(pnz = "Proportion")
+  #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cat.pair)
  
 ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
   specs+  
@@ -166,8 +166,9 @@ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.mat
  
 ## FIGURE S5: Prop syn/cosmo/rest cosmo.pair #### 
 d <- d5.prop.catp
-obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match, cosmo.pair)
- b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, cosmo.pair)
+obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match, cosmo.pair) %>% 
+  mutate(pnz = "Proportion")
+ b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cosmo.pair)
  
 obsexp$cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
 ggplot(obsexp, aes(x = unaltered, y = altered)) + 
@@ -254,6 +255,25 @@ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.pair, fill = diet.pair
   scale_fill_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70))
 
 # TABLE S1: Sig tests ####
-## TODO
+l <- list.files("./Results/Bayes_Paired_Ttests", full.names = T)
+s <- list()
+t <- list()
+u <- list()
+for(i in seq_along(l)){
+  load(l[[i]])
+  s[[i]] <-  b %>% purrr::map(~.$stats %>% data.frame) %>% purrr::map(~.["mu_diff", c("mean", "sd", "X..comp")]) %>% bind_rows(.id = "id")
+  t[[i]] <-  b %>% purrr::map(~.$stats %>% data.frame) %>% purrr::map(~.["sigma_diff", c("mean", "sd", "X..comp")]) %>% bind_rows(.id = "id")
+  u[[i]] <-  b %>% purrr::map(~.$stats %>% data.frame) %>% purrr::map(~.["eff_size", c("mean", "sd", "X..comp")]) %>% bind_rows(.id = "id")
+}
+
+sigtests <- map2(s, t, merge, by="id", all = TRUE)
+sigtests <- map2(sigtests, u, merge, by = "id", all = TRUE)
+sigtests <- bind_rows(sigtests) %>% setNames(c("id", "mean_mu_diff", "sd_mu_diff", "p_mu_diff", "mean_sd_diff", "sd_sd_diff", "p_sd_diff", "mean_eff_size", "sd_eff_size", "p_eff_size"))
+sigtests$id <- substr(sigtests$id, start = 1, stop = nchar(sigtests$id)-1)
+sigtests <- sigtests %>% separate(id, c("status", "taxon", "type", "group"), sep = "_")
+sigtests$type[sigtests$type == ""] <- "Proportion"
+sigtests$group[sigtests$group %>% is.na] <- "all"
+sigtests$group[sigtests$group == ""] <- "all"
+
 #####
 #####

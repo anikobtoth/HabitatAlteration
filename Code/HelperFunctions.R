@@ -281,14 +281,14 @@ bayesPairedTtest <- function(obsexp, split.var,  ...){
   group.vars <- enquos(...)
   
   data <- melt(obsexp) %>% spread(!!split.var, value)
-  n <- data %>% group_by(., !!! group.vars, variable) %>% summarise(placeholder = "") %>% unite(name, sep = "_") %>% pull(name)
-  b <- data %>% group_by(., !!! group.vars, variable) %>% 
+  n <- data %>% group_by(., variable, !!! group.vars) %>% summarise(placeholder = "") %>% unite(name, sep = "_") %>% pull(name)
+  b <- data %>% group_by(., variable, !!! group.vars) %>% 
   group_map(~if(length(.$Different[!is.na(.$Different)]) > 1 && 
                  length(.$Same[!is.na(.$Same)]) > 1 &&
                 all(.$Different) != 0 && all(.$Same) != 0) {
     bayes.t.test(.$Different, .$Same, paired = TRUE)}
-    else{return(NULL)}, keep = TRUE) %>% setNames(n)
-  b <- purrr::map(b, ~.[!sapply(., is_null)])
+    else{return(NULL)}, keep = TRUE) %>% setNames(n) 
+  b <- b[!sapply(b, is_null)]
   return(b)
 }
 
