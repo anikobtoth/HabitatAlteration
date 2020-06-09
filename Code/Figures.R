@@ -28,7 +28,6 @@ plot_grid(p, get_legend(p1), rel_widths = c(1, .2))
 
 
 
-
 ### DIET OVERLAP ####
 
 colors2 <- c("#34008C", "#E8AC00")

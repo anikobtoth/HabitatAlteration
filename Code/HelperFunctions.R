@@ -63,8 +63,8 @@ matchbiogeo <- function(coords1, coords2) {
     dists <- apply(coords1, 1, function(x) spDistsN1(pts = as.matrix(dplyr::select(coords2, longitude, latitude)), pt = as.numeric(x[3:2]), longlat = TRUE))
     mindist <- min(max(apply(dists,1,min)), max(apply(dists, 2, min))) # take the maximum distance of the closest point of other type for each type of point, take the lesser of these.
     
-    keep1 <- coords1$siteid[which(apply(dists, 2, min)<=mindist)]
-    keep2 <- coords2$siteid[which(apply(dists, 1, min)<=mindist)]
+    keep1 <- coords1[which(apply(dists, 2, min)<=mindist), 1]
+    keep2 <- coords2[which(apply(dists, 1, min)<=mindist), 1]
     
     return(list(keep1, keep2)) }
   }
@@ -151,10 +151,27 @@ resamp <- function(PA, sites = 50, reps = 100){
   return(samp)
 }
 
+## Single run of FETmP
+FETmP <- function(Talt, Tunalt, altered, unaltered){
+  occurrences <- altered + unaltered
+  p <- choose(Talt, 0:altered) * choose(Tunalt, occurrences:unaltered) / choose(Talt+Tunalt, occurrences)
+  return(sum(p)-0.5*last(p))
+  
+}
+
+## FETmP along vectors
+FETmP_ <- function(Talt, Tunalt, altered, unaltered){
+  out <- numeric()
+  for(i in seq_along(Talt)){
+    out[i] <- FETmP(Talt[i], Tunalt[i], altered[i], unaltered[i])
+  }
+  return(out)
+}
+
 #### Forbes similarity ###
 # formats beta diversity results and organises them by altered and unaltered site pairings. 
 beta.types <- function(PAn, unalt_sites){
-  beta <- map(PAn, forbesMatrix) %>% map(as.dist, upper = F) %>% map2(.y = map(PAn, ~t(.)), dist2edgelist)
+  beta <- map(PAn, ochiaiMatrix) %>% map(as.dist, upper = F) %>% map2(.y = map(PAn, ~t(.)), dist2edgelist)
   beta <- bind_rows(beta, .id = 'taxon')
   beta$unalt1 <- beta$Sp1 %in% unalt_sites
   beta$unalt2 <- beta$Sp2 %in% unalt_sites
@@ -168,23 +185,66 @@ beta.types <- function(PAn, unalt_sites){
 }
 
 # Squares richness estimator, Alroy 2018
-squares<-function(n) {
-  n <- n[n>0] # removes any non-sampled species from calculation
+  squares<-function(n) {
+    n <- n[n>0] # removes any non-sampled species from calculation
+    S <- length(n)
+    N <- sum(n)
+    s1 <- length(which(n == 1))
+    if (s1 == S)
+      return(NA)
+    return(S + s1^2 * sum(n^2) / (N^2 - S * s1))
+  }
+  
+  rscale<-function(n,scale=2) {
+    s <- ceiling(cJ1(n))
+    q <- ceiling(s / scale)
+    m <- n
+    m[m > 2] <- 3
+    rarefy(m,q) / (1 - exp(lchoose(3 * s - 3,q) - lchoose(3 * s,q)))
+  }
+  
+## From John Alroy (2020)####
+
+### cj1 to replace squares
+
+cJ1rich<-function(n)	{
+  n <- n[n>0]
   S <- length(n)
-  N <- sum(n)
-  s1 <- length(which(n == 1))
+  s1 <- sum(n == 1)
   if (s1 == S)
     return(NA)
-  return(S + s1^2 * sum(n^2) / (N^2 - S * s1))
+  if (s1 == 0)
+    return(S)
+  l <- log(sum(n) / s1)
+  return((S + s1) / (1 - exp(-l) + l * exp(-l)))
 }
 
-rscale<-function(n,scale=2) {
-  s <- ceiling(squares(n))
-  q <- ceiling(s / scale)
-  m <- n
-  m[m > 2] <- 3
-  rarefy(m,q) / (1 - exp(lchoose(3 * s - 3,q) - lchoose(3 * s,q)))
+## Ochiai to replace the forbes index ####
+ochiai<-function(x,y)	{
+  if (is.numeric(x) && is.numeric(y) && min(x) == 0 && min(y) == 0 && length(x) == length(y))	{
+    a <- length(which((x * y) > 0))
+    b <- length(which(x > 0)) - a
+    c <- length(which(y > 0)) - a
+  } else	{
+    a <- length(na.omit(match(x,y)))
+    b <- length(x) - a
+    c <- length(y) - a
+  }
+  return(a / ((a + b) * (a + c))^0.5)
 }
+
+ochiaiMatrix<-function(x)	{
+  x[is.na(x)] <- 0
+  m <- matrix(nrow=ncol(x),ncol=ncol(x))
+  for (i in 1:ncol(x))
+    for (j in 1:ncol(x))
+      m[i,j] <- ochiai(x[,i],x[,j])
+  rownames(m) <- colnames(x)
+  colnames(m) <- colnames(x)
+  return(m)
+}
+
+
 
 ### Chao1 richness estimator
 chao1 <- function(n) {
@@ -291,7 +351,6 @@ bayesPairedTtest <- function(obsexp, split.var,  ...){
   b <- b[!sapply(b, is_null)]
   return(b)
 }
-
 
 
 

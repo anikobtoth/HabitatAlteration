@@ -6,7 +6,7 @@
 # Analysis script 
 
 source('./Code/HelperFunctions.R')
-source('./Code/Forbes_Index.R') # Alroy 2018
+#source('./Code/Forbes_Index.R') # Alroy 2018
 
 library("tidyverse")
 library("vegan")
@@ -28,10 +28,7 @@ load("./Data/sitedat_metadata.Rdata")
 # Site data #
 #load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/sitedat_meta_clim.RData")
 
-neotropics <- sitedat[sitedat$ecozone %in% c("Neotropic"),]$siteid
-unalt_sites <- sitedat[sitedat$altered_habitat == "",]$siteid 
-sitedat$status[sitedat$altered_habitat == ""] <- "Unaltered" 
-sitedat$status[!sitedat$altered_habitat == ""] <- "Altered" 
+unalt_sites <- sitedat[sitedat$altered_habitat == "",]$sample.no 
 
   ##### Guild Categories #####
   
@@ -62,16 +59,16 @@ sitedat$status[!sitedat$altered_habitat == ""] <- "Altered"
   
 ###### Richness - run using raw abundance data ####
 # can only be run on raw data because it requires a singleton count of abundances.
-# SQUARES
-squares <- map(PAn, map_dbl, rscale) %>% map(~split(., names(.) %in% unalt_sites)) %>% 
+# cJ1
+cJ1 <- map(PAn, map_dbl, cJ1rich) %>% map(~split(., names(.) %in% unalt_sites)) %>% 
   map(map, cbind) %>% map(map, data.frame) %>% map(bind_rows, .id = "status") %>% 
   bind_rows(.id = "taxon") %>% setNames(c("taxon", "status", "richness"))
-squares$status <- plyr::revalue(squares$status, c("FALSE" = "Altered", "TRUE" = "Unaltered"))
+cJ1$status <- plyr::revalue(cJ1$status, c("FALSE" = "Altered", "TRUE" = "Unaltered"))
 # summary stats
-squares %>% group_by(taxon, status) %>% summarise(mean.rich = mean(richness), median.rich = median(richness))
+cJ1 %>% group_by(taxon, status) %>% summarise(mean.rich = mean(richness), median.rich = median(richness))
 
 # test for significant difference between altered and unaltered
-squares %>% group_by(taxon) %>% summarise(w=wilcox.test(richness~status, paired=FALSE)$p.value)
+cJ1 %>% group_by(taxon) %>% summarise(w=wilcox.test(richness~status, paired=FALSE)$p.value)
 
 # CHAO 1
 chao <- map(PAn, map_dbl, chao1) %>% map(~split(., names(.) %in% unalt_sites)) %>% 
@@ -90,14 +87,14 @@ PAna <- PAn %>% map(~return(.[,!colnames(.) %in% unalt_sites])) # and altered si
 
 #### Match Biogeography ####
 meta <- sitedat %>% split(.$taxon)
-coords <- map(meta, select, c(siteid, latitude, longitude)) 
+coords <- map(meta, select, c(sample.no, latitude, longitude)) 
 
 # Remove unaltered or altered sites that are not near a site of the other type. This is done to ensure the two sets have similar biogoegraphical distributions.
-coords1 <- purrr::map2(coords, PAnu, function(x, y) x[x$siteid %in% colnames(y),])
-coords2 <- purrr::map2(coords, PAna, function(x, y) x[x$siteid %in% colnames(y),])
+coords1 <- purrr::map2(coords, PAnu, function(x, y) x[x$sample.no %in% colnames(y),])
+coords2 <- purrr::map2(coords, PAna, function(x, y) x[x$sample.no %in% colnames(y),])
 keep <- map2(coords1, coords2, matchbiogeo) %>% map(unlist)
 
-PAn <- map2(PAn, keep, function(x, y) return(x[,y]))
+PAn <- map2(PAn, keep, function(x, y) return(x[,as.character(y)]))
 PAn <- map(PAn, clean.empty, minrow = 1) # remove any species that now have no occurrences
 
 # recalculate alt/unalt split from new PAn
@@ -105,8 +102,8 @@ PAnu <- PAn %>% map(~return(.[,colnames(.) %in% unalt_sites]))
 PAna <- PAn %>% map(~return(.[,!colnames(.) %in% unalt_sites]))
 
 # coords of sites we kept, for plotting later.
-coords1.keep <- purrr::map2(coords, PAnu, function(x, y) x[x$siteid %in% colnames(y),])
-coords2.keep <- purrr::map2(coords, PAna, function(x, y) x[x$siteid %in% colnames(y),])
+coords1.keep <- purrr::map2(coords, PAnu, function(x, y) x[x$sample.no %in% colnames(y),])
+coords2.keep <- purrr::map2(coords, PAna, function(x, y) x[x$sample.no %in% colnames(y),])
 
 ### Beta - run using presence-absence, biogeo matched data ####
 
@@ -138,9 +135,9 @@ occ %>% group_by(taxon) %>% summarise(
 
 #### Composition - run using presence-absence, biogeo matched data ####
 
-dist <- map(PAn, forbesMatrix) %>% map(as.dist, upper = F) %>% map(~return(1-.)) 
+dist <- map(PAn, ochiaiMatrix) %>% map(as.dist, upper = F) %>% map(~return(1-.)) 
 ord <- map(dist, cmdscale, k = 2) %>% map(data.frame)
-ord <- map(ord, ~merge(., y = sitedat[,c(8:16)], all.x = T, all.y = F, by.x = 0, by.y = "siteid"))
+ord <- map(ord, ~merge(., y = sitedat, all.x = T, all.y = F, by.x = 0, by.y = "sample.no"))
 
 w <- numeric()
 for(j in 1:length(ord)){
@@ -166,8 +163,12 @@ PAna <- map(PAna, clean.empty)
 PAnu <- map(PAnu, clean.empty)
 
 ##### Functional Altered/unaltered analysis ####
+
+# no singletons
+PAn.ns <- map(PAn, clean.empty, minrow = 2)
+
 # Format data
-tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
+tables <- PAn.ns %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
   map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
 # observed
 obs <- purrr::map(tables, ~purrr::map(., function(x) simpairs(x) %>% dist2edgelist(x))) %>%
@@ -177,16 +178,16 @@ obs <- purrr::map(tables, ~purrr::map(., function(x) simpairs(x) %>% dist2edgeli
 ss1 <- map(tables, map_int, ncol)  
 rps <- 100
 
-ss.bat <- lapply(1:100, function(x) sample(c(rep(1, ss1$bat["altered"]), rep(2, ss1$bat["unaltered"]))))
-ss.bird <- lapply(1:100, function(x) sample(c(rep(1, ss1$bird["altered"]), rep(2, ss1$bird["unaltered"]))))
-# no singletons
-PAn.ns <- map(PAn, clean.empty, minrow = 2)
+ss.bat <- lapply(1:rps, function(x) sample(c(rep(1, ss1$bat["altered"]), rep(2, ss1$bat["unaltered"]))))
+ss.bird <- lapply(1:rps, function(x) sample(c(rep(1, ss1$bird["altered"]), rep(2, ss1$bird["unaltered"]))))
+
 # no replacement site subsampling
 bat.a <- lapply(ss.bat, function(x) PAn.ns[[1]][,which(x == 1)]) %>% lapply(clean.empty)
 bat.u <- lapply(ss.bat, function(x) PAn.ns[[1]][,which(x == 2)]) %>% lapply(clean.empty)
 bird.a <- lapply(ss.bird, function(x) PAn.ns[[2]][,which(x == 1)]) %>% lapply(clean.empty)
 bird.u <- lapply(ss.bird, function(x) PAn.ns[[2]][,which(x == 2)]) %>% lapply(clean.empty)
 
+ # Subsampling with replacement -- not used, 
   # bat.a <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["altered"]) 
   # bat.u <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["unaltered"])
   # bird.a <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["altered"])
@@ -300,6 +301,18 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
   d3.prop.catp <- out[out$diet.match == "Same",] %>% group_by(subsample, Taxon_status, diet.pair, diet.match, type, cat.pair) %>% 
     summarise(seg = percneg(Z.Score), agg = percpos(Z.Score), count = length(Z.Score))
+  
+  
+  
+# GLM approach ####
+  test <- out %>% 
+    select(type, subsample, Taxon_status, id, Z.Score, diet.match, cat.pair, cosmo.pair) %>% 
+    obsDexp( split.var = "type", data.var = "Z.Score", Taxon_status, id, diet.match, cat.pair, cosmo.pair)
+  
+  test$shared <- gregexpr("Shared", test$cat.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
+  test$synan <- gregexpr("synan", test$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
+  test$restr <- gregexpr("restr", test$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
+  
   
   
 #### Analysis of co-occurrence at altered habitats ####
