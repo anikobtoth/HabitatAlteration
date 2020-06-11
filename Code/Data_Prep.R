@@ -12,6 +12,8 @@ dat <- lapply(l, read.delim) %>% setNames(list.files("./Raw_Data", ".txt"))
 spp <- dat[grep("species", names(dat))] %>% bind_rows() %>% 
   select(species, life.form, individuals, samples, diet.1, diet.2, mass_g = mass..g.)
 
+rownames(spp) <-  gsub(" ", "_", spp$species)
+
 # Site metadata
 sitedat <- dat[grep("samples", names(dat))] %>% setNames(c("bat", "bird")) %>% bind_rows(.id = "taxon") %>% 
   select(taxon, sample.no, sample.name, country, ecozone, latitude, longitude, habitat, altered.habitat, MAT, MAP, richness)
@@ -45,4 +47,11 @@ cosmo <- map2(u, a, data.frame) %>%
     Tunalt = nsamp[taxon, "Unaltered"],
     cosmopolitan = FETmP_(Talt, Tunalt, altered, unaltered)
   )
+
+cosmo$group[qnorm(cosmo$cosmopolitan) < -1] <- "restricted"
+cosmo$group[qnorm(cosmo$cosmopolitan) > 1] <- "synanthropic"
+cosmo$group[is.na(cosmo$group)] <- "cosmopolitan"
+
+cosmo$group_abbr <- substr(cosmo$group, start = 1, stop = 5)
+rownames(cosmo) <- cosmo$name
 

@@ -302,14 +302,13 @@ percent.occupancy.by.guild <- function(t, gld, taxon, sitedat){
   }
   
   colnames(pr) <- gld
-  pr <- merge(pr, sitedat[,c("siteid", "altered_habitat")], by.x = 0, by.y = "siteid") %>% namerows
+  pr <- merge(pr, sitedat[,c("sample.no", "altered.habitat")], by.x = 0, by.y = "sample.no") %>% namerows
 
-  prm <- melt(pr, id.vars = "altered_habitat")
-  prm$altered_habitat <- factor(prm$altered_habitat, levels = c("cropland", "disturbed forest", 
-                                                                "fragment", "pasture", 
-                                                                "plantation", "rural", 
-                                                                "secondary forest", "suburban", 
-                                                                "urban", "unaltered")) %>%
+  prm <- melt(pr, id.vars = "altered.habitat")
+  prm$altered_habitat <- factor(prm$altered.habitat, levels = c("combined", "cropland", "disturbed forest", 
+                                                                "fragment", "inhabited area", "pasture", 
+                                                                "plantation", "secondary forest", 
+                                                                "unaltered")) %>%
     replace_na("unaltered")
   
     return(prm)
