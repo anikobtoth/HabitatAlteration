@@ -50,31 +50,31 @@ Our main analyses suggest that non-competing pairs co-occur less at altered site
 
 ```{r, echo = FALSE, include = TRUE, fig.height=5.5, fig.width = 7}
 load("../Data/coords.Rdata")
-load("../Data/original_coords.Rdata")
 
+### FIGURE S1: Maps ####
 par(mfrow = c(2,2), mar = c(0,0,0,0), oma = c(1,1,1,1))
-
-maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
-points(latitude~longitude, orig_coords1$bat, pch = 16, cex=.7, col = "dodgerblue")
-points(latitude~longitude, orig_coords2$bat, pch = 16, cex=.7, col = "red")
-mtext("Bats-original sites", side = 3, line = 1)
-box()
-
-maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
-points(latitude~longitude, orig_coords1$bird, pch = 16, cex=.7, col = "dodgerblue")
-points(latitude~longitude, orig_coords2$bird, pch = 16, cex=.7, col = "red")
-mtext("Birds-original sites", side = 3, line = 1)
-box()
 
 maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
 points(latitude~longitude, coords1$bat, pch = 16, cex=.7, col = "dodgerblue")
 points(latitude~longitude, coords2$bat, pch = 16, cex=.7, col = "red")
-mtext("Bats-included sites", side = 3, line = 1)
+mtext("Bats-original sites", side = 3, line = 1)
 box()
 
 maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
 points(latitude~longitude, coords1$bird, pch = 16, cex=.7, col = "dodgerblue")
 points(latitude~longitude, coords2$bird, pch = 16, cex=.7, col = "red")
+mtext("Birds-original sites", side = 3, line = 1)
+box()
+
+maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
+points(latitude~longitude, coords1.keep$bat, pch = 16, cex=.7, col = "dodgerblue")
+points(latitude~longitude, coords2.keep$bat, pch = 16, cex=.7, col = "red")
+mtext("Bats-included sites", side = 3, line = 1)
+box()
+
+maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
+points(latitude~longitude, coords1.keep$bird, pch = 16, cex=.7, col = "dodgerblue")
+points(latitude~longitude, coords2.keep$bird, pch = 16, cex=.7, col = "red")
 mtext("Birds-included sites", side = 3, line = 1)
 box()
 
@@ -85,7 +85,7 @@ __Figure S1.__ Maps of Neotropical bat and bird sites before (top) and after (bo
 
 
 ```{r, echo = FALSE}
-load("../Results/d2_d5_SummaryTables_100r_ns_nr_dm2.RData")
+load("../Results/d2_d5_summary_tables_nr_ns_100r.RData")
 colors2 <- c("#34008C", "#E8AC00")
 specs <- list(geom_hline(yintercept = 1, col = "gray"),
               geom_vline(xintercept = 1, col = "gray"),
@@ -167,18 +167,18 @@ __Figure S5.__ Proportion of aggregations comparing competing (yellow) and non-c
 ```{r, echo = FALSE, message=FALSE, warning=FALSE, include = TRUE, fig.height = 8, fig.width = 10}
 load("../Results/pr_bats_birds_percent_spp_supported_by_sites.RData")
 
-pbat <- ggplot(pr.bats, aes(x = altered_habitat, y = value, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
-  facet_wrap(variable~., nrow = 4, ncol = 1, scales = "free_y") + geom_jitter(width = 0.1, size = 0.3) +
-  panel_border(remove = F, colour = "black") + 
-  theme(axis.text.x = element_blank(), axis.title.x = element_blank()) + labs(y = "Percent of species co-occurring")
+pbat <- ggplot(pr.bat, aes(x = altered_habitat, y = value*100, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
+  facet_wrap(variable~., nrow = 4, ncol = 1, scales = "free_y") + geom_jitter(width = 0.15, size = 0.3) +
+  scale_fill_manual(values = c(gg_color_hue(9), "gray50")) +
+  theme(axis.text.x = element_blank()) + labs(y = "Percent of species co-occurring", x = "Habitat type")
 
-pbird <- ggplot(pr.birds, aes(x = altered_habitat, y = value, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
-  facet_wrap(variable~., nrow = 4, ncol = 2, scales = "free_y") + geom_jitter(width = 0.1, size = 0.3) +
-  panel_border(remove = F, colour = "black") + 
-  theme(axis.text.x = element_blank(), axis.title.x = element_blank()) + labs(y = "Percent of species co-occurring", fill = "Type of alteration") + 
-  scale_fill_manual(values = gg_color_hue(9), 
-                    limits = c("cropland", "disturbed forest", "fragment", "pasture", "plantation", "rural", "secondary forest", "suburban", "urban"),
-                    labels = c("cropland", "disturbed forest", "fragment", "pasture", "plantation", "rural", "secondary forest", "suburban", "urban"))
+
+pbird <- ggplot(pr.bird, aes(x = altered_habitat, y = value*100, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
+  facet_wrap(variable~., nrow = 4, ncol = 2, scales = "free_y") + geom_jitter(width = 0.15, size = 0.3) +
+  theme(axis.text.x = element_blank()) + labs(y = "Percent of species co-occurring", x = "Habitat type", fill = "Type of alteration") + 
+  scale_fill_manual(values = c(gg_color_hue(9), "gray50"), 
+                    limits = c("combined", "cropland", "disturbed forest", "fragment", "inhabited area", "pasture", "plantation", "secondary forest", "unaltered"),
+                    labels = c("combined", "cropland", "disturbed forest", "fragment", "inhabited area", "pasture", "plantation", "secondary forest", "unaltered"))
 
 plot_grid(pbird+ theme(legend.position = c(1, 0), legend.justification = c(1, 0), legend.text = element_text(size = 10)) + guides(fill=guide_legend(ncol=2)), 
           pbat+theme(legend.position="none"), ncol = 2, rel_widths = c(1.9, 1), labels = c("Birds", "Bats"))
