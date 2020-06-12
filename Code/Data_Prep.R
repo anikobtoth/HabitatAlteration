@@ -43,9 +43,10 @@ spp$guild[spp$diet.1 == "nectarivore" & spp$diet.2 == "granivore"] <- "NG"
 
 ##### Site metadata ####
 sitedat <- dat[grep("samples", names(dat))] %>% setNames(c("bat", "bird")) %>% bind_rows(.id = "taxon") %>% 
-  select(taxon, sample.no, sample.name, country, ecozone, latitude, longitude, habitat, altered.habitat, MAT, MAP, richness)
-sitedat$status[sitedat$altered.habitat == ""] <- "Unaltered" 
+  select(taxon, sample.no, sample.name, country, ecozone, latitude, longitude, habitat, altered.habitat, MAT, MAP, richness, fragment.size)
 sitedat$status[!sitedat$altered.habitat == ""] <- "Altered" 
+sitedat$status[sitedat$altered.habitat == "" | sitedat$fragment.size == "1000 - 10000 ha"] <- "Unaltered" 
+
 sitedat$siteid <- paste0("X", sitedat$sample.no)
 
 #### Occurrences ####
@@ -58,7 +59,7 @@ PAn <- dat[grep("register", names(dat))] %>%
 
 
 #### Calculate habitat preference ####
-unalt_sites <- sitedat[sitedat$altered.habitat == "",]$sample.no
+unalt_sites <- sitedat$sample.no[sitedat$status == "Unaltered"]
 
 nsamp <- table(sitedat$taxon, sitedat$status)
 
