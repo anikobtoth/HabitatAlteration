@@ -5,58 +5,34 @@
 # Submitted 18 July 2019 
 # Analysis script 
 
-source('./Code/HelperFunctions.R')
-#source('./Code/Forbes_Index.R') # Alroy 2018
-
 library(tidyverse)
 library(vegan)
 library(reshape2)
 library(stringi)
 library(parallel)
 
+## Load helper functions
+source('./Code/HelperFunctions.R')
+
+## Prep raw data
+source('./Code/Data_Prep.R')
+
 # Load Datasets ####
-# settings
-options(stringsAsFactors = FALSE)
-# abundance data (Neotropical bats and birds, raw abundance data)
-load("./Data/PA1_raw_abund_all.RData")
-PAn <- map(PAn, clean.empty) # remove empty rows.
-# species metadata
-load("./Data/Species_metadata.RData")
-load("./Data/cosmo_species_cosmopolitan_score.RData") # cosmopolitan category 
-# site metadata 
-load("./Data/sitedat_metadata.Rdata")
-# Site data #
-#load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/sitedat_meta_clim.RData")
+  # # settings
+  # options(stringsAsFactors = FALSE)
+  # # abundance data (Neotropical bats and birds, raw abundance data)
+  # load("./Data/PA1_raw_abund_all.RData")
+  # PAn <- map(PAn, clean.empty) # remove empty rows.
+  # # species metadata
+  # load("./Data/Species_metadata.RData")
+  # load("./Data/cosmo_species_cosmopolitan_score.RData") # cosmopolitan category 
+  # # site metadata 
+  # load("./Data/sitedat_metadata.Rdata")
+  # # Site data #
+  # #load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/sitedat_meta_clim.RData")
+  # 
+  # unalt_sites <- sitedat[sitedat$altered_habitat == "",]$sample.no 
 
-unalt_sites <- sitedat[sitedat$altered_habitat == "",]$sample.no 
-
-  ##### Guild Categories #####
-  
-  # redo guild categories
-  spp$diet.2[spp$diet.2 == ""] <- spp$diet.1[spp$diet.2 == ""]
-  spp$guild[spp$diet.1 == "invertivore" & spp$diet.2 == "invertivore"] <- "I"
-  spp$guild[spp$diet.1 == "invertivore" & spp$diet.2 == "frugivore"] <- "FI"
-  spp$guild[spp$diet.1 == "frugivore" & spp$diet.2 == "invertivore"] <- "FI"
-  spp$guild[spp$diet.1 == "nectarivore" & spp$diet.2 == "frugivore"] <- "FN"
-  spp$guild[spp$diet.1 == "frugivore" & spp$diet.2 == "nectarivore"] <- "FN"
-  spp$guild[spp$diet.1 == "nectarivore" & spp$diet.2 == "nectarivore"] <- "N"
-  spp$guild[spp$diet.1 == "frugivore" & spp$diet.2 == "frugivore"] <- "F"
-  spp$guild[spp$diet.1 == "invertivore" & spp$diet.2 == "carnivore"] <- "CI"
-  spp$guild[spp$diet.1 == "carnivore" & spp$diet.2 == "invertivore"] <- "CI"
-  spp$guild[spp$diet.1 == "carnivore" & spp$diet.2 == "carnivore"] <- "C"
-  spp$guild[spp$diet.1 == "invertivore" & spp$diet.2 == "piscivore"] <- "CI"
-  spp$guild[spp$diet.1 == "piscivore" & spp$diet.2 == "piscivore"] <- "C"
-  spp$guild[spp$diet.1 == "nectarivore" & spp$diet.2 == "invertivore"] <- "IN"
-  spp$guild[spp$diet.1 == "invertivore" & spp$diet.2 == "nectarivore"] <- "IN"
-  spp$guild[spp$diet.1 == "sanguinivore" & spp$diet.2 == "sanguinivore"] <- "S"
-  spp$guild[spp$diet.1 == "frugivore" & spp$diet.2 == "granivore"] <- "FG"
-  spp$guild[spp$diet.1 == "granivore" & spp$diet.2 == "frugivore"] <- "FG"
-  spp$guild[spp$diet.1 == "granivore" & spp$diet.2 == "granivore"] <- "G"
-  spp$guild[spp$diet.1 == "invertivore" & spp$diet.2 == "granivore"] <- "IG"
-  spp$guild[spp$diet.1 == "granivore" & spp$diet.2 == "invertivore"] <- "IG"
-  spp$guild[spp$diet.1 == "nectarivore" & spp$diet.2 == "granivore"] <- "NG"
-  
-  
 ###### Richness - run using raw abundance data ####
 # can only be run on raw data because it requires a singleton count of abundances.
 # cJ1
@@ -112,8 +88,9 @@ beta <- beta.types(PAn, unalt_sites)
 # summary stats
 b <- beta %>% group_by(taxon, unalt.pair) %>% summarise(mean = mean(Z.Score), median = median(Z.Score))
 # p - values
-beta %>% filter(unalt.pair != "Unaltered-Altered") %>% group_by(taxon) %>% summarise(w=wilcox.test(Z.Score[unalt.pair=="Altered-Altered"], Z.Score[unalt.pair=="Unaltered-Unaltered"], paired=FALSE)$p.value)
-
+beta %>% filter(unalt.pair != "Unaltered-Altered") %>% 
+  mutate(similarity = qnorm(Z.Score)) %>% split(.$taxon) %>% 
+  purrr::map(~wilcox.test(data = ., similarity~unalt.pair, paired=FALSE))
 #occupancy calculations (used later)
 occ.count <- map(PAn, t)  %>% map(data.frame) %>% map(~split(., rownames(.) %in% unalt_sites)) %>% 
   map(map, ~colSums(.)) %>% map(map, data.frame) %>% map(~merge(.[[1]], .[[2]], by = 0)) %>% map(setNames, c("name", "altered", "unaltered")) %>% bind_rows(.id = "taxon")
@@ -305,15 +282,21 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   
   
 # GLM approach ####
-  test <- out %>% 
+  glmdat <- out %>% 
     select(type, subsample, Taxon_status, id, Z.Score, diet.match, cat.pair, cosmo.pair) %>% 
     obsDexp( split.var = "type", data.var = "Z.Score", Taxon_status, id, diet.match, cat.pair, cosmo.pair)
   
-  test$shared <- gregexpr("Shared", test$cat.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
-  test$synan <- gregexpr("synan", test$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
-  test$restr <- gregexpr("restr", test$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
+  glmdat$shared <- gregexpr("Shared", glmdat$cat.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
+  glmdat$synan <- gregexpr("synan", glmdat$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
+  glmdat$restr <- gregexpr("restr", glmdat$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
   
+  bat <- glmdat %>% filter(taxon == "bat") %>% mutate(dietmatch = as.numeric(as.factor(diet.match))) %>% select(dietmatch, shared, synan, restr, altered, unaltered)
+  bird <- glmdat %>% filter(taxon == "bird") %>% mutate(dietmatch = as.numeric(as.factor(diet.match))) %>% select(dietmatch, shared, synan, restr, altered, unaltered)
   
+  bat.alt <- bat %>% select(-unaltered) %>% na.omit() %>% filter(!is.infinite(altered)) %>% scale(center = FALSE) %>% data.frame()
+  bat.unalt <-bat %>% select(-altered) %>% na.omit() %>% filter(!is.infinite(unaltered)) %>% scale(center = FALSE) %>% data.frame()
+  bird.alt <- bird %>% select(-unaltered) %>% na.omit() %>% filter(!is.infinite(altered)) %>% scale(center = FALSE) %>% data.frame()
+  bird.unalt <-bird %>% select(-altered) %>% na.omit() %>% filter(!is.infinite(unaltered)) %>% scale(center = FALSE) %>% data.frame()
   
 #### Analysis of co-occurrence at altered habitats ####
   # bats
