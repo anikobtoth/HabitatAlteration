@@ -2,12 +2,15 @@
 ## Outputs will be placed in ./Data folder and used in Analysis_Script.R
 library(reshape2)
 library(tidyverse)
-#source('./Code/HelperFunctions.R')
 
-l <- list.files("../Raw_Data", ".txt", full.names = T)
+## Adjust relative paths to compile environment.
+if(grepl(pattern = "Manuscript", getwd())){
+  rt <- ".."
+  }else{rt <- "."}
 
-dat <- lapply(l, read.delim) %>% setNames(list.files("../Raw_Data", ".txt"))
-
+file.path(rt, 'Code/HelperFunctions.R') %>% source()
+l <- file.path(rt, "Raw_Data") %>% list.files(".txt", full.names = T)
+dat <- lapply(l, read.delim) %>% setNames(file.path(rt, "Raw_Data") %>% list.files(".txt"))
 
 #### Species metadata ####
 spp <- dat[grep("species", names(dat))] %>% bind_rows() %>% 
