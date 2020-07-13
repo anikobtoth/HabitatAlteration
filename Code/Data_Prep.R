@@ -48,8 +48,7 @@ spp$guild[spp$diet.1 == "nectarivore" & spp$diet.2 == "granivore"] <- "NG"
 sitedat <- dat[grep("samples", names(dat))] %>% setNames(c("bat", "bird")) %>% bind_rows(.id = "taxon") %>% 
   select(taxon, sample.no, sample.name, country, ecozone, latitude, longitude, habitat, altered.habitat, MAT, MAP, richness, fragment.size)
 sitedat$status[!sitedat$altered.habitat == ""] <- "Altered" 
-sitedat$status[sitedat$altered.habitat == "" | sitedat$fragment.size == "1000 - 10000 ha"] <- "Unaltered" 
-
+sitedat$status[sitedat$altered.habitat == ""] <- "Unaltered" 
 sitedat$siteid <- paste0("X", sitedat$sample.no)
 
 #### Occurrences ####
@@ -87,3 +86,5 @@ cosmo$group[is.na(cosmo$group)] <- "cosmopolitan"
 cosmo$group_abbr <- substr(cosmo$group, start = 1, stop = 5)
 rownames(cosmo) <- cosmo$name
 
+#clear unneeded objects
+rm(a, u, dat, l, nsamp, rt)

@@ -17,22 +17,6 @@ source('./Code/HelperFunctions.R')
 ## Prep raw data
 source('./Code/Data_Prep.R')
 
-# Load Datasets ####
-  # # settings
-  # options(stringsAsFactors = FALSE)
-  # # abundance data (Neotropical bats and birds, raw abundance data)
-  # load("./Data/PA1_raw_abund_all.RData")
-  # PAn <- map(PAn, clean.empty) # remove empty rows.
-  # # species metadata
-  # load("./Data/Species_metadata.RData")
-  # load("./Data/cosmo_species_cosmopolitan_score.RData") # cosmopolitan category 
-  # # site metadata 
-  # load("./Data/sitedat_metadata.Rdata")
-  # # Site data #
-  # #load("~/Desktop/MacQuarie_PhD/Thesis/Chapter_3/R_Files/Data/sitedat_meta_clim.RData")
-  # 
-  # unalt_sites <- sitedat[sitedat$altered_habitat == "",]$sample.no 
-
 ###### Richness - run using raw abundance data ####
 # can only be run on raw data because it requires a singleton count of abundances.
 # cJ1
@@ -91,8 +75,9 @@ b <- beta %>% group_by(taxon, unalt.pair) %>% summarise(mean = mean(Z.Score), me
 beta %>% filter(unalt.pair != "Unaltered-Altered") %>% 
   mutate(similarity = qnorm(Z.Score)) %>% split(.$taxon) %>% 
   purrr::map(~wilcox.test(data = ., similarity~unalt.pair, paired=FALSE))
+
 #occupancy calculations (used later)
-occ.count <- map(PAn, t)  %>% map(data.frame) %>% map(~split(., rownames(.) %in% unalt_sites)) %>% 
+occ.count <- map(PAn, t) %>% map(data.frame) %>% map(~split(., rownames(.) %in% unalt_sites)) %>% 
   map(map, ~colSums(.)) %>% map(map, data.frame) %>% map(~merge(.[[1]], .[[2]], by = 0)) %>% map(setNames, c("name", "altered", "unaltered")) %>% bind_rows(.id = "taxon")
 occ.count$name <- stri_replace_all_regex(occ.count$name, "[.]", " ")
 
@@ -202,6 +187,12 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
 #### Add categorical data #####
   out$diet.Sp1 <- spp[out$Sp1,"guild"]
   out$diet.Sp2 <- spp[out$Sp2,"guild"]
+  
+  related <- c("C-CI", "CI-IG", "NF-NI", "I-NI", "CI-NI", "CI-I", "CI-FI", "CI-IN","F-FN", "FI-NF", "FI-NI", 
+        "FN-IN", "FI-I", "FI-FN", "FI-IN", "FN-N", "FG-FI", "FG-FN", "FG-IG", "FI-IG", "FG-G", "I-IN", "IN-N", 
+        "N-NI", "N-NF", "F-FI", "FG-NF", "F-FG", "G-IG", "I-IG","IG-IN") 
+  out <- out[-which(paste(out$diet.Sp1, out$diet.Sp2, sep = "-") %in% related),]
+  
   #out$diet.pair <- map2(out$diet.Sp1, out$diet.Sp2, function(x, y) c(x,y)) %>% map(sort) %>% map(paste, collapse = "-") %>% unlist()
   out$diet.match <- as.numeric(out$diet.Sp1 == out$diet.Sp2)
   out$diet.match[out$diet.match == 0] <- "Different"
@@ -282,21 +273,50 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   
   
 # GLM approach ####
-  glmdat <- out %>% 
-    select(type, subsample, Taxon_status, id, Z.Score, diet.match, cat.pair, cosmo.pair) %>% 
-    obsDexp( split.var = "type", data.var = "Z.Score", Taxon_status, id, diet.match, cat.pair, cosmo.pair)
+  gd <- out %>% mutate(score = pnorm(Z.Score)) %>% 
+    select(type, subsample, Taxon_status, id, score, diet.match, cat.pair, cosmo.pair) %>% 
+    obsDexp( split.var = "type", data.var = "score", Taxon_status, id, diet.match, cat.pair, cosmo.pair)
   
-  glmdat$shared <- gregexpr("Shared", glmdat$cat.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
-  glmdat$synan <- gregexpr("synan", glmdat$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
-  glmdat$restr <- gregexpr("restr", glmdat$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
+  #gd$shared <- gregexpr("Shared", gd$cat.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
+  #gd$synan <- gregexpr("synan", gd$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
+  #gd$restr <- gregexpr("restr", gd$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
   
-  bat <- glmdat %>% filter(taxon == "bat") %>% mutate(dietmatch = as.numeric(as.factor(diet.match))) %>% select(dietmatch, shared, synan, restr, altered, unaltered)
-  bird <- glmdat %>% filter(taxon == "bird") %>% mutate(dietmatch = as.numeric(as.factor(diet.match))) %>% select(dietmatch, shared, synan, restr, altered, unaltered)
+  #bat <- gd %>% filter(taxon == "bat") %>% mutate(dietmatch = as.numeric(as.factor(diet.match))) %>% select(dietmatch, shared, synan, restr, altered, unaltered)
+  #bird <- gd %>% filter(taxon == "bird") %>% mutate(dietmatch = as.numeric(as.factor(diet.match))) %>% select(dietmatch, shared, synan, restr, altered, unaltered)
   
-  bat.alt <- bat %>% select(-unaltered) %>% na.omit() %>% filter(!is.infinite(altered)) %>% scale(center = FALSE) %>% data.frame()
-  bat.unalt <-bat %>% select(-altered) %>% na.omit() %>% filter(!is.infinite(unaltered)) %>% scale(center = FALSE) %>% data.frame()
-  bird.alt <- bird %>% select(-unaltered) %>% na.omit() %>% filter(!is.infinite(altered)) %>% scale(center = FALSE) %>% data.frame()
-  bird.unalt <-bird %>% select(-altered) %>% na.omit() %>% filter(!is.infinite(unaltered)) %>% scale(center = FALSE) %>% data.frame()
+  #bat.alt <- bat %>% select(-unaltered) %>% na.omit() %>% filter(!is.infinite(altered)) %>% scale(center = FALSE) %>% data.frame()
+  #bat.unalt <-bat %>% select(-altered) %>% na.omit() %>% filter(!is.infinite(unaltered)) %>% scale(center = FALSE) %>% data.frame()
+  #bird.alt <- bird %>% select(-unaltered) %>% na.omit() %>% filter(!is.infinite(altered)) %>% scale(center = FALSE) %>% data.frame()
+  #bird.unalt <-bird %>% select(-altered) %>% na.omit() %>% filter(!is.infinite(unaltered)) %>% scale(center = FALSE) %>% data.frame()
+  
+  gd <- gd %>% pivot_longer(cols = c("altered", "unaltered"), names_to = "hab.type", values_to = "score")
+  bat <- gd %>% filter(taxon == "bat") %>% mutate(scaled.score = scale(score, center= FALSE), 
+                                                  log.sc.score = log(scaled.score)) %>% na.omit()
+  bird <- gd %>% filter(taxon == "bird") %>% mutate(scaled.score = scale(score, center= FALSE),
+                                                  log.sc.score = log(scaled.score)) %>% na.omit()
+  
+  interaction.plot(bat$hab.type, bat$diet.match, response = bat$log.sc.score)
+  interaction.plot(bird$hab.type, bird$diet.match, response = bird$log.sc.score)
+  
+  mbat <- glm(log.sc.score~diet.match*hab.type, data = bat)
+  mbird <- glm(log.sc.score~diet.match*hab.type, data = bird)
+  #  Anikos GLM approach (not needed anymore?) ####
+  out$score <- pnorm(out$Z.Score)
+  x <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.pair, type) %>%
+     summarise(avmag = mean(score), count = length(score))
+
+  obsexp <- obsDexp(x, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cosmo.pair)
+  glmdat <- obsexp %>% melt() %>% dcast(taxon+cosmo.pair+subsample+variable~diet.match, value.var = "value")
+  
+  glmdat$comp.diff <- glmdat$Same - glmdat$Different
+  bat <- glmdat %>% filter(taxon == "bat")
+  bird <- glmdat %>% filter(taxon == "bird")
+  
+  interaction.plot(bat$variable, bat$cosmo.pair, response = bat$comp.diff)
+  interaction.plot(bird$variable, bird$cosmo.pair, response = bird$comp.ratio)
+  
+  mbat <- glm(comp.diff~variable*cosmo.pair, data = bat)
+  mbird <- glm(comp.diff~variable*cosmo.pair, data = bird)
   
 #### Analysis of co-occurrence at altered habitats ####
   # bats
