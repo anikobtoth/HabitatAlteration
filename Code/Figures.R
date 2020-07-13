@@ -59,7 +59,7 @@ d <- d2.mag.catp
 obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cat.pair, pnz)
 
 # bayesian paired t-test on competing and non-competing pairs
- b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cat.pair)
+ #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cat.pair)
  
 anno <- obsexp %>% group_by(cat.pair, taxon, pnz) %>% 
   summarise() %>% ungroup() %>% 
@@ -74,7 +74,7 @@ ggplot(obsexp, aes(x = unaltered, y = altered)) +
 d <- d5.mag.catp
 obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cosmo.pair, pnz)
  # bayesian paired t-test on competing and non-competing pairs
- b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cosmo.pair)
+ #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cosmo.pair)
 
 obsexp$cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
 anno <- obsexp %>% filter(taxon == "bat") %>% group_by(pnz, cosmo.pair) %>% 
@@ -82,7 +82,7 @@ anno <- obsexp %>% filter(taxon == "bat") %>% group_by(pnz, cosmo.pair) %>%
   mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
 
 ggplot(obsexp %>% filter(taxon == "bat"), aes(x = unaltered, y = altered)) + 
-  specs+ facet_wrap(pnz~cosmo.pair, scales = "free", ncol = 6, nrow = 2) +
+  specs+ facet_wrap(cosmo.pair~pnz, scales = "free", ncol = 2, nrow = 6) +
   geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
 
 anno <- obsexp %>% filter(taxon == "bird") %>% group_by(pnz, cosmo.pair) %>% 
@@ -90,7 +90,7 @@ anno <- obsexp %>% filter(taxon == "bird") %>% group_by(pnz, cosmo.pair) %>%
   mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
 
 ggplot(obsexp %>% filter(taxon == "bird"), aes(x = unaltered, y = altered)) + 
-  specs+ facet_wrap(pnz~cosmo.pair, scales = "free", ncol = 6, nrow = 2)+
+  specs+ facet_wrap(cosmo.pair~pnz, scales = "free", ncol = 2, nrow = 6)+
   geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
