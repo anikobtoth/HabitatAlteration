@@ -85,7 +85,7 @@ __Figure S1.__ Maps of Neotropical bat and bird sites before (top) and after (bo
 
 
 ```{r, echo = FALSE}
-load("../Results/d2_d5_summary_tables_nr_ns_100r.RData")
+load("../Results/d2_d5_summary_tables_nr_ns_100r_relatedexcl.RData")
 colors2 <- c("#34008C", "#E8AC00")
 specs <- list(geom_hline(yintercept = 1, col = "gray"),
               geom_vline(xintercept = 1, col = "gray"),
