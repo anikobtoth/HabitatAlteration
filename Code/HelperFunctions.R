@@ -139,19 +139,38 @@ cont_table <- function(x){ #simpairs function, simpairs only out
   t$absSp1 <- t$samples - t$presSp1
   t$absSp2 <- t$samples - t$presSp2
   
-  t$presSp1absSp2 <- t$presSp1- t$presBoth
-  t$presSp2absSp1 <- t$presSp2- t$presBoth
+  #t$presSp1absSp2 <- t$presSp1- t$presBoth
+  #t$presSp2absSp1 <- t$presSp2- t$presBoth
   
-  t$absBoth <- t$samples - t$presBoth - t$presSp1absSp2 - t$presSp2absSp1
+  #t$absBoth <- t$samples - t$presBoth - t$presSp1absSp2 - t$presSp2absSp1
   
   return(t)
+}
+
+diet_cat <- function(x, spp, related = TRUE){
+  x$diet.Sp1 <- spp[x$Sp1,"guild"]
+  x$diet.Sp2 <- spp[x$Sp2,"guild"]
+  
+  rltd <- c("C-CI", "CI-IG", "NF-NI", "I-NI", "CI-NI", "CI-I", "CI-FI", "CI-IN","F-FN", "FI-NF", "FI-NI", 
+               "FN-IN", "FI-I", "FI-FN", "FI-IN", "FN-N", "FG-FI", "FG-FN", "FG-IG", "FI-IG", "FG-G", "I-IN", "IN-N", 
+               "N-NI", "N-NF", "F-FI", "FG-NF", "F-FG", "G-IG", "I-IG","IG-IN") 
+  if(!related) x <- x[!which(paste(x$diet.Sp1, x$diet.Sp2, sep = "-") %in% rltd),]
+  
+  x$diet.pair <- map2(x$diet.Sp1, x$diet.Sp2, function(x, y) c(x,y)) %>% map(sort) %>% map(paste, collapse = "-") %>% unlist()
+  x$diet.match <- as.numeric(x$diet.Sp1 == x$diet.Sp2)
+  x$diet.match[x$diet.match == 0] <- "Different"
+  x$diet.match[x$diet.match == 1] <- "Same"
+  x$diet.match[x$diet.pair %in% rltd] <- "Related"
+  
+  return(x)
+  
 }
 
 ##### ANALYSES ######
 # FETmP
 simpairs <- function(x){ #simpairs function, simpairs only out
   samples = ncol(x)  #S
-   z = matrix(nrow=nrow(x),ncol=nrow(x),data=0)
+   z = matrix(nrow=nrow(x),ncol=nrow(x),x=0)
   occs = array()
  
   #convert to P/A. Occs = rowsums of PA matrix.
@@ -219,7 +238,7 @@ beta.types <- function(PAn, unalt_sites){
   return(beta)
 }
 
-# Squares richness estimator, Alroy 2018
+# Squares richness estimator, Alroy 2018 ####
   squares<-function(n) {
     n <- n[n>0] # removes any non-sampled species from calculation
     S <- length(n)
@@ -238,9 +257,9 @@ beta.types <- function(PAn, unalt_sites){
     rarefy(m,q) / (1 - exp(lchoose(3 * s - 3,q) - lchoose(3 * s,q)))
   }
   
-## From John Alroy (2020)####
+## CJ1 From John Alroy (2020)####
 
-### cj1 to replace squares
+# cj1 to replace squares
 
 cJ1rich<-function(n)	{
   n <- n[n>0]
@@ -254,7 +273,7 @@ cJ1rich<-function(n)	{
   return((S + s1) / (1 - exp(-l) + l * exp(-l)))
 }
 
-## Ochiai to replace the forbes index ####
+## Ochiai similarity ####
 ochiai<-function(x,y)	{
   if (is.numeric(x) && is.numeric(y) && min(x) == 0 && min(y) == 0 && length(x) == length(y))	{
     a <- length(which((x * y) > 0))
@@ -278,7 +297,6 @@ ochiaiMatrix<-function(x)	{
   colnames(m) <- colnames(x)
   return(m)
 }
-
 
 
 ### Chao1 richness estimator
