@@ -119,19 +119,28 @@ for(j in 1:length(ord)){
 w
 
 
-#### Select shared species #####
+#### Format Data for Co-occurrence analysis #####
   # Remove empty rows from altered and unaltered tables
 PAna <- map(PAna, clean.empty) 
 PAnu <- map(PAnu, clean.empty)
-
-##### Functional Altered/unaltered analysis ####
 
 # no singletons
 PAn.ns <- map(PAn, clean.empty, minrow = 2)
 
 # Format data
+tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
+  map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
+
+# Contingency table
+contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>% 
+  bind_rows(.id = "taxon") %>% diet_cat(contables, spp, related = TRUE) %>% na.omit()
+
+## *** Run omega script here ***
+
+##### Functional FETmP analysis ####
 tables <- PAn.ns %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
   map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
+
 # observed
 obs <- purrr::map(tables, ~purrr::map(., function(x) simpairs(x) %>% dist2edgelist(x))) %>%
   purrr::map(bind_rows, .id = 'status') %>% bind_rows(.id = "taxon") %>% mutate(Taxon_status = paste(taxon, status, sep = "_"))
@@ -149,11 +158,6 @@ bat.u <- lapply(ss.bat, function(x) PAn.ns[[1]][,which(x == 2)]) %>% lapply(clea
 bird.a <- lapply(ss.bird, function(x) PAn.ns[[2]][,which(x == 1)]) %>% lapply(clean.empty)
 bird.u <- lapply(ss.bird, function(x) PAn.ns[[2]][,which(x == 2)]) %>% lapply(clean.empty)
 
- # Subsampling with replacement -- not used, 
-  # bat.a <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["altered"]) 
-  # bat.u <- resamp(PAn[[1]], reps = rps, sites = ss1$bat["unaltered"])
-  # bird.a <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["altered"])
-  # bird.u <- resamp(PAn[[2]], reps = rps, sites = ss1$bird["unaltered"])
 
 input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_unaltered", "bird_altered", "bird_unaltered"))
 
@@ -174,30 +178,10 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
    exp$status <- word(exp$Taxon_status, 2, 2, sep = "_")
    
    out <- bind_rows(list(expected = exp, observed = obs), .id = "type")
-     
- ### Collate results ###
-     ## For the output of this analysis 
-  # with reps = 100 (bird results are randomly subsampled to reduce data file size), 
-  # load results/output tables with the following code: 
-  #load("./Results/out_bat_100r_PAn3.RData")
-  #load("./Results/out_bird_randsamp_100r_PAn3_1.7m.RData")
-  
-  ## ***NOTE*** the output tables take up roughly 6 gigabytes of memory. 
   
 #### Add categorical data #####
-  out$diet.Sp1 <- spp[out$Sp1,"guild"]
-  out$diet.Sp2 <- spp[out$Sp2,"guild"]
-  
-  related <- c("C-CI", "CI-IG", "NF-NI", "I-NI", "CI-NI", "CI-I", "CI-FI", "CI-IN","F-FN", "FI-NF", "FI-NI", 
-        "FN-IN", "FI-I", "FI-FN", "FI-IN", "FN-N", "FG-FI", "FG-FN", "FG-IG", "FI-IG", "FG-G", "I-IN", "IN-N", 
-        "N-NI", "N-NF", "F-FI", "FG-NF", "F-FG", "G-IG", "I-IG","IG-IN") 
-  out <- out[-which(paste(out$diet.Sp1, out$diet.Sp2, sep = "-") %in% related),]
-  
-  #out$diet.pair <- map2(out$diet.Sp1, out$diet.Sp2, function(x, y) c(x,y)) %>% map(sort) %>% map(paste, collapse = "-") %>% unlist()
-  out$diet.match <- as.numeric(out$diet.Sp1 == out$diet.Sp2)
-  out$diet.match[out$diet.match == 0] <- "Different"
-  out$diet.match[out$diet.match == 1] <- "Same"
-  
+  out <- diet_cat(out, spp, related = FALSE)
+   
   out$cat.Sp1[out$Sp1 %in% uniquesp] <- "Unique"
   out$cat.Sp1[out$Sp1 %in% sharedsp] <- "Shared"
   out$cat.Sp2[out$Sp2 %in% uniquesp] <- "Unique"
@@ -277,29 +261,18 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
     select(type, subsample, Taxon_status, id, score, diet.match, cat.pair, cosmo.pair) %>% 
     obsDexp( split.var = "type", data.var = "score", Taxon_status, id, diet.match, cat.pair, cosmo.pair)
   
-  #gd$shared <- gregexpr("Shared", gd$cat.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
-  #gd$synan <- gregexpr("synan", gd$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
-  #gd$restr <- gregexpr("restr", gd$cosmo.pair) %>% sapply(function(x) if(x[1] == -1) return(0) else return(length(x)))
-  
-  #bat <- gd %>% filter(taxon == "bat") %>% mutate(dietmatch = as.numeric(as.factor(diet.match))) %>% select(dietmatch, shared, synan, restr, altered, unaltered)
-  #bird <- gd %>% filter(taxon == "bird") %>% mutate(dietmatch = as.numeric(as.factor(diet.match))) %>% select(dietmatch, shared, synan, restr, altered, unaltered)
-  
-  #bat.alt <- bat %>% select(-unaltered) %>% na.omit() %>% filter(!is.infinite(altered)) %>% scale(center = FALSE) %>% data.frame()
-  #bat.unalt <-bat %>% select(-altered) %>% na.omit() %>% filter(!is.infinite(unaltered)) %>% scale(center = FALSE) %>% data.frame()
-  #bird.alt <- bird %>% select(-unaltered) %>% na.omit() %>% filter(!is.infinite(altered)) %>% scale(center = FALSE) %>% data.frame()
-  #bird.unalt <-bird %>% select(-altered) %>% na.omit() %>% filter(!is.infinite(unaltered)) %>% scale(center = FALSE) %>% data.frame()
-  
-  gd <- gd %>% pivot_longer(cols = c("altered", "unaltered"), names_to = "hab.type", values_to = "score")
+  gd <- gd %>% pivot_longer(cols = c("altered", "unaltered"), names_to = "status", values_to = "score")
   bat <- gd %>% filter(taxon == "bat") %>% mutate(scaled.score = scale(score, center= FALSE), 
                                                   log.sc.score = log(scaled.score)) %>% na.omit()
   bird <- gd %>% filter(taxon == "bird") %>% mutate(scaled.score = scale(score, center= FALSE),
                                                   log.sc.score = log(scaled.score)) %>% na.omit()
   
-  interaction.plot(bat$hab.type, bat$diet.match, response = bat$log.sc.score)
-  interaction.plot(bird$hab.type, bird$diet.match, response = bird$log.sc.score)
+  interaction.plot(bat$status, bat$diet.match, response = bat$log.sc.score)
+  interaction.plot(bird$status, bird$diet.match, response = bird$log.sc.score)
   
-  mbat <- glm(log.sc.score~diet.match*hab.type, data = bat)
-  mbird <- glm(log.sc.score~diet.match*hab.type, data = bird)
+  mbat <- glm(log.sc.score~diet.match*status, data = bat)
+  mbird <- glm(log.sc.score~diet.match*status, data = bird)
+  
   #  Anikos GLM approach (not needed anymore?) ####
   out$score <- pnorm(out$Z.Score)
   x <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.pair, type) %>%
