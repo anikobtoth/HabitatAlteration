@@ -129,13 +129,21 @@ PAn.ns <- map(PAn, clean.empty, minrow = 2)
 
 # Format data
 tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
-  map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
+  map(map, ~t(.)) %>% map(map, clean.empty, minrow = 4) %>% purrr::map(setNames, c("altered", "unaltered"))
 
 # Contingency table
 contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>% 
-  bind_rows(.id = "taxon") %>% diet_cat(contables, spp, related = TRUE) %>% na.omit()
+  bind_rows(.id = "taxon") %>% diet_cat(spp, related = TRUE) %>% na.omit()
 
-## *** Run omega script here ***
+# Calculate omega 
+## default main effects, no bagging, no related
+out_bat <- omega(contables, taxon = "bat") 
+out_bird <- omega(contables, taxon = "bird")
+
+## main effects, bagging, no related
+out_bat_bag <- omega(contables, taxon = "bat", bagging = TRUE) 
+out_bird_bag <- omega(contables, taxon = "bird", bagging = TRUE)
+
 
 ##### Functional FETmP analysis ####
 tables <- PAn.ns %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
