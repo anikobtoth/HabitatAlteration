@@ -65,6 +65,7 @@ indep_drw <- function(data, reps = 10, pairs){
 # omega
 omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = FALSE, reps = 100) {
   ## Prep data ##
+  message("Preparing data")
   data <- contables %>% filter(taxon == taxon)
   if(related){
     data$diet.match[data$diet.match=='Related'] <- 'Same'   #related diets coded as competing
@@ -76,6 +77,7 @@ omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = F
   data$xx <- as.numeric(interaction(factor(data$status),factor(data$diet.match)))
   
   ##  Define models ##
+  message("Defining models")
   if(interaction){
     jags.params <- c(paste0('av.ln.omega[',1:4,']'),paste0('sigma[',1:4,']'))
     jags.inits <- function() {
@@ -132,6 +134,7 @@ omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = F
     
     set.seed(123)
     jags.fit <- list() # container for fitted models
+    message("Running bagged estimates")
     
     for(i in 1:reps) {
       
@@ -161,7 +164,7 @@ omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = F
      }
       jags.fit[[i]] <- jags.parallel(data = jags.data, inits = jags.inits, 
                             parameters.to.save = jags.params, model.file = jags.model,
-                            n.chains = 3, n.iter = 50000, n.burnin = 10000, n.thin = 100)
+                            n.chains = 3, n.iter = 50000, n.burnin = 10000, n.thin = 100, n.cluster = detectCores()*.75)
     }
     
     if(interaction){
@@ -171,9 +174,6 @@ omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = F
                    "omega-Altered_Same", "omega-Unaltered_Same", "deviance-all", 
                    "sigma-Altered_Different", "sigma-Unaltered_Different", 
                    "sigma-Altered_Same", "sigma-Unaltered_Same"))
-      
-      out <- out %>% pivot_longer(cols = 2:10, names_to = "Group", values_to= "avg.ln.omega") %>% 
-        separate(Group, into = c("parameter", "status_dietmatch"), sep = "-")
       
     }else{
       out <- jags.fit %>% map(~as.mcmc(.) %>% as.matrix() %>% as.data.frame()) %>% 
@@ -185,12 +185,12 @@ omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = F
                `omega-Altered_Different` = avg.ln.omega + altered, 
                `omega-Altered_Same` = avg.ln.omega + altered + same) %>% 
         select(-altered, -avg.ln.omega, -same)
-      
-      out <- out %>% pivot_longer(cols = 2:10, names_to = "Group", values_to= "value") %>%
-        separate(Group, into = c("parameter", "status_dietmatch"), sep = "-")
-      
     }
+    out <- out %>% pivot_longer(cols = 2:10, names_to = "Group", values_to= "value") %>%
+      separate(Group, into = c("parameter", "status_dietmatch"), sep = "-")
+    
   }else{
+    message("Running full estimates")
     temp <- data
     if(!related) temp <- temp %>% filter(diet.match != "Similar")
     
@@ -211,31 +211,35 @@ omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = F
                              xx = temp$xx)             # index
     }
     
-    jags.fit[[i]] <- jags.parallel(data = jags.data, inits = jags.inits, 
+    jags.fit <- jags.parallel(data = jags.data, inits = jags.inits, 
                                    parameters.to.save = jags.params, model.file = jags.model,
-                                   n.chains = 3, n.iter = 50000, n.burnin = 10000, n.thin = 100)
-    
+                                   n.chains = 3, n.iter = 50000, n.burnin = 10000, n.thin = 100, 
+                                   n.cluster = detectCores()*.75)
+  
+  message("Formatting posteriors")
+  
   out <- as.mcmc(jags.fit) %>% as.matrix() %>% as.data.frame()
   
   if(interaction){
-    out <- out %>% setNames(c("omega-Altered_Different", "omega-Unaltered_Different", 
-                              "omega-Altered_Same", "omega-Unaltered_Same", "deviance-all", 
-                              "sigma-Altered_Different", "sigma-Unaltered_Different", 
-                              "sigma-Altered_Same", "sigma-Unaltered_Same")) %>%  
-           pivot_longer(cols = 2:10, names_to = "Group", values_to= "avg.ln.omega") %>% 
-           separate(Group, into = c("parameter", "status_dietmatch"), sep = "-")
+    n <- c("omega-Altered_Different", "omega-Unaltered_Different", 
+           "omega-Altered_Same", "omega-Unaltered_Same", "deviance-all", 
+           "sigma-Altered_Different", "sigma-Unaltered_Different", 
+           "sigma-Altered_Same", "sigma-Unaltered_Same")
+    out <- out %>% setNames(n) 
       
   }else{
-  out <- out %>% setNames(c("altered", "avg.ln.omega", "deviance", "same", "sigma-Altered_Different",
-                            "sigma-Unaltered_Different", "sigma-Altered_Same", "sigma-Unaltered_Same")) %>%  
-    mutate(`omega-Unaltered_Different` = avg.ln.omega,
-           `omega-Unaltered_Same` = avg.ln.omega + same,
-           `omega-Altered_Different` = avg.ln.omega + altered,
-           `omega-Altered_Same` = avg.ln.omega + altered + same) %>%
-    select(-altered, -avg.ln.omega, -same)
+    n <- c("altered", "avg.ln.omega", "deviance", "same", "sigma-Altered_Different",
+           "sigma-Unaltered_Different", "sigma-Altered_Same", "sigma-Unaltered_Same")
+    out <- out %>% setNames(n) %>%  
+     mutate(`omega-Unaltered_Different` = avg.ln.omega,
+            `omega-Unaltered_Same` = avg.ln.omega + same,
+            `omega-Altered_Different` = avg.ln.omega + altered,
+            `omega-Altered_Same` = avg.ln.omega + altered + same) %>%
+     select(-altered, -avg.ln.omega, -same)
+ 
+  }
   out <- out %>% pivot_longer(cols = 1:9, names_to = "Group", values_to= "value") %>%
-  separate(Group, into = c("parameter", "status_dietmatch"), sep = "-")
-       }
+    separate(Group, into = c("parameter", "status_dietmatch"), sep = "-")
   }
   
   return(out)
