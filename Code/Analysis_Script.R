@@ -2,7 +2,7 @@
 ##      functional diversity in Neotropical bats and birds.    ### 
 ##                     Anikó B. Tóth                           ##
 
-# Submitted 18 July 2019 
+# Submitted 1 November 2020 
 # Analysis script 
 
 library(tidyverse)

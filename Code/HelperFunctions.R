@@ -1,6 +1,4 @@
 library(sp)
-library(BEST)
-library(BayesianFirstAid)
 library(rlang)
 
 ##### DATA MANIPULATION #####
@@ -366,43 +364,4 @@ percent.occupancy.by.guild <- function(t, gld, taxon, sitedat){
   
     return(prm)
 }
-
-# Randomization significance test ######
-
-besttest <- function(obsexp, split.var,  ...){
-  group.vars <- enquos(...)
-  alt <- obsexp %>% split(.[split.var]) %>% 
-    purrr::map(~group_by(., !!! group.vars)) %>%
-    purrr::map(~group_map(.,~pull(., altered))) 
-    
-  unalt <- obsexp %>% split(.[split.var]) %>% 
-    purrr::map(~group_by(., !!! group.vars)) %>%
-    purrr::map(~group_map(.,~pull(., unaltered))) 
-  b <- list(unalt = map2(unalt$Different, unalt$Same, 
-                         function(x, y) if(all(x) != 0 && all(y) != 0 && length(x[!is.na(x)]) > 1 && length(y[!is.na(y)]) > 1) {
-                           return(BESTmcmc(x, y))
-                           } else {return(NULL)}), 
-            alt   = map2(alt$Different, alt$Same, 
-                         function(x, y) if(all(x) != 0 && all(y) != 0 && length(x[!is.na(x)]) > 1 && length(y[!is.na(y)]) > 1) {
-                           return(BESTmcmc(x, y))
-                           } else {return(NULL)}))
-  return(b)
-}
-
-bayesPairedTtest <- function(obsexp, split.var,  ...){
-  group.vars <- enquos(...)
-  
-  data <- melt(obsexp) %>% spread(!!split.var, value)
-  n <- data %>% group_by(., variable, !!! group.vars) %>% summarise(placeholder = "") %>% unite(name, sep = "_") %>% pull(name)
-  b <- data %>% group_by(., variable, !!! group.vars) %>% 
-  group_map(~if(length(.$Different[!is.na(.$Different)]) > 1 && 
-                 length(.$Same[!is.na(.$Same)]) > 1 &&
-                all(.$Different) != 0 && all(.$Same) != 0) {
-    bayes.t.test(.$Different, .$Same, paired = TRUE)}
-    else{return(NULL)}, keep = TRUE) %>% setNames(n) 
-  b <- b[!sapply(b, is_null)]
-  return(b)
-}
-
-
 
