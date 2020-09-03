@@ -145,6 +145,10 @@ out_bat_bag <- omega(contables, taxon = "bat", bagging = TRUE)
 out_bird_bag <- omega(contables, taxon = "bird", bagging = TRUE)
 
 
+# Code for plotting omega function output
+ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = avg.ln.omega, col = status_dietmatch)) + 
+  geom_density() + facet_wrap(parameter~., scales = "free_x")
+
 ##### Functional FETmP analysis ####
 tables <- PAn.ns %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
   map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
