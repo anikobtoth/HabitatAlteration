@@ -190,7 +190,7 @@ omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = F
       separate(Group, into = c("parameter", "status_dietmatch"), sep = "-")
     
   }else{
-    message("Running full estimates")
+    
     temp <- data
     if(!related) temp <- temp %>% filter(diet.match != "Similar")
     
@@ -210,7 +210,7 @@ omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = F
                              ds = temp$ds,
                              xx = temp$xx)             # index
     }
-    
+    message("Running full estimates")
     jags.fit <- jags.parallel(data = jags.data, inits = jags.inits, 
                                    parameters.to.save = jags.params, model.file = jags.model,
                                    n.chains = 3, n.iter = 50000, n.burnin = 10000, n.thin = 100, 

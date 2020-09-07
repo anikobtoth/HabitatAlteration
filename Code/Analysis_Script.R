@@ -139,6 +139,9 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
 ## default main effects, no bagging, no related
 out_bat <- omega(contables, taxon = "bat") 
 out_bird <- omega(contables, taxon = "bird")
+##  interaction, no bagging, no related
+out_bat <- omega(contables, taxon = "bat", interaction = TRUE)
+out_bird <- omega(contables, taxon = "bird", interaction = TRUE)
 
 ## main effects, bagging, no related
 out_bat_bag <- omega(contables, taxon = "bat", bagging = TRUE) 
@@ -146,7 +149,7 @@ out_bird_bag <- omega(contables, taxon = "bird", bagging = TRUE)
 
 
 # Code for plotting omega function output
-ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = avg.ln.omega, col = status_dietmatch)) + 
+ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch)) + 
   geom_density() + facet_wrap(parameter~., scales = "free_x")
 
 ##### Functional FETmP analysis ####
