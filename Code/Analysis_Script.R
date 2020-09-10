@@ -136,15 +136,15 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
   bind_rows(.id = "taxon") %>% diet_cat(spp, related = TRUE) %>% na.omit()
 
 # Calculate omega 
-## default main effects, no bagging, no related
-out_bat <- omega(contables, taxon = "bat") 
-out_bird <- omega(contables, taxon = "bird")
-##  interaction, no bagging, no related
-out_bat <- omega(contables, taxon = "bat", interaction = TRUE)
-out_bird <- omega(contables, taxon = "bird", interaction = TRUE)
+## interaction, no bagging, no related, clipped to median
+out_bat <- omega(contables, tax = "bat", interaction = TRUE) 
+out_bird <- omega(contables, tax = "bird", interaction = TRUE)
+##  interaction, no bagging, no related, all species
+out_bat <- omega(contables, taxon = "bat", interaction = TRUE, median = FALSE)
+out_bird <- omega(contables, taxon = "bird", interaction = TRUE, median = FALSE)
 
 ## main effects, bagging, no related
-out_bat_bag <- omega(contables, taxon = "bat", bagging = TRUE) 
+out_bat_bag <- omega(contables, taxon = "bat", bagging = TRUE, median = TRUE) 
 out_bird_bag <- omega(contables, taxon = "bird", bagging = TRUE)
 
 

@@ -63,10 +63,10 @@ indep_drw <- function(data, reps = 10, pairs){
 }
 
 # omega
-omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = FALSE, reps = 100, median = TRUE) {
+omega <- function(data, tax, related = FALSE, interaction = FALSE, bagging = FALSE, reps = 100, median = TRUE) {
   ## Prep data ##
   message("Preparing data")
-  data <- contables %>% filter(taxon == taxon)
+  data <- contables %>% filter(taxon == tax)
   
   if(median){
     occs <- rbind(data %>% select(status, Sp1, presSp1) %>% setNames(c("status", "sp", "pres")), 
