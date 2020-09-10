@@ -257,7 +257,7 @@ omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffec
   out <- out %>% pivot_longer(cols = 1:9, names_to = "Group", values_to= "value") %>%
     separate(Group, into = c("parameter", "status_dietmatch"), sep = "-")
   }
-  save(out, jags.fit, file = paste0("./Results/Omega/", type, "/out_jagsfit_", tax, "_median", medn, "_", reps, "reps_", type, "_bagging", bagging, ".RData"))
+  save(out, jags.fit, data, file = paste0("./Results/Omega/", type, "/out_jagsfit_", tax, "_median", medn, "_", reps, "reps_", type, "_bagging", bagging, ".RData"))
   return(out)
 }
 
