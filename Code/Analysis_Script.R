@@ -140,13 +140,16 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
 out_bat <- omega(contables, tax = "bat", interaction = TRUE) 
 out_bird <- omega(contables, tax = "bird", interaction = TRUE)
 ##  interaction, no bagging, no related, all species
-out_bat <- omega(contables, taxon = "bat", interaction = TRUE, median = FALSE)
-out_bird <- omega(contables, taxon = "bird", interaction = TRUE, median = FALSE)
+out_bat <- omega(contables, tax = "bat", interaction = TRUE, median = FALSE)
+out_bird <- omega(contables, tax = "bird", interaction = TRUE, median = FALSE)
 
-## main effects, bagging, no related
-out_bat_bag <- omega(contables, taxon = "bat", bagging = TRUE, median = TRUE) 
-out_bird_bag <- omega(contables, taxon = "bird", bagging = TRUE)
+## interaction, bagging, no related, clipped to median
+out_bat_bag <- omega(contables, tax = "bat", interaction = TRUE, bagging = TRUE) 
+out_bird_bag <- omega(contables, tax = "bird", interaction = TRUE, bagging = TRUE)
 
+## interaction, bagging, no related, all species
+out_bat_bag <- omega(contables, tax = "bat", interaction = TRUE, bagging = TRUE, median = FALSE) 
+out_bird_bag <- omega(contables, tax = "bird", interaction = TRUE, bagging = TRUE, median = FALSE)
 
 # Code for plotting omega function output
 ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch)) + 
