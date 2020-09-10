@@ -63,12 +63,12 @@ indep_drw <- function(data, reps = 10, pairs){
 }
 
 # omega
-omega <- function(data, tax, related = FALSE, interaction = FALSE, bagging = FALSE, reps = 100, median = TRUE) {
+omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffects"), bagging = FALSE, reps = 100, medn = TRUE) {
   ## Prep data ##
   message("Preparing data")
   data <- contables %>% filter(taxon == tax)
   
-  if(median){
+  if(medn){
     occs <- rbind(data %>% select(status, Sp1, presSp1) %>% setNames(c("status", "sp", "pres")), 
                   data %>% select(status, Sp2, presSp2) %>% setNames(c("status", "sp", "pres"))) %>% 
       unique()  
@@ -92,7 +92,7 @@ omega <- function(data, tax, related = FALSE, interaction = FALSE, bagging = FAL
   
   ##  Define models ##
   message("Defining models")
-  if(interaction){
+  if(type == "interaction"){
     jags.params <- c(paste0('av.ln.omega[',1:4,']'),paste0('sigma[',1:4,']'))
     jags.inits <- function() {
       list(av.ln.omega=rnorm(4),sigma = runif(4))
@@ -161,7 +161,7 @@ omega <- function(data, tax, related = FALSE, interaction = FALSE, bagging = FAL
         ncat <- length(unique(temp$xx))
       }
       
-      if(interaction){jags.data <- list(N = nrow(temp),           # number of pairs
+      if(type == "interaction"){jags.data <- list(N = nrow(temp),           # number of pairs
                         presSp1  = temp$presSp1,  # number of sites with species 1
                         absSp1   = temp$absSp1,   # number of sites without species 1
                         presSp2  = temp$presSp2,  # number of sites with species 2
@@ -182,7 +182,7 @@ omega <- function(data, tax, related = FALSE, interaction = FALSE, bagging = FAL
                             n.chains = 3, n.iter = 50000, n.burnin = 10000, n.thin = 100, n.cluster = detectCores()*.75)
     }
     
-    if(interaction){
+    if(type == "interaction"){
       out <- jags.fit %>% map(~as.mcmc(.) %>% as.matrix() %>% as.data.frame()) %>% 
         setNames(1:length(.)) %>% bind_rows(.id = "rep") %>%
         setNames(c("rep", "omega-Altered_Different", "omega-Unaltered_Different", 
@@ -209,7 +209,7 @@ omega <- function(data, tax, related = FALSE, interaction = FALSE, bagging = FAL
     temp <- data
     if(!related) temp <- temp %>% filter(diet.match != "Similar")
     
-    if(interaction){jags.data <- list(N = nrow(temp),           # number of pairs
+    if(type == "interaction"){jags.data <- list(N = nrow(temp),           # number of pairs
                                       presSp1  = temp$presSp1,  # number of sites with species 1
                                       absSp1   = temp$absSp1,   # number of sites without species 1
                                       presSp2  = temp$presSp2,  # number of sites with species 2
@@ -236,7 +236,7 @@ omega <- function(data, tax, related = FALSE, interaction = FALSE, bagging = FAL
   
   out <- as.mcmc(jags.fit) %>% as.matrix() %>% as.data.frame()
   
-  if(interaction){
+  if(type == "interaction"){
     n <- c("omega-Altered_Different", "omega-Unaltered_Different", 
            "omega-Altered_Same", "omega-Unaltered_Same", "deviance-all", 
            "sigma-Altered_Different", "sigma-Unaltered_Different", 
@@ -257,7 +257,7 @@ omega <- function(data, tax, related = FALSE, interaction = FALSE, bagging = FAL
   out <- out %>% pivot_longer(cols = 1:9, names_to = "Group", values_to= "value") %>%
     separate(Group, into = c("parameter", "status_dietmatch"), sep = "-")
   }
-  
+  save(out, jags.fit, file = paste0("./Results/Omega/", type, "/out_jagsfit_", tax, "_median", medn, "_", reps, "reps_", type, "_bagging", bagging, ".RData"))
   return(out)
 }
 
