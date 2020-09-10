@@ -129,7 +129,7 @@ PAn.ns <- map(PAn, clean.empty, minrow = 2)
 
 # Format data
 tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
-  map(map, ~t(.)) %>% map(map, clean.empty, minrow = 4) %>% purrr::map(setNames, c("altered", "unaltered"))
+  map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
 
 # Contingency table
 contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>% 

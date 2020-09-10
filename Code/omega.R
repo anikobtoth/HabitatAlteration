@@ -63,10 +63,24 @@ indep_drw <- function(data, reps = 10, pairs){
 }
 
 # omega
-omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = FALSE, reps = 100) {
+omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = FALSE, reps = 100, median = TRUE) {
   ## Prep data ##
   message("Preparing data")
   data <- contables %>% filter(taxon == taxon)
+  
+  if(median){
+    occs <- rbind(data %>% select(status, Sp1, presSp1) %>% setNames(c("status", "sp", "pres")), 
+                  data %>% select(status, Sp2, presSp2) %>% setNames(c("status", "sp", "pres"))) %>% 
+      unique()  
+    meds <- occs %>% group_by(status) %>% summarise(med = median(pres)) %>% pull(med)
+    
+    alt <- occs %>% filter(status == "altered" & pres > meds[1]) %>% pull("sp")
+    unalt <- occs %>% filter(status == "unaltered" & pres > meds[2]) %>% pull("sp")
+    
+    data <- rbind(data %>% filter(status == "altered" & Sp1 %in% alt & Sp2 %in% alt),
+                  data %>% filter(status == "unaltered" & Sp1 %in% unalt & Sp2 %in% unalt))
+    }
+  
   if(related){
     data$diet.match[data$diet.match=='Related'] <- 'Same'   #related diets coded as competing
   }else{
@@ -132,10 +146,11 @@ omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = F
     sp_altered <- length(unique(c(temp_altered$Sp1,temp_altered$Sp2)))
     sp_unaltered <- length(unique(c(temp_unaltered$Sp1,temp_unaltered$Sp2)))
     
-    set.seed(123)
     jags.fit <- list() # container for fitted models
     message("Running bagged estimates")
     
+    set.seed(123)
+     
     for(i in 1:reps) {
       
       ncat <- 2
@@ -211,6 +226,7 @@ omega <- function(data, taxon, related = FALSE, interaction = FALSE, bagging = F
                              xx = temp$xx)             # index
     }
     message("Running full estimates")
+    set.seed(123)
     jags.fit <- jags.parallel(data = jags.data, inits = jags.inits, 
                                    parameters.to.save = jags.params, model.file = jags.model,
                                    n.chains = 3, n.iter = 50000, n.burnin = 10000, n.thin = 100, 
