@@ -26,6 +26,45 @@ p <- plot_grid(p1+theme(legend.position = "none"),
                align = "lr")
 plot_grid(p, get_legend(p1), rel_widths = c(1, .2))
 
+## specs 
+colors <- c("#FFCB5C", "#FF791F", "#2F99DC", "#084887")
+specs <- list(geom_density(lwd = 1.4, alpha = .3),
+              facet_wrap(parameter~., scales = "free_x"), 
+              scale_color_manual(values = colors), 
+              scale_fill_manual(values = colors))
+
+# FIGURE 2: bat results
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingFALSE.RData")
+a1 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + specs
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingFALSE.RData")
+a2 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs + theme(legend.position = "none")
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingTRUE.RData")
+a3 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs + theme(legend.position = "none")
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingTRUE.RData")
+a4 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs + theme(legend.position = "none")
+
+legend <- get_legend(a1+ theme(legend.box.margin = margin(0, 0, 0, 5)))
+
+p1 <- plot_grid(a1 + theme(legend.position = "none"), a2, a3, a4, align = "hv", nrow = 2)
+plot_grid(p1, legend, nrow = 1, rel_widths = c(2, 0.5))
+
+# FIGURE 3: bird results
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingFALSE.RData")
+r1 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch)) + 
+  geom_density() + facet_wrap(parameter~., scales = "free_x")
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingTRUE.RData")
+r2 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch)) + 
+  geom_density() + facet_wrap(parameter~., scales = "free_x")
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingFALSE.RData")
+r3 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch)) + 
+  geom_density() + facet_wrap(parameter~., scales = "free_x")
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingTRUE.RData")
+r4 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch)) + 
+  geom_density() + facet_wrap(parameter~., scales = "free_x")
+
 
 
 ### DIET OVERLAP ####
