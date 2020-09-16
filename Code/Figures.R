@@ -26,14 +26,14 @@ p <- plot_grid(p1+theme(legend.position = "none"),
                align = "lr")
 plot_grid(p, get_legend(p1), rel_widths = c(1, .2))
 
-## specs 
+## specs #################
 colors <- c("#FFCB5C", "#FF791F", "#2F99DC", "#084887")
 specs <- list(geom_density(lwd = 1.4, alpha = .3),
               facet_wrap(parameter~., scales = "free_x"), 
               scale_color_manual(values = colors), 
               scale_fill_manual(values = colors))
 
-# FIGURE 2: bat results
+# FIGURE 2: bat results##############
 load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingFALSE.RData")
 a1 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + specs
 load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingFALSE.RData")
@@ -51,7 +51,7 @@ legend <- get_legend(a1+ theme(legend.box.margin = margin(0, 0, 0, 5)))
 p1 <- plot_grid(a1 + theme(legend.position = "none"), a2, a3, a4, align = "hv", nrow = 2)
 plot_grid(p1, legend, nrow = 1, rel_widths = c(2, 0.5))
 
-# FIGURE 3: bird results
+# FIGURE 3: bird results################
 load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingFALSE.RData")
 r1 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch)) + 
   geom_density() + facet_wrap(parameter~., scales = "free_x")
@@ -67,71 +67,51 @@ r4 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col =
 
 
 
-### DIET OVERLAP ####
 
-colors2 <- c("#34008C", "#E8AC00")
-specs <- list(geom_hline(yintercept = 1, col = "gray"),
-              geom_vline(xintercept = 1, col = "gray"),
-              stat_ellipse(geom= "polygon", alpha = 0.3, aes(col = diet.match, fill = diet.match)),
-              geom_point(aes(col = diet.match, fill = diet.match), size = 0.5), 
-              geom_rug(aes(col = diet.match), alpha = 0.5),
-              scale_colour_manual(values = colors2),
-              scale_fill_manual(values = colors2),
-              theme(legend.position = "none")
-)
-# FIGURE 2: Mag.all ####
-d <- d2.mag.all
-obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, pnz)
- #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz)
+# Figs 2 and 3 with extra labels: ################
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingFALSE.RData")
+bat_FF <- out
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingTRUE.RData")
+bat_FT <- out
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingFALSE.RData")
+bat_TF <- out
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingTRUE.RData")
+bat_TT <- out
 
-anno <- obsexp %>% group_by(taxon, pnz) %>% 
-  summarise() %>% ungroup() %>% 
-  mutate(label = paste0("  ", LETTERS[1:4]), x = -Inf, y = Inf)
+resbat <- bind_rows(list("common_only-bagged" = bat_TT, "common_only-not_bagged" = bat_TF, "all-bagged" = bat_FT, "all-not_bagged" = bat_FF), .id = "model") %>% 
+  separate(model, into = c("species", "bagging"), sep = "-") %>% 
+  mutate(species = factor(species, levels = c("common_only", "all")), 
+         bagging = factor(bagging, levels = c("not_bagged", "bagged")))
+ggplot(resbat %>% filter(parameter != "deviance"), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  geom_density(alpha = 0.25, lwd = 1) + 
+  facet_wrap(bagging~species+parameter, scales = "free", nrow = 2, ncol = 4) +
+  scale_color_manual(values = colors) + scale_fill_manual(values = colors) + ggtitle("Bats")
 
-ggplot(obsexp, aes(x = unaltered, y = altered)) +
-  specs + facet_wrap(pnz~taxon, scales = "free") +
-  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
 
-# FIGURE 3: Mag shared/unique cat.pair ####
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingFALSE.RData")
+bird_FF <- out
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingTRUE.RData")
+bird_FT <- out
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingFALSE.RData")
+bird_TF <- out
+load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingTRUE.RData")
+bird_TT <- out
 
-d <- d2.mag.catp
-obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cat.pair, pnz)
+resbird <- bind_rows(list("common_only-bagged" = bird_TT, "common_only-not_bagged" = bird_TF, "all-bagged" = bird_FT, "all-not_bagged" = bird_FF), .id = "model") %>% 
+  separate(model, into = c("species", "bagging"), sep = "-") %>% 
+  mutate(species = factor(species, levels = c("common_only", "all")), 
+         bagging = factor(bagging, levels = c("not_bagged", "bagged")))
 
-# bayesian paired t-test on competing and non-competing pairs
- #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cat.pair)
- 
-anno <- obsexp %>% group_by(cat.pair, taxon, pnz) %>% 
-  summarise() %>% ungroup() %>% 
-  mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
+ggplot(resbird %>% filter(parameter != "deviance"), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  geom_density(alpha = 0.25, lwd = 1) + 
+  facet_wrap(bagging~species+parameter, scales = "free", nrow = 2, ncol = 4) +
+  scale_color_manual(values = colors) + scale_fill_manual(values = colors) + ggtitle("Birds")
 
-ggplot(obsexp, aes(x = unaltered, y = altered)) + 
-  specs+ facet_wrap(cat.pair+taxon~pnz, scales = "free") +
-  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
 
-# FIGURES 4 and 5: Mag syn/cosmo/restr cosmo.pair ####
 
-d <- d5.mag.catp
-obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cosmo.pair, pnz)
- # bayesian paired t-test on competing and non-competing pairs
- #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cosmo.pair)
 
-obsexp$cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
-anno <- obsexp %>% filter(taxon == "bat") %>% group_by(pnz, cosmo.pair) %>% 
-  summarise() %>% ungroup() %>% 
-  mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
 
-ggplot(obsexp %>% filter(taxon == "bat"), aes(x = unaltered, y = altered)) + 
-  specs+ facet_wrap(cosmo.pair~pnz, scales = "free", ncol = 2, nrow = 6) +
-  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
-
-anno <- obsexp %>% filter(taxon == "bird") %>% group_by(pnz, cosmo.pair) %>% 
-  summarise() %>% ungroup() %>% 
-  mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
-
-ggplot(obsexp %>% filter(taxon == "bird"), aes(x = unaltered, y = altered)) + 
-  specs+ facet_wrap(cosmo.pair~pnz, scales = "free", ncol = 2, nrow = 6)+
-  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
-
+######
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
 ##  SUPPLEMENT 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -163,55 +143,6 @@ points(latitude~longitude, coords2.keep$bird, pch = 16, cex=.7, col = "red")
 mtext("Birds-included sites", side = 3, line = 1)
 box()
 
-
-### FIGURE S2: Explanation for plots #####
-meansx = c(0.8, 1, 1.2, 1.2, 1.2, 1, 0.8, 0.8)
-meansy = c(0.8, 0.8, 0.8, 1, 1.2, 1.2, 1.2, 1 )
-d <- map2(meansx, meansy, function(x, y) data.frame(unaltered=rnorm(n= 100, mean = x, sd = 0.2), altered = rnorm(n = 100, mean = y, sd = 0.2))) %>% 
-  setNames(c("bl", "bc", "br", "mr", "tr", "tc", "tl", "ml")) %>% bind_rows(.id = "cluster")
-d$group[d$cluster %in% c("bl", "tr")] <- "Both-Unchanged"
-d$group[d$cluster %in% c("br", "tl")] <- "Both-Reversed"
-d$group[d$cluster %in% c("bc", "tc")] <- "Altered"
-d$group[d$cluster %in% c("mr", "ml")] <- "Unaltered"
-
-d$diet[d$cluster %in% c("bc", "br", "bl", "ml")] <- "Different"
-d$diet[d$cluster %in% c("mr", "tc", "tl", "tr")] <- "Same"
-
-ggplot(d, aes(x = unaltered, y = altered)) + 
-  geom_point(aes(col = diet, fill = diet), size = 0.8) + stat_ellipse(geom= "polygon", alpha = 0.3, aes(col = diet, fill = diet)) + 
-  facet_wrap(~group, scales = "free") +
-  geom_rug(aes(col = diet), alpha = 0.5) + scale_color_manual(values = colors2) +
-  scale_fill_manual(values = colors2)
-
-## FIGURE S3: Prop.all ####
-d <- d2.prop.all
-obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match)
- #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon)
-
-ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
-  specs+ 
-  facet_grid(taxon~., scales = "fixed") + geom_abline(slope = 1, intercept = 0, lty = 2, col = "gray")
-
-## FIGURE S4: Prop shared/unique cat.pair #### 
-d <- d2.prop.catp
-obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match, cat.pair) %>% 
-  mutate(pnz = "Proportion")
-  #b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cat.pair)
- 
-ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
-  specs+  
-  facet_wrap(taxon~cat.pair, scales = "free") 
- 
-## FIGURE S5: Prop syn/cosmo/rest cosmo.pair #### 
-d <- d5.prop.catp
-obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match, cosmo.pair) %>% 
-  mutate(pnz = "Proportion")
- b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cosmo.pair)
- 
-obsexp$cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
-ggplot(obsexp, aes(x = unaltered, y = altered)) + 
-  specs+  
-  facet_wrap(taxon~cosmo.pair, scales = "free", ncol = 6, nrow = 2) 
 
 ## FIGURE S6: Altered habitat types ########
 
@@ -291,6 +222,128 @@ ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.pair, fill = diet.pair
   scale_colour_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70)) +
   scale_fill_hue(h = c(270, 20, 330, 60, 300, 110, 216), c = 100, l = c(50, 60, 90, 50, 80, 85, 70))
 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
+## OLD STUFF 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+### DIET OVERLAP ####
+
+colors2 <- c("#34008C", "#E8AC00")
+specs <- list(geom_hline(yintercept = 1, col = "gray"),
+              geom_vline(xintercept = 1, col = "gray"),
+              stat_ellipse(geom= "polygon", alpha = 0.3, aes(col = diet.match, fill = diet.match)),
+              geom_point(aes(col = diet.match, fill = diet.match), size = 0.5), 
+              geom_rug(aes(col = diet.match), alpha = 0.5),
+              scale_colour_manual(values = colors2),
+              scale_fill_manual(values = colors2),
+              theme(legend.position = "none")
+)
+# FIGURE 2: Mag.all ####
+d <- d2.mag.all
+obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, pnz)
+#b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz)
+
+anno <- obsexp %>% group_by(taxon, pnz) %>% 
+  summarise() %>% ungroup() %>% 
+  mutate(label = paste0("  ", LETTERS[1:4]), x = -Inf, y = Inf)
+
+ggplot(obsexp, aes(x = unaltered, y = altered)) +
+  specs + facet_wrap(pnz~taxon, scales = "free") +
+  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
+
+# FIGURE 3: Mag shared/unique cat.pair ####
+
+d <- d2.mag.catp
+obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cat.pair, pnz)
+
+# bayesian paired t-test on competing and non-competing pairs
+#b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cat.pair)
+
+anno <- obsexp %>% group_by(cat.pair, taxon, pnz) %>% 
+  summarise() %>% ungroup() %>% 
+  mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
+
+ggplot(obsexp, aes(x = unaltered, y = altered)) + 
+  specs+ facet_wrap(cat.pair+taxon~pnz, scales = "free") +
+  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
+
+# FIGURES 4 and 5: Mag syn/cosmo/restr cosmo.pair ####
+
+d <- d5.mag.catp
+obsexp <- obsDexp(d, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cosmo.pair, pnz)
+# bayesian paired t-test on competing and non-competing pairs
+#b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cosmo.pair)
+
+obsexp$cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
+anno <- obsexp %>% filter(taxon == "bat") %>% group_by(pnz, cosmo.pair) %>% 
+  summarise() %>% ungroup() %>% 
+  mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
+
+ggplot(obsexp %>% filter(taxon == "bat"), aes(x = unaltered, y = altered)) + 
+  specs+ facet_wrap(cosmo.pair~pnz, scales = "free", ncol = 2, nrow = 6) +
+  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
+
+anno <- obsexp %>% filter(taxon == "bird") %>% group_by(pnz, cosmo.pair) %>% 
+  summarise() %>% ungroup() %>% 
+  mutate(label = paste0("  ", LETTERS[1:12]), x = -Inf, y = Inf)
+
+ggplot(obsexp %>% filter(taxon == "bird"), aes(x = unaltered, y = altered)) + 
+  specs+ facet_wrap(cosmo.pair~pnz, scales = "free", ncol = 2, nrow = 6)+
+  geom_text(data = anno, aes(x = x, y = y, label = label), vjust = "inward", hjust = "inward", fontface = 2)
+
+
+### Supplement old stuff
+### FIGURE S2: Explanation for plots #####
+meansx = c(0.8, 1, 1.2, 1.2, 1.2, 1, 0.8, 0.8)
+meansy = c(0.8, 0.8, 0.8, 1, 1.2, 1.2, 1.2, 1 )
+d <- map2(meansx, meansy, function(x, y) data.frame(unaltered=rnorm(n= 100, mean = x, sd = 0.2), altered = rnorm(n = 100, mean = y, sd = 0.2))) %>% 
+  setNames(c("bl", "bc", "br", "mr", "tr", "tc", "tl", "ml")) %>% bind_rows(.id = "cluster")
+d$group[d$cluster %in% c("bl", "tr")] <- "Both-Unchanged"
+d$group[d$cluster %in% c("br", "tl")] <- "Both-Reversed"
+d$group[d$cluster %in% c("bc", "tc")] <- "Altered"
+d$group[d$cluster %in% c("mr", "ml")] <- "Unaltered"
+
+d$diet[d$cluster %in% c("bc", "br", "bl", "ml")] <- "Different"
+d$diet[d$cluster %in% c("mr", "tc", "tl", "tr")] <- "Same"
+
+ggplot(d, aes(x = unaltered, y = altered)) + 
+  geom_point(aes(col = diet, fill = diet), size = 0.8) + stat_ellipse(geom= "polygon", alpha = 0.3, aes(col = diet, fill = diet)) + 
+  facet_wrap(~group, scales = "free") +
+  geom_rug(aes(col = diet), alpha = 0.5) + scale_color_manual(values = colors2) +
+  scale_fill_manual(values = colors2)
+
+## FIGURE S3: Prop.all ####
+d <- d2.prop.all
+obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match)
+#b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon)
+
+ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
+  specs+ 
+  facet_grid(taxon~., scales = "fixed") + geom_abline(slope = 1, intercept = 0, lty = 2, col = "gray")
+
+## FIGURE S4: Prop shared/unique cat.pair #### 
+d <- d2.prop.catp
+obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match, cat.pair) %>% 
+  mutate(pnz = "Proportion")
+#b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cat.pair)
+
+ggplot(obsexp, aes(x = unaltered, y = altered, col = diet.match, fill = diet.match)) + 
+  specs+  
+  facet_wrap(taxon~cat.pair, scales = "free") 
+
+## FIGURE S5: Prop syn/cosmo/rest cosmo.pair #### 
+d <- d5.prop.catp
+obsexp <- obsDexp(d, split.var = "type",data.var = "agg", Taxon_status, diet.match, cosmo.pair) %>% 
+  mutate(pnz = "Proportion")
+b <- bayesPairedTtest(obsexp, split.var = "diet.match", taxon, pnz, cosmo.pair)
+
+obsexp$cosmo.pair <- factor(obsexp$ cosmo.pair, levels = c("synan-synan", "cosmo-synan", "cosmo-cosmo", "restr-synan", "restr-cosmo", "restr-restr"))
+ggplot(obsexp, aes(x = unaltered, y = altered)) + 
+  specs+  
+  facet_wrap(taxon~cosmo.pair, scales = "free", ncol = 6, nrow = 2) 
+
+
 # TABLE S1: Sig tests ####
 l <- list.files("./Results/Bayes_Paired_Ttests", full.names = T)
 s <- list()
@@ -313,4 +366,5 @@ sigtests$group[sigtests$group %>% is.na] <- "all"
 sigtests$group[sigtests$group == ""] <- "all"
 
 #####
+
 #####
