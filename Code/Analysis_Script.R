@@ -123,6 +123,8 @@ w
   # Remove empty rows from altered and unaltered tables
 PAna <- map(PAna, clean.empty) 
 PAnu <- map(PAnu, clean.empty)
+shared_bats <- rownames(tables[[1]][[1]])[which(rownames(tables[[1]][[1]]) %in% rownames(tables[[1]][[2]]))]
+shared_birds <- rownames(tables[[2]][[1]])[which(rownames(tables[[2]][[1]]) %in% rownames(tables[[2]][[2]]))]
 
 # no singletons
 PAn.ns <- map(PAn, clean.empty, minrow = 2)
@@ -130,6 +132,8 @@ PAn.ns <- map(PAn, clean.empty, minrow = 2)
 # Format data
 tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
   map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
+# shared only
+#tables <- map2(tables, list(shared_bats, shared_birds), function(x, y) map(x, function(z) return(z[y,])))
 
 # Contingency table
 contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>% 
