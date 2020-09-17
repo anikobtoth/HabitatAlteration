@@ -13,7 +13,9 @@ csl: proceedings-b.csl
 ---
 
 ^1^ Centre for Ecosystem Science, School of Biological, Earth and Environmental Sciences, UNSW, Sydney, NSW 2052, Australia.
+
 ^2^ Department of Biological Sciences, Macquarie University, New South Wales 2109, Australia.
+
 ^3^ School of Biological Sciences, University of Nebraska-Lincoln, Lincoln, Nebraska 68588, USA.
 
 
@@ -63,9 +65,9 @@ unalt_sites <- sitedat[sitedat$altered_habitat == "",]$siteid
 
 How does human habitat alteration disrupt biological processes? With rapidly changing global conditions, this question is on the forefront of many urgent research agendas, spanning conservation, restoration, ecosystem management, environmental science, ecology, and paleoecology. It is increasingly recognised that the effects of human disturbance extend many thousands of years into the past [@Lyons2016; @Maezumi2018], across the entire planet [@Sanderson2002; @Ellis2008], and may continue to be felt tens of millions of years into the future [@Novacek2001; @Alroy2008]. 
 
-Human impacts on the natual drivers of community assembly, such as climate change [@IPCC2007], habitat alteration [@Alroy2017], engineering of dispersal barriers [@Cui2018], and changes in interaction networks [@deAssisBomfim2018], have been a focus of intense research interest. Aside from the straightforward introduction or removal of species, the last of these is probably the most poorly understood, with many researchers still working to understand the dynamics of interaction systems without even considering human impacts explicitly [@Baiser2019]. Nonetheless, there is evidence that human disturbance can decouple predator-prey interactions [@Rodewald2011], increase competition for pollinators [@Holzschuh2011], and simplify or break apart interaction networks [@Haddad2000; @deAssisBomfim2018].
+Human impacts on the natual drivers of community assembly, such as climate change [@IPCC2007], habitat alteration [@Alroy2017], engineering of dispersal barriers [@Cui2018], and changes in interaction networks [@DeAssisBomfim2018], have been a focus of intense research interest. Aside from the straightforward introduction or removal of species, the last of these is probably the most poorly understood, with many researchers still working to understand the dynamics of interaction systems without even considering human impacts explicitly [@Baiser2019]. Nonetheless, there is evidence that human disturbance can decouple predator-prey interactions [@Rodewald2011], increase competition for pollinators [@Holzschuh2011], and simplify or break apart interaction networks [@Haddad2000; @DeAssisBomfim2018].
 
-Though the subject has long been contentious among both ecologists [@McGill2010; @Araujo2014] and palaeontologists [@Ezard2016; @Marshall2016], evidence has long accumulated that the effects of biotic interactions scale up to measurably influence community assembly at much larger spatial scales [@Araujo2007; @Pollock2014; @Fraser2021 in press] than the scale of individual encounters would suggest. The same appears to be true for biotic processes occurring over geological timescales, as mounting evidence demonstrates that interactions such as competition and facilitation can be instrumental in structuring spatial patterns over thousands of years [@Toth2019], as well as the diversification and extinction of entire clades on timescales of millions of years [@Sepkoski1984; @Alroy2010]. Though many interaction networks have been documented in detail, these are usually limited to single locations or small extents, so the way in which this upscaling unfolds is still not well understood.
+Though the subject has long been contentious among both ecologists [@McGill2010; @Araujo2013] and palaeontologists [@Ezard2016; @Marshall2016], evidence has long accumulated that the effects of biotic interactions scale up to measurably influence community assembly at much larger spatial scales [@Araujo2007; @Pollock2014; @Fraser2021 in press] than the scale of individual encounters would suggest. The same appears to be true for biotic processes occurring over geological timescales, as mounting evidence demonstrates that interactions such as competition and facilitation can be instrumental in structuring spatial patterns over thousands of years [@Toth2019], as well as the diversification and extinction of entire clades on timescales of millions of years [@Sepkoski1984; @Alroy2010]. Though many interaction networks have been documented in detail, these are usually limited to single locations or small extents, so the way in which this upscaling unfolds is still not well understood.
 
 One obvious reason for the limited understanding of biotic interactions is that they are costly and challenging to monitor directly. Quantitative methods that are capable of distinguishing the effects of biotic interactions from other drivers are therefore becoming crucially important, and indeed have already begun to yield promising results [@Fraser2021 in press]. Such methods rely on large datasets of species occurrence and ecological traits that are becoming widely available and were therefore not feasible until very recently. The question of shifting biotic interactions is as critical as it is elusive. The degree to which biotic interactions have been disrupted is one of the five criteria proposed for assessing the risk level of ecosystems and has been adopted by the IUCN Red List of Ecosystems [@Keith2015]. Humans produce pollution, change the spatial allocation of resources, genetically modify organisms, and engineer novel ecological niches, demonstrating a vast potential to affect the dynamics of biotic interactions and thus the composition of assemblages living in proximity to human-altered areas, all without necessarily adding or removing species.
 
@@ -120,11 +122,10 @@ This framework also allows invesigators to quantify the effect of various extern
 
 Recent studies repeatedly point out that nonrandom co-occurrence should not be construed as evidence for interaction between species pairs [@Freilich2018;@Thurman2019; @Blanchet2020]. In our framework, we have independent evidence of potential interactions (diet) and examine the relationship between putative interactions and co-occurrence, using non-interacting pairs as a control. Research using such an approach is exactly what is needed to understand under what circumstances, and to what extent, interactions lead to nonrandom spatial associations, what factors affect the relationship, and how they change under duress. 
 
-*__The Model__*
+*__The Model. __*
 We assume that the probability that species A and B co-occur at $N_{AB}$ sites adheres to Fisher's noncentral hypergeometric distribution [@Fog2008],
 
 \[
-\tag{1a}
 p(N_{AB}|\psi) = 
 \frac{{N_{A^{+}} \choose N_{AB}}{N_{A^{-}}\choose N_{B^{+}} - N_{AB}} \psi^{N_{AB}} }
 {\sum_{n} {N_{A^{+}}\choose n}{N_{A^{-}}\choose N_{B^{+}} - n} \psi^{n}}
@@ -133,7 +134,6 @@ p(N_{AB}|\psi) =
 where $N_{A^{+}}$ and $N_{A^{-}}$ are the respective numbers of sites with species A present and absent, $N_{B^{+}}$ is the number of sites with species B present, and $\binom{n}{k} = \frac{n!}{k! (n-k)!}$ is a binomial coefficient. The denominator of this probability mass function (pmf) is the numerator summed over the range of possible values ($n$) for the numbers of co-occurring sites, $\text{max}(0,N_{A^{+}}+N_{A^{-}}-N_{B^{+}}) \leq n \leq \text{min}(N_{A^{+}},N_{B^{+}})$. This pmf has one fitted parameter,
 
 \[
-\tag{1b}
 \psi = \frac{\pi_{A|B^{+}}}{\pi_{A|B^{-}}} =\frac{p_{A|B^{+}} (1 - p_{A|B^{-}})} {(1-p_{A|B^{+}}) p_{A|B^{-}}}
 \]
 
@@ -146,28 +146,24 @@ The $\psi$ parameter is defined on the interval $[0,\infty]$ because it is a rat
 We adopt a hierarchical Bayesian modeling approach [@Gelman2014] to estimate averages of $\theta = \text{log}\psi$ for species pairs that have been subdivided into four groups, $g$, on the basis of habitat type (altered, unaltered) and diet (similar, distinct). At the lower hierarchical level, we model variation in $\theta_i$ for species pairs and groups as
 
 \[
-\tag{2}
 \theta_i = \overline{\theta_{g(i)}} + \Delta\theta_i
 \]
 
 where $g(i)$ is a function that indexes the group assignment of each species pair $i$, and $\Delta\theta_i$ is a deviation from the group mean $\overline{\theta_{g(i)}}$. We assume that these deviations are normally distributed with means of 0,
 
 \[
-\tag{3}
 p(\Delta\theta|\sigma_{g}) = \frac{1}{\sigma_{g} \sqrt{2 \pi}} e^{\Delta\theta^2 / \sigma_{g}^2}
 \]
 
 and standard deviations that vary by group, $\sigma_{g}$. At the upper hierarchical level, we assign the group averages, $\overline{\theta_g}$, normal prior distributions with means of 0 and standard deviations of 5,
 
 \[
-\tag{4}
 p(\overline{\theta_g}) = \frac{1}{5 \sqrt{2 \pi}} e^{\Delta\theta^2 / 5^2}
 \]
 
 and we assign the group standard deviations, $\sigma_{g}$, uniform prior distributions on the interval 0 to 5,
 
 \[
-\tag{5}
 p(\sigma_g) = 
 \begin{cases}
     1/5 & \text{if } 0 \leq \sigma_g \leq 5 \\
@@ -179,7 +175,6 @@ These prior distributions were chosen based on preliminary analyses to allow ade
 The posterior distributions of the group-level averages, $p(\overline{\theta_g}|N_{AB})$, are proportional to the product of two likelihood distributions (Eqs. 1 and 3) and two prior distributions (Eqs. 4 and 5),
 
 \[
-\tag{6}
 p(\overline{\theta_g}|N_{AB}) \propto p(N_{AB}|e^{\overline{\theta_g}+\Delta\theta})
 p(\Delta\theta|\sigma_g) p(\overline{\theta_g}) p(\sigma_g).
 \]
@@ -196,7 +191,6 @@ We estimate posterior distributions using two distinct approaches. First, we use
 Second, to address the issue of non-independence, we use Bayesian bootstrap aggregation [@Huggins2020], to obtain "bagged" estimates of posterior distributions, $p^{*}(\overline{\theta_g}|N_{AB}^{*}$), for independent samples, $N_{AB}^{*}$. Our approach entails the following: (\textit{i}) construct $D$ datasets comprised of independent co-occurrence counts ($N_{AB}^{*}$: $N_{AB}^{(1)}$, $N_{AB}^{(2)}$, ... $N_{AB}^{(D)}$); (\textit{ii}) sample the posterior distributions of the model parameters for each independent sample using Bayesian MCMC; (\textit{iii}) average over the $D$ posterior distributions obtained in (\textit{ii}) to approximate the posterior distribution for independent samples:
 
 \[
-\tag{7}
 p^{*}(\overline{\theta_g}|N_{AB}^*) \approx \frac{1}{D} {\sum_{n = 1}^{D} p(\overline{\theta_g}|N_{AB}^{(n)})}
 \]
 
@@ -299,7 +293,7 @@ Bagged interaction models showed no significant difference in $\psi$ or $\sigma_
 
 Competition for food affected the spatial community structure of both bats and birds, demonstrated by offsets in the $\psi$ and variance ($\sigma_{g}$) posteriors in both taxa (Figs. 2-3). Competing pairs consistently exhibited significantly higher variance than their non-competing counterparts, supporting the conclusion that nondrandom spatial patterns are manifested more strongly by species that share food sources. This is backed up by the observation that competing pairs nearly always had equal or more extreme (farther from zero) $\psi$ posteriors than their non-competing counterparts. This result is not surprising, given that we would expect species with similar food resources to either aggregate in the same areas (i.e. sites with an abundance of their food source), or, if there is strong competition or a dearth of resources, to segregate between sites more often than pairs in the same environment that do not share food sources.
 
-Overall, birds tended toward repulsive assiociations while bats tended toward attractive associations. This observation should likely be taken as a fundamental difference in the ecology of birds and bats and is supported by our beta-diversity results. Bats tend to exhibit limiting morphological similarity [@Kingston2000], share roosts [@Swift1983], display varied foraging behaviours [@Swift1983; @Denzinger2013], and micro-partition resources, habitats and foraging times [@Aldridge1987; @Nicholls2006]. Neotropical birds, meanwhile, are well known for interspecific aggression [@Jankowski2010; @Freeman2016a; @Freeman2016b], separating out along elevational gradients [@Jankowski2010], and competitive exclusion [@Terborgh1975; @Remsen1995]. Even non-competing bird pairs are far less likely to co-occur than non-competing pairs of bats, suggesting that natural beta diversity and abiotic niche specialization are much more pronounced in birds than bats. Conversely, bird pairs that do not compete for food may still compete for other resources, such as territory and nesting sites. 
+Overall, birds tended toward repulsive assiociations while bats tended toward attractive associations. This observation should likely be taken as a fundamental difference in the ecology of birds and bats and is supported by our beta-diversity results. Bats tend to exhibit limiting morphological similarity [@Kingston2000], share roosts [@Swift1983], display varied foraging behaviours [@Swift1983; @Denzinger2013], and micro-partition resources, habitats and foraging times [@Aldridge1987; @Nicholls]. Neotropical birds, meanwhile, are well known for interspecific aggression [@Jankowski2010; @Freeman2016; @Freeman2016a], separating out along elevational gradients [@Jankowski2010], and competitive exclusion [@Terborgh1975; @Remsen1995]. Even non-competing bird pairs are far less likely to co-occur than non-competing pairs of bats, suggesting that natural beta diversity and abiotic niche specialization are much more pronounced in birds than bats. Conversely, bird pairs that do not compete for food may still compete for other resources, such as territory and nesting sites. 
 
 *__Habitat alteration__*
 In unaltered habitats, both bats and birds displayed little to no exclusion, with competing pairs tending to coexist more readily than non-competing pairs. The pattern is manifested as weaker negative $\psi$ for competing birds (vs. non-competing birds) and stronger positive $\psi$ for competing bats (vs. non-competing bats). Because competing variances are also significantly higher, mutual food sources evidently tend to encourage resource sharing and partitioning in the wild even in models where $\psi$ was not significantly offset, such as models including rare species, with occasional cases of exclusion. In both taxa, this relationship is lost in altered habitats. 
@@ -351,7 +345,7 @@ __Figure 1.__ Principal coordinates analysis of altered and unaltered sites for 
 ```{r echo=FALSE, include = T}
 colors <- c("#FFCB5C", "#FF791F", "#2F99DC", "#084887")
 
-specs <- list(geom_density(lwd = 1.4, alpha = .3),
+specs <- list(geom_density(lwd = 1, alpha = .3),
               facet_wrap(parameter~., scales = "free_x"), 
               scale_color_manual(values = colors), 
               scale_fill_manual(values = colors))
@@ -359,51 +353,53 @@ specs <- list(geom_density(lwd = 1.4, alpha = .3),
 
 ```
 
-```{r echo=FALSE, include = T,}
-load("../Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingFALSE.RData")
-bat_FF <- out
-load("../Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingTRUE.RData")
-bat_FT <- out
+```{r echo=FALSE, include = T}
 load("../Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingFALSE.RData")
-bat_TF <- out
+a1 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs
+load("../Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingFALSE.RData")
+a2 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs + theme(legend.position = "none")
 load("../Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingTRUE.RData")
-bat_TT <- out
+a3 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs + theme(legend.position = "none")
+load("../Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingTRUE.RData")
+a4 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs + theme(legend.position = "none")
 
-resbat <- bind_rows(list("common_only-bagged" = bat_TT, "common_only-not_bagged" = bat_TF, "all-bagged" = bat_FT, "all-not_bagged" = bat_FF), .id = "model") %>% 
-  separate(model, into = c("species", "bagging"), sep = "-") %>% 
-  mutate(species = factor(species, levels = c("common_only", "all")), 
-         bagging = factor(bagging, levels = c("not_bagged", "bagged")))
-ggplot(resbat %>% filter(parameter != "deviance"), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
-  geom_density(alpha = 0.25, lwd = 1) + 
-  facet_wrap(bagging~species+parameter, scales = "free", nrow = 2, ncol = 4) +
-  scale_color_manual(values = colors) + scale_fill_manual(values = colors) + ggtitle("Bats")
+legend <- get_legend(a1+ theme(legend.box.margin = margin(0, 0, 0, 7)))
+
+p1 <- plot_grid(a1 + theme(legend.position = "none"), a2, a3, a4, align = "hv", nrow = 2)
+plot_grid(p1, legend, nrow = 1, rel_widths = c(2, 0.8))
+
+```
+
+__Figure 2.__ Results of bat interaction models, depicting $\psi$ and $\sigma_{g}$, with non-bagged models in the top row and bagged models in the bottom row. Left column includes species with occurrences above the median for that taxon and habitat type. Right column includes all species.
+
+```{r echo=FALSE, include = T}
+load("../Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingFALSE.RData")
+r1 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs
+load("../Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingFALSE.RData")
+r2 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs + theme(legend.position = "none")
+load("../Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingTRUE.RData")
+r3 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs + theme(legend.position = "none")
+load("../Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingTRUE.RData")
+r4 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs + theme(legend.position = "none")
+
+legend <- get_legend(r1+ theme(legend.box.margin = margin(0, 0, 0, 7)))
+
+p1 <- plot_grid(r1 + theme(legend.position = "none"), r2, r3, r4, align = "hv", nrow = 2)
+plot_grid(p1, legend, nrow = 1, rel_widths = c(2, 0.8))
+
+
 
 ```
 
-
-
-```{r}
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingFALSE.RData")
-bird_FF <- out
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingTRUE.RData")
-bird_FT <- out
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingFALSE.RData")
-bird_TF <- out
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingTRUE.RData")
-bird_TT <- out
-
-resbird <- bind_rows(list("common_only-bagged" = bird_TT, "common_only-not_bagged" = bird_TF, "all-bagged" = bird_FT, "all-not_bagged" = bird_FF), .id = "model") %>% 
-  separate(model, into = c("species", "bagging"), sep = "-") %>% 
-  mutate(species = factor(species, levels = c("common_only", "all")), 
-         bagging = factor(bagging, levels = c("not_bagged", "bagged")))
-
-ggplot(resbird %>% filter(parameter != "deviance"), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
-  geom_density(alpha = 0.25, lwd = 1) + 
-  facet_wrap(bagging~species+parameter, scales = "free", nrow = 2, ncol = 4) +
-  scale_color_manual(values = colors) + scale_fill_manual(values = colors) + ggtitle("Birds")
-
-
-```
+__Figure 2.__ Results of bird interaction models, depicting $\psi$ and $\sigma_{g}$, with non-bagged models in the top row and bagged models in the bottom row. Left column includes species with occurrences above the median for that taxon and habitat type. Right column includes all species.
 
 ## References
 
