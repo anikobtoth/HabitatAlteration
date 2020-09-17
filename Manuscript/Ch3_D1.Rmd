@@ -353,7 +353,7 @@ specs <- list(geom_density(lwd = 1, alpha = .3),
 
 ```
 
-```{r echo=FALSE, include = T}
+```{r echo=FALSE, fig.height=4, fig.width=7, include= T}
 load("../Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingFALSE.RData")
 a1 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
   specs
@@ -376,7 +376,7 @@ plot_grid(p1, legend, nrow = 1, rel_widths = c(2, 0.8))
 
 __Figure 2.__ Results of bat interaction models, depicting $\psi$ and $\sigma_{g}$, with non-bagged models in the top row and bagged models in the bottom row. Left column includes species with occurrences above the median for that taxon and habitat type. Right column includes all species.
 
-```{r echo=FALSE, include = T}
+```{r echo=FALSE, fig.height=4, fig.width=7, include = T}
 load("../Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingFALSE.RData")
 r1 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
   specs
