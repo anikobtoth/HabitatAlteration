@@ -28,21 +28,22 @@ plot_grid(p, get_legend(p1), rel_widths = c(1, .2))
 
 ## specs #################
 colors <- c("#FFCB5C", "#FF791F", "#2F99DC", "#084887")
-specs <- list(geom_density(lwd = 1.4, alpha = .3),
+specs <- list(geom_density(lwd = .8, alpha = .3),
               facet_wrap(parameter~., scales = "free_x"), 
               scale_color_manual(values = colors), 
               scale_fill_manual(values = colors))
 
 # FIGURE 2: bat results##############
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingFALSE.RData")
-a1 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + specs
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingFALSE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingFALSE.RData")
+a1 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
+  specs 
+load("./Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingFALSE.RData")
 a2 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
   specs + theme(legend.position = "none")
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingTRUE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingTRUE.RData")
 a3 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
   specs + theme(legend.position = "none")
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingTRUE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingTRUE.RData")
 a4 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
   specs + theme(legend.position = "none")
 
@@ -52,16 +53,16 @@ p1 <- plot_grid(a1 + theme(legend.position = "none"), a2, a3, a4, align = "hv", 
 plot_grid(p1, legend, nrow = 1, rel_widths = c(2, 0.5))
 
 # FIGURE 3: bird results################
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingFALSE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingFALSE.RData")
 r1 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
   specs
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingFALSE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingFALSE.RData")
 r2 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
   specs + theme(legend.position = "none")
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingTRUE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingTRUE.RData")
 r3 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
   specs + theme(legend.position = "none")
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingTRUE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingTRUE.RData")
 r4 <- ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + 
   specs + theme(legend.position = "none")
 
@@ -73,13 +74,13 @@ plot_grid(p1, legend, nrow = 1, rel_widths = c(2, 0.5))
 
 
 # Figs 2 and 3 with extra labels: ################
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingFALSE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingFALSE.RData")
 bat_FF <- out
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingTRUE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingTRUE.RData")
 bat_FT <- out
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingFALSE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingFALSE.RData")
 bat_TF <- out
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingTRUE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingTRUE.RData")
 bat_TT <- out
 
 resbat <- bind_rows(list("common_only-bagged" = bat_TT, "common_only-not_bagged" = bat_TF, "all-bagged" = bat_FT, "all-not_bagged" = bat_FF), .id = "model") %>% 
@@ -92,13 +93,13 @@ ggplot(resbat %>% filter(parameter != "deviance"), aes(x = value, col = status_d
   scale_color_manual(values = colors) + scale_fill_manual(values = colors) + ggtitle("Bats")
 
 
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingFALSE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingFALSE.RData")
 bird_FF <- out
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingTRUE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingTRUE.RData")
 bird_FT <- out
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingFALSE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingFALSE.RData")
 bird_TF <- out
-load("E:/HabitatAlteration/Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingTRUE.RData")
+load("./Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingTRUE.RData")
 bird_TT <- out
 
 resbird <- bind_rows(list("common_only-bagged" = bird_TT, "common_only-not_bagged" = bird_TF, "all-bagged" = bird_FT, "all-not_bagged" = bird_FF), .id = "model") %>% 
