@@ -102,7 +102,7 @@ omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffec
       # Priors
       for (i in 1:4) {
         av.ln.omega[i] ~ dnorm(0,0.01)
-        sigma[i]       ~ dunif(0, 5)       # hyperparameter sigma for random effect
+        sigma[i]       ~ dunif(0, 10)       # hyperparameter sigma for random effect
         tau[i]        <- 1 / (sigma[i] * sigma[i]) # convert from sd to precision for dnorm
       }
       
@@ -126,7 +126,7 @@ omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffec
       altered     ~ dnorm(0,0.04)
       same        ~ dnorm(0,0.04)
       for(i in 1:4) {  
-        sigma[i]  ~ dunif(0,5)
+        sigma[i]  ~ dunif(0,10)
         tau[i]   <- 1 / (sigma[i] * sigma[i])
       }
       # Likelihood
@@ -150,8 +150,8 @@ omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffec
     message("Running bagged estimates")
     
     set.seed(123)
-     
-    for(i in 1:reps) {
+    i <- 1
+    while(i<=100) {
       
       ncat <- 2
       while(ncat != 4) {  ## Ensure all categories are represented in the random draw
@@ -177,9 +177,17 @@ omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffec
                         ds = temp$ds,
                         xx = temp$xx)             # index
      }
-      jags.fit[[i]] <- jags.parallel(data = jags.data, inits = jags.inits, 
-                            parameters.to.save = jags.params, model.file = jags.model,
-                            n.chains = 3, n.iter = 50000, n.burnin = 10000, n.thin = 100, n.cluster = detectCores()*.75)
+      
+      temp2 <- NULL
+      try(temp2 <- jags.parallel(data = jags.data, inits = jags.inits,
+                        parameters.to.save = jags.params, model.file = jags.model,
+                        n.chains = 3, n.iter = 100000, n.burnin = 50000, n.thin = 1000))
+      if(!is.null(temp2)) {
+        jags.fit[[i]] <- temp2
+        print(i)
+        i <- i + 1
+        message(cat(i, "successful attempts"))
+      }
     }
     
     if(type == "interaction"){
