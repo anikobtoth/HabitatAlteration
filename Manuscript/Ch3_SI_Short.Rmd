@@ -1,15 +1,19 @@
 ---
 title: The effect of food competition on community assembly in Neotropical bats and birds is reversed by habitat alteration.
-author:
-  - "Anikó B. Tóth"
-  - "S. Kathleen Lyons"
-  - "John Alroy"
-date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
   bookdown::word_document2: default
 bibliography: References.bib
 csl: science.csl
 ---
+
+Anikó B. Tóth, Andrew P. Allen, S. Kathleen Lyons, John Alroy
+
+This file includes: 
+    Materials and Methods
+    Supplementary Text
+    Figs. S1 to S2
+    References (36–48)
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -24,7 +28,7 @@ library(cowplot)
 library(reshape2)
 ```
 
-### Supplementary Methods
+### Materials and Methods
 
 *__Data__* Abundance data were dowloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mistnetted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also dowloaded Register metadata for the species and sites in the abundance tables, including coordinates and habitat alteration category for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published individual papers. Sampling and reporting was standardised across the samples, as all were mist-netted samples with consistent mesh size, harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the average number of individuals per sample being `r mean(colSums(PAn[["bat"]]))` for bats and `r mean(colSums(PAn[["bird"]]))` for birds.  Samples were combined if they were within the same 11.1 km equal-area grid cell, sourced from the same study, and represented the same habitat and alteration category. The combined data consisted of a total of `r sum(PAn[["bat"]])` bat and `r sum(PAn[['bird']])` bird individuals from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
 
@@ -166,7 +170,7 @@ Overall changes observed in association patterns could result from pairs changin
 
 *__Analysis of alteration types.__* To gain more insight into the aggregation of same-guild pairs in altered habitats, we calculated the percent of species in each guild that co-occur at individual sites (e.g., 5% of insectivorous bat species occur at site A, etc.). We plotted the sites by alteration type to examine the influence of alteration on species aggregation. Although we do not have enough sites of each alteration type to draw any definitive conclusions, this analysis can suggest reasons why certain guilds might co-occur more in altered sites and provide questions for future research.
 
-### Results
+### Supplementary Text
 ```{r, echo = FALSE}
 ## Richness results
 load("../Results/cj1_chao_richness_raw.RData")
@@ -198,12 +202,12 @@ docc <- occ %>% group_by(taxon) %>% summarise(
 ```
 
 *__Richness and beta diversity.__* Based on Chao 1 and cJ1, altered sites have lower alpha richness to intact sites, however the difference is not significant (cJ1 p-values  = `r round(pcj1[1,],3)` and `r round(pcj1[2,],3)`, and Chao 1 p-values  = `r round(pcha[1,], 3)` and `r round(pcha[2,], 3)` for bats and birds, respectively). Average richness for bat samples in intact habitats was 
-`r cJ1 %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bat" & .$status == "intact",3]} %>% round(2)` (cJ1) and 
-`r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bat" & .$status == "intact",3]} %>% round(2)` (Chao1), and
+`r cJ1 %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bat" & .$status == "Unaltered",3]} %>% round(2)` (cJ1) and 
+`r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bat" & .$status == "Unaltered",3]} %>% round(2)` (Chao1), and
 `r cJ1 %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bat" & .$status == "Altered",3]} %>% round(2)` (cJ1) and 
 `r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bat" & .$status == "Altered",3]} %>% round(2)` (Chao 1) in altered habitats. Average richness for bird samples  was 
-`r cJ1 %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bird" & .$status == "intact",3]} %>% round(2)` (cJ1) and 
-`r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bird" & .$status == "intact",3]} %>% round(2)` (Chao 1) in intact habitats, and 
+`r cJ1 %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bird" & .$status == "Unaltered",3]} %>% round(2)` (cJ1) and 
+`r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bird" & .$status == "Unaltered",3]} %>% round(2)` (Chao 1) in intact habitats, and 
 `r cJ1 %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bird" & .$status == "Altered",3]} %>% round(2)` (cJ1) and 
 `r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bird" & .$status == "Altered",3]} %>% round(2)` (Chao 1) in altered habitats. 
 For bats and birds, respectively, 
@@ -221,7 +225,7 @@ Altered sites had the lowest beta diversity in bats, decreasing significantly fr
 *__Interaction results__* Bagged interaction models showed no significant difference in $\psi$ or $\sigma_{g}$ of any group, but non-bagged models showed significant differences in all instances (Figs 2-3). Qualitative differences in bagged models weakly support the results of the non-bagged models, so we focus on the results of the non-bagged models in the main text. The reality is likely somewhere between the two sets of results, but the bagged models evidently discard too much information to muster enough power to detect the signal observed in the non-bagged models. All non-bagged model results are reported in the main text. 
 
 *__Altered site types.__*
- Strong aggregations form when species occur together at a relatively small number of sites and are both absent from other sites. To help understand our results, we calculated the representation of dietary guilds at various different types of altered sites (Fig. S6). Carnivore-insectivorous (22 species) and frugivorous bats (69 species) co-occur disproportionately in plantations. Plantations and forest fragments support the highest proportion of insectivore bats (80 species), and nectarivores (21 species) co-occur disproportionately in plantations and croplands (Fig. S2). 
+ Strong aggregations form when species occur together at several sites and are both absent from other sites. To help understand our results, we calculated the representation of dietary guilds at various different types of altered sites (Fig. S2). Carnivore-insectivorous (22 species) and frugivorous bats (69 species) co-occur disproportionately in plantations. Plantations and forest fragments support the highest proportion of insectivore bats (80 species), and nectarivores (21 species) co-occur disproportionately in plantations and croplands (Fig. S2). 
 
 For birds, inhabited sites support a disproportionate ratio of birds with simple diets (nectarivores, frugivores, invertivores, and granivores). Croplands are the main supporter of frugivore-granivore birds. Many of our alteration categories included only one or two sites, which is insufficient to draw definitive conclusions about how bat and bird guilds aggregate over the altered landscape. However, our results (Fig. S2) suggest that plantations are an important aggregation point for bats, particularly frugivores and nectarivores. Although only two suburban sites are included, these sites both contain more than 15% of bat insectivores, and very few other species. The data for site types are even sparser for birds, but the primary habitat types are forest fragment, secondary forest, disturbed forest, and plantation. These site types vary in their importance to individual bird guilds. Birds with fruit or nectar in their diets co-occurred in plantations and fragments, while insectivores were most strongly aggregated in secondary forest. Disturbed forest typically contained a low percentage of each dietary guild. Secondary forest and forest fragment sites appear more instrumental for the co-occurrence of competing birds than bats.
 
@@ -308,4 +312,4 @@ plot_grid(pbird+ theme(legend.position = c(1, 0), legend.justification = c(1, 0)
 __Figure S2.__ Percent of species in bird (left and center) and bat (right) guilds, represented by panels, that co-occur at individual altered sites by type of alteration. Each point is an altered site. There are no bird sites in the suburban category. Key to panels: C = carnivore; F = frugivore; I = insectivore; N = nectarivore; and G = granivore. Multiple letters indicate mixed feeders.
 
 
-
+## References
