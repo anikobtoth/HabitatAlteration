@@ -1,5 +1,5 @@
 ---
-title: The effect of food competition on community assembly in Neotropical bats and birds is reversed by habitat alteration.
+title: Competitive interactions are extirpated from human-altered habitats in the Neotropics
 output:
   bookdown::word_document2: default
 bibliography: References.bib
@@ -8,14 +8,14 @@ csl: science.csl
 
 Anikó B. Tóth, Andrew P. Allen, S. Kathleen Lyons, John Alroy
 
-This file includes: 
+*This PDF file includes:* 
 
 Materials and Methods
-    
+
 Supplementary Text
-    
+
 Figs. S1 to S3
-    
+
 References (37–51)
 
 
@@ -34,7 +34,8 @@ library(reshape2)
 
 ### Materials and Methods
 
-*__Data__* Abundance data were dowloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mistnetted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also dowloaded Register metadata for the species and sites in the abundance tables, including coordinates and habitat alteration category for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published individual papers. Sampling and reporting was standardised across the samples, as all were mist-netted samples with consistent mesh size, harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the median number of individuals per sample being `r round(median(colSums(PAn[["bat"]])), 2)` for bats and `r round(median(colSums(PAn[["bird"]])), 2)` for birds.  Samples were combined if they were within the same 11.1 km equal-area grid cell, sourced from the same study, and represented the same habitat and alteration category. The combined data consisted of a total of `r round(sum(PAn[["bat"]]), 0)` bat and `r round(sum(PAn[['bird']]),0)` bird individuals from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
+_Data_ 
+Abundance data were dowloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mistnetted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also dowloaded Register metadata for the species and sites in the abundance tables, including coordinates and habitat alteration category for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published individual papers. Sampling and reporting was standardised across the samples, as all were mist-netted samples with consistent mesh size, harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the median number of individuals per sample being `r round(median(colSums(PAn[["bat"]])), 2)` for bats and `r round(median(colSums(PAn[["bird"]])), 2)` for birds.  Samples were combined if they were within the same 11.1 km equal-area grid cell, sourced from the same study, and represented the same habitat and alteration category. The combined data consisted of a total of `r round(sum(PAn[["bat"]]), 0)` bat and `r round(sum(PAn[['bird']]),0)` bird individuals from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
 
 
 ```{r, include = FALSE}
@@ -65,21 +66,24 @@ coords2.keep <- purrr::map2(coords, PAna, function(x, y) x[x$sample.no %in% coln
 
 ```
 
-*__Richness and Beta diversity.__* We estimated richness for bats and birds in altered and intact sites using a corrected first-order jackknife (cJ1) [@Alroy2020] and Chao1 [@Chao1984] on the raw abundance data for all sites. The status of each site was based on the 'altered.habitat' field in the site metadata, which is empty if the site is intact and filled with a land use category if the site is altered. Altered sites included cropland, disturbed forest, fragment, pasture, plantation, secondary forest, inhabited area, and combined categories [@Alroy2017], and none of them had sufficient sites to be evaluated individually. The abundance data were converted to a presence-absence format. 
+_Richness and Beta diversity_ 
+We estimated richness for bats and birds in altered and intact sites using a corrected first-order jackknife (cJ1) [@Alroy2020] and Chao1 [@Chao1984] on the raw abundance data for all sites. The status of each site was based on the 'altered.habitat' field in the site metadata, which is empty if the site is intact and filled with a land use category if the site is altered. Altered sites included cropland, disturbed forest, fragment, pasture, plantation, secondary forest, inhabited area, and combined categories [@Alroy2017], and none of them had sufficient sites to be evaluated individually. The abundance data were converted to a presence-absence format. 
 
-*__Biogeographic correction__* The geographic layout of sites can influence the results of a co-occurrence analysis. For instance, if sites are clustered in two regions with no sites in between, there is a good chance that the co-occurrence structure of the assemblage will reflect this clustered layout by exhibiting strong aggregations within the clusters and segregations between clusters. Ideally, we would like to have even sampling over our entire study area, but when this is not possible, we must at least make sure that any comparisons are not influenced by geographic sampling bias. One way to achieve this is to ensure that the sites used to calculate co-occurrences have roughly the same geographic coverage when comparing across different types of sites or time periods.
+_Biogeographic correction_ 
+The geographic layout of sites can influence the results of a co-occurrence analysis. For instance, if sites are clustered in two regions with no sites in between, there is a good chance that the co-occurrence structure of the assemblage will reflect this clustered layout by exhibiting strong aggregations within the clusters and segregations between clusters. Ideally, we would like to have even sampling over our entire study area, but when this is not possible, we must at least make sure that any comparisons are not influenced by geographic sampling bias. One way to achieve this is to ensure that the sites used to calculate co-occurrences have roughly the same geographic coverage when comparing across different types of sites or time periods.
 
 In this paper, the study extent covers Central and South America south of the Tropic of Cancer. This includes large swathes of the Amazon in Brazil where there are no samples in altered habitats. As a result, the intact sites cover more area than the altered sites, and the geographic coverage of the latter is nested within that of the former. To correct for these biases before calculating co-occurrence, we removed the intact sites covering areas that were not covered by altered sites using the following algorithm. (1) We measured the distance to the closest altered site for all intact sites and vice versa. (2) We found the altered site farthest from its closest intact site. (3) We removed all intact sites whose closest altered neighbour was farther than the the distance in step 2. Note that this approach only works because the geographic coverages is nested; site types that are offset in space would require a different approach. Our original and final sites are plotted in Fig. S1.
 
 The resulting dataset had `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. We then calculated the beta diversity between pairs of sites for bats and birds separately, separating them into altered and intact groups. We used the Ochiai similarity index as the similarity measure for beta diversity, and transformed the results to z-scores to achieve normality for significance testing. Finally, we ran a principal coordinates analysis (PCoA) on the sites using the R function *cmdscale* in the stats package to check for compositional shifts between altered and intact habitats. We tested for significant shifts in the site centroids on the two primary PCoA axes using a simple permutation test. 
 
-*__Biotic Interactions.__* We used dietary information for bats and birds from the Ecological Register to analyse the effects of food competition on patterns of co-occurrence. We selected all pairs with complete dietary information and classified them as competing or non-competing. Competing pairs shared primary and secondary sources of food, but we allowed the order of these to be reversed (e.g., a frugivore-nectarivore and a nectarivore-frugivore would be equated). Non-competing pairs had no mutual food sources. Pairs with mutual and nonmutual food sources (e.g., a frugivore and an insectivore-frugivore) may experience a complex mix of effects and were therefore removed from the analysis for simplicity. Although species in the same dietary guilds are not necessarily competing, pairs with high dietary overlap have a nonzero probability of experiencing competition for food, while pairs in differing guilds have no chance of competing for food. Therefore, the co-occurrence patterns of competing and non-competing groups should be different if food competition plays a role in structuring the assemblage. 
+_Biotic Interactions_ 
+We used dietary information for bats and birds from the Ecological Register to analyse the effects of food competition on patterns of co-occurrence. We selected all pairs with complete dietary information and classified them as competing or non-competing. Competing pairs shared primary and secondary sources of food, but we allowed the order of these to be reversed (e.g., a frugivore-nectarivore and a nectarivore-frugivore would be equated). Non-competing pairs had no mutual food sources. Pairs with mutual and nonmutual food sources (e.g., a frugivore and an insectivore-frugivore) may experience a complex mix of effects and were therefore removed from the analysis for simplicity. Although species in the same dietary guilds are not necessarily competing, pairs with high dietary overlap have a nonzero probability of experiencing competition for food, while pairs in differing guilds have no chance of competing for food. Therefore, the co-occurrence patterns of competing and non-competing groups should be different if food competition plays a role in structuring the assemblage. 
 
 This framework also allows invesigators to quantify the effect of various external factors and ecological context on the spatial outcomes of biotic interactions. In this paper, we compare assemblages from altered and intact habitats to evaluate the effect of habitat alteration on the outcome of food competition. However, the samples could be split up along other lines instead, such as along environmental gradients, temporally before and after disturbances, etc.
 
 Recent studies repeatedly point out that nonrandom co-occurrence should not be construed as evidence for interaction between species pairs [@Freilich2018;@Thurman2019; @Blanchet2020]. In our framework, we have independent evidence of potential interactions (diet) and examine the relationship between putative interactions and co-occurrence, using non-interacting pairs as a control. Research using such an approach is exactly what is needed to understand under what circumstances, and to what extent, interactions lead to nonrandom spatial associations, what factors affect the relationship, and how they change under duress. 
 
-*__The Model. __*
+_The Model_
 In the main text we present a hierarchical Bayesian model that estimates the co-occurrence scores of our experimental groups (altered-interacting, altered-control, intact-interacting, intact-control). This section provides the model details. 
 
 We assume that the probability that species A and B co-occur at $N_{AB}$ sites adheres to Fisher's noncentral hypergeometric distribution [@Fog2008],
@@ -167,15 +171,16 @@ s <- spp %>% filter(rownames(.) %in% unlist(map(PAn, rownames))) %>% group_by(li
 
 ```
 
-*__Model interpretation.__*
+_Model interpretation_
 In this framework, a change in the posterior distributions of $\psi$ and $\sigma_{g}$ can exhibit several patterns, which point to various biological processes (Fig. S2). Competing pairs can display lower $\psi$ than non-competing pairs, which means that diffuse competition tends to lead to exclusion with respect to opportunity for co-occurrence (Fig. S2A). This is the case even if all $\psi$ are positive, as exclusion does not necessarily present as a negative association. Because competing and non-competing pairs are comprised of the same species data in different pairwise arrangements, the $\psi$ of non-competing pairs represents the opportunity for coexistence in the absence of food competition. A deviation toward lower $\psi$ from this baseline is evidence that competing pairs are not coexisting as often as expected--hence, exclusion. Conversely, a higher $\psi$ in competing pairs confirms that similarity in resource use leads to co-occurrence without causing exclusion, suggesting that competing pairs tend to partition or share adequate resources (Fig. S2B). If the $\psi$ of competing and non-competing pairs do not differ significantly, but the $\sigma_{g}$ (variance) of competing pairs is higher, this points to stronger spatial patterns (both coexistence and exclusion) in pairs that compete for food, and vice versa (Fig. S2D). If there is no difference in $\psi$ or $\sigma_{g}$ between the two groups, then there is insufficient evidence to support the hypothesis that diffuse competition is influencing the structure of the assemblage at the landscape scale (Fig. S2C).
 
 The $\psi$ and $\sigma_{g}$ of competing and non-competing pairs might also differ between altered and intact sites in our example. If the relationship between competing and non-competing pairs is different, this means that alteration has changed the outcome of biotic interactions, e.g., by promoting partitioning over exclusion or vice versa. More subtly, the extent of disparity between the two groups could differ without qualitatively changing the relationship, which indicates that naturally existing mechanisms have been enhanced or dampened. On the other hand, $\psi$ or $\sigma_{g}$ could simply be higher or lower across the board, suggesting that alteration leads to changes in community structure that do not necessarily involve the rewiring of competitive interations.  
 
-*__The effect of turnover.__*
+_The effect of turnover_
 Overall changes observed in association patterns could result from pairs changing their spatial behaviour or their competition intensity in altered vs. intact habitats. Conversely, a shift in species composition (e.g. the removal or introduction of interaction partners), and therefore the presence of a different suite of pairs, could also cause disparities between the two habitat types. To investigate these possibilities, we ran the models with all species and then repeated them with only species occurring at least once in both habitat types. If the results of the two model sets are very similar, we can conclude that the results are driven by changes in the spatial behaviour of species occurring in both site types. If the two model sets are different but both show significant effects, likely both turnover and changes in preserved interactions are occurring. Furthermore, the differences between the two outputs can be used to determine which changes are due to which mechanism. Model effects are due to turnover alone if the model set using only shared species has no significant results while the model set using all species has significant differences.
 
-*__Analysis of alteration types.__* To gain more insight into the aggregation of same-guild pairs in altered habitats, we calculated the percent of species in each guild that co-occur at individual sites (e.g., 5% of insectivorous bat species occur at site A, etc.). We plotted the sites by alteration type to examine the influence of alteration on species aggregation. Although we do not have enough sites of each alteration type to draw any definitive conclusions, this analysis can suggest reasons why certain guilds might co-occur more in altered sites and provide questions for future research.
+_Analysis of alteration types_ 
+To gain more insight into the aggregation of same-guild pairs in altered habitats, we calculated the percent of species in each guild that co-occur at individual sites (e.g., 5% of insectivorous bat species occur at site A, etc.). We plotted the sites by alteration type to examine the influence of alteration on species aggregation. Although we do not have enough sites of each alteration type to draw any definitive conclusions, this analysis can suggest reasons why certain guilds might co-occur more in altered sites and provide questions for future research.
 
 ### Supplementary Text
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
@@ -208,7 +213,8 @@ docc <- occ %>% group_by(taxon) %>% summarise(
   total = length(altered))
 ```
 
-*__Richness and beta diversity.__* Based on Chao 1 and cJ1, altered sites have lower alpha richness to intact sites, however the difference is not significant (cJ1 p-values  = `r round(pcj1[1,],3)` and `r round(pcj1[2,],3)`, and Chao 1 p-values  = `r round(pcha[1,], 3)` and `r round(pcha[2,], 3)` for bats and birds, respectively). Average richness for bat samples in intact habitats was 
+_Richness and beta diversity_ 
+Based on Chao 1 and cJ1, altered sites have lower alpha richness to intact sites, however the difference is not significant (cJ1 p-values  = `r round(pcj1[1,],3)` and `r round(pcj1[2,],3)`, and Chao 1 p-values  = `r round(pcha[1,], 3)` and `r round(pcha[2,], 3)` for bats and birds, respectively). Average richness for bat samples in intact habitats was 
 `r cJ1 %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bat" & .$status == "Unaltered",3]} %>% round(2)` (cJ1) and 
 `r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bat" & .$status == "Unaltered",3]} %>% round(2)` (Chao1), and
 `r cJ1 %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bat" & .$status == "Altered",3]} %>% round(2)` (cJ1) and 
@@ -229,9 +235,10 @@ For bats and birds, respectively,
 
 Altered sites had the lowest beta diversity in bats, decreasing significantly from intact sites  (Wilcoxon rank sum test, $p_{bat}$ = `r round(pbeta[[1]]$p.value, 3)`). Birds also exhibited higher beta diversity in intact sites, but the difference was not significant ($p _{bird}$ = `r round(pbeta[[2]]$p.value, 3)`). Bats had an order of magnitude higher similarity than birds overall, indicating that spatial turnover in birds is much higher and suggesting the two taxa have very different community structures. This is unsurprising because Neotropical bats frequently have geographic ranges spanning almost the entire realm, unlike Neotropical birds.
 
-*__Interaction results__* Bagged interaction models showed no significant difference in $\psi$ or $\sigma_{g}$ of any group, but non-bagged models showed significant differences in all instances. Qualitative differences in bagged models weakly support the results of the non-bagged models, so we focus on the results of the non-bagged models in the main text. The reality is likely somewhere between the two sets of results, but the bagged models evidently discard too much information to muster enough power to detect the signal observed in the non-bagged models. All non-bagged model results are reported in the main text. 
+_Interaction results_ 
+Bagged interaction models showed no significant difference in $\psi$ or $\sigma_{g}$ of any group, but non-bagged models showed significant differences in all instances. Qualitative differences in bagged models weakly support the results of the non-bagged models, so we focus on the results of the non-bagged models in the main text. The reality is likely somewhere between the two sets of results, but the bagged models evidently discard too much information to muster enough power to detect the signal observed in the non-bagged models. All non-bagged model results are reported in the main text. 
 
-*__Altered site types.__*
+_Altered site types_
  Strong aggregations form when species occur together at several sites and are both absent from other sites. To help understand our results, we calculated the representation of dietary guilds at various different types of altered sites (Fig. S3). Carnivore-insectivorous (22 species) and frugivorous bats (69 species) co-occur disproportionately in plantations. Plantations and forest fragments support the highest proportion of insectivore bats (80 species), and nectarivores (21 species) co-occur disproportionately in plantations and croplands (Fig. S3). 
 
 For birds, the single inhabited site supports a disproportionate ratio of birds with simple diets (nectarivores, frugivores, invertivores, and granivores). Croplands are the main supporter of frugivore-granivore birds. Many of our alteration categories included only one or two sites, which is insufficient to draw definitive conclusions about how bat and bird guilds aggregate over the altered landscape. However, our results (Fig. S3) suggest that plantations are an important aggregation point for bats, particularly frugivores and nectarivores. The data for site types are even sparser for birds, but the primary habitat types are forest fragment, combined, disturbed forest, and plantation. These site types vary in their importance to individual bird guilds. Birds with fruit or nectar in their diets showed a variety of site preferences, while insectivores were most strongly aggregated in combined and inhabited sites. 
@@ -271,7 +278,8 @@ box()
 
 ```
 
-__Figure S1.__ Maps of Neotropical bat and bird sites before (top) and after (bottom) biogeographic matching procedure, with altered sites represented in red and intact sites represented in blue.
+__Fig. S1.__ 
+Maps of Neotropical bat and bird sites before (top) and after (bottom) biogeographic matching procedure, with altered sites represented in red and intact sites represented in blue.
 
 
 ```{r, echo = FALSE}
@@ -310,7 +318,8 @@ plot_grid(pbird+ theme(legend.position = c(1, 0), legend.justification = c(1, 0)
 
 ```
 
-__Figure S3.__ Percent of species in bird (left and center) and bat (right) guilds, represented by panels, that co-occur at individual altered sites by type of alteration. Each point is an altered site. There are no bird sites in the suburban category. Key to panels: C = carnivore; F = frugivore; I = insectivore; N = nectarivore; and G = granivore. Multiple letters indicate mixed feeders.
+__Fig. S3.__ 
+Percent of species in bird (left and center) and bat (right) guilds, represented by panels, that co-occur at individual altered sites by type of alteration. Each point is an altered site. There are no bird sites in the suburban category. Key to panels: C = carnivore; F = frugivore; I = insectivore; N = nectarivore; and G = granivore. Multiple letters indicate mixed feeders.
 
 
-## References
+### References
