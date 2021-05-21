@@ -102,7 +102,7 @@ omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffec
       # Priors
       for (i in 1:4) {
         av.ln.omega[i] ~ dnorm(0,0.01)
-        sigma[i]       ~ dunif(0, 10)       # hyperparameter sigma for random effect
+        sigma[i]       ~ gamma(2, 0)       # hyperparameter sigma for random effect
         tau[i]        <- 1 / (sigma[i] * sigma[i]) # convert from sd to precision for dnorm
       }
       
@@ -126,7 +126,7 @@ omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffec
       altered     ~ dnorm(0,0.04)
       same        ~ dnorm(0,0.04)
       for(i in 1:4) {  
-        sigma[i]  ~ dunif(0,10)
+        sigma[i]  ~ gamma(2,0)
         tau[i]   <- 1 / (sigma[i] * sigma[i])
       }
       # Likelihood

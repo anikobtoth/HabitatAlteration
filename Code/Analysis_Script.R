@@ -72,8 +72,8 @@ beta <- beta.types(PAn, unalt_sites)
 # summary stats
 b <- beta %>% group_by(taxon, unalt.pair) %>% summarise(mean = mean(Z.Score), median = median(Z.Score))
 # p - values
-beta %>% filter(unalt.pair != "Unaltered-Altered") %>% 
-  mutate(similarity = qnorm(Z.Score)) %>% split(.$taxon) %>% 
+beta %>% dplyr::filter(unalt.pair != "Unaltered-Altered") %>% 
+  mutate(similarity = log(Z.Score)) %>% split(.$taxon) %>% 
   purrr::map(~wilcox.test(data = ., similarity~unalt.pair, paired=FALSE))
 
 #occupancy calculations (used later)
@@ -123,17 +123,17 @@ w
   # Remove empty rows from altered and unaltered tables
 PAna <- map(PAna, clean.empty) 
 PAnu <- map(PAnu, clean.empty)
-shared_bats <- rownames(tables[[1]][[1]])[which(rownames(tables[[1]][[1]]) %in% rownames(tables[[1]][[2]]))]
-shared_birds <- rownames(tables[[2]][[1]])[which(rownames(tables[[2]][[1]]) %in% rownames(tables[[2]][[2]]))]
 
 # no singletons
 PAn.ns <- map(PAn, clean.empty, minrow = 2)
 
-# Format data
+# Format data (full)
 tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
   map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
-# shared only
-#tables <- map2(tables, list(shared_bats, shared_birds), function(x, y) map(x, function(z) return(z[y,])))
+# shared (common-only)
+shared_bats <- rownames(tables[[1]][[1]])[which(rownames(tables[[1]][[1]]) %in% rownames(tables[[1]][[2]]))]
+shared_birds <- rownames(tables[[2]][[1]])[which(rownames(tables[[2]][[1]]) %in% rownames(tables[[2]][[2]]))]
+tables <- map2(tables, list(shared_bats, shared_birds), function(x, y) map(x, function(z) return(z[y,])))
 
 # Contingency table
 contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>% 
@@ -279,40 +279,6 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   
   
   
-# GLM approach ####
-  gd <- out %>% mutate(score = pnorm(Z.Score)) %>% 
-    select(type, subsample, Taxon_status, id, score, diet.match, cat.pair, cosmo.pair) %>% 
-    obsDexp( split.var = "type", data.var = "score", Taxon_status, id, diet.match, cat.pair, cosmo.pair)
-  
-  gd <- gd %>% pivot_longer(cols = c("altered", "unaltered"), names_to = "status", values_to = "score")
-  bat <- gd %>% filter(taxon == "bat") %>% mutate(scaled.score = scale(score, center= FALSE), 
-                                                  log.sc.score = log(scaled.score)) %>% na.omit()
-  bird <- gd %>% filter(taxon == "bird") %>% mutate(scaled.score = scale(score, center= FALSE),
-                                                  log.sc.score = log(scaled.score)) %>% na.omit()
-  
-  interaction.plot(bat$status, bat$diet.match, response = bat$log.sc.score)
-  interaction.plot(bird$status, bird$diet.match, response = bird$log.sc.score)
-  
-  mbat <- glm(log.sc.score~diet.match*status, data = bat)
-  mbird <- glm(log.sc.score~diet.match*status, data = bird)
-  
-  #  Anikos GLM approach (not needed anymore?) ####
-  out$score <- pnorm(out$Z.Score)
-  x <- out %>% group_by(subsample, Taxon_status, diet.match, cosmo.pair, type) %>%
-     summarise(avmag = mean(score), count = length(score))
-
-  obsexp <- obsDexp(x, split.var = "type", data.var = "avmag", Taxon_status, diet.match, cosmo.pair)
-  glmdat <- obsexp %>% melt() %>% dcast(taxon+cosmo.pair+subsample+variable~diet.match, value.var = "value")
-  
-  glmdat$comp.diff <- glmdat$Same - glmdat$Different
-  bat <- glmdat %>% filter(taxon == "bat")
-  bird <- glmdat %>% filter(taxon == "bird")
-  
-  interaction.plot(bat$variable, bat$cosmo.pair, response = bat$comp.diff)
-  interaction.plot(bird$variable, bird$cosmo.pair, response = bird$comp.ratio)
-  
-  mbat <- glm(comp.diff~variable*cosmo.pair, data = bat)
-  mbird <- glm(comp.diff~variable*cosmo.pair, data = bird)
   
 #### Analysis of co-occurrence at altered habitats ####
   # bats
@@ -326,6 +292,26 @@ input <- list(bat.a, bat.u, bird.a, bird.u) %>% setNames(c("bat_altered", "bat_u
   tab <- tables[[2]][[1]]
   tab <- merge(tables[[2]][[1]], tables[[2]][[2]], by = 0) %>% namerows
   pr.bird <- percent.occupancy.by.guild(tab, gld, "bird", sitedat) 
+
+#### Exploratory analysis of co-occurring competitors ####
+comp_nc_ratio <- function(x, spp){
+  spplists <- apply(x, 2, function(y) rownames(x)[which(y==1)])
+  coocc_counts <- lapply(spplists, combn, 2) %>% lapply(t) %>% lapply(data.frame) %>% bind_rows(.id = "site") %>% group_by(X1, X2) %>% summarise(n = length(X1))
+  coocc_counts$X1.diet <- spp[coocc_counts$X1,"guild"]
+  coocc_counts$X2.diet <- spp[coocc_counts$X2,"guild"]
+  coocc_counts$comp <- coocc_counts$X1.diet == coocc_counts$X2.diet
+  #return(table(coocc_counts$comp))
+  return(coocc_counts %>% split(.$comp) %>% sapply(function(x) sum(x$n)))
+  #dietlists <- lapply(spplists, function(y) spp[y,"guild"])
+  #dietcounts <- lapply(dietlists, table)
+  #competing_coocc <- lapply(dietcounts, function(y) y*(y-1)/2) %>% sapply(sum)
+  #occ <-colSums(x)
+  #total_coocc <- occ*(occ-1)/2
+  #nc_coocc <- total_coocc - competing_coocc
+  #return(competing_coocc / nc_coocc)
+}
+  ratios <- purrr::map(tables, purrr::map, comp_nc_ratio, spp)
+  purrr::map(ratios, purrr::map_dbl, function(x) x[2]/x[1])
   
   
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
