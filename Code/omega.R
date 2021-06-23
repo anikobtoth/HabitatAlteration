@@ -64,9 +64,9 @@ indep_drw <- function(data, reps = 10, pairs){
 
 # omega
 omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffects"), bagging = FALSE, reps = 100, medn = TRUE) {
-  ## Prep data ##
+   ## Prep data ##
   message("Preparing data")
-  data <- contables %>% filter(taxon == tax)
+  data <- data %>% filter(taxon == tax)
   
   if(medn){
     occs <- rbind(data %>% select(status, Sp1, presSp1) %>% setNames(c("status", "sp", "pres")), 
@@ -102,7 +102,7 @@ omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffec
       # Priors
       for (i in 1:4) {
         av.ln.omega[i] ~ dnorm(0,0.01)
-        sigma[i]       ~ gamma(2, 0)       # hyperparameter sigma for random effect
+        sigma[i]       ~ dgamma(2, 0.5)       # hyperparameter sigma for random effect
         tau[i]        <- 1 / (sigma[i] * sigma[i]) # convert from sd to precision for dnorm
       }
       
@@ -126,7 +126,7 @@ omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffec
       altered     ~ dnorm(0,0.04)
       same        ~ dnorm(0,0.04)
       for(i in 1:4) {  
-        sigma[i]  ~ gamma(2,0)
+        sigma[i]  ~ dgamma(2,0.5)
         tau[i]   <- 1 / (sigma[i] * sigma[i])
       }
       # Likelihood
