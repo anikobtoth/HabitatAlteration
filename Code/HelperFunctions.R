@@ -236,6 +236,20 @@ beta.types <- function(PAn, unalt_sites){
   return(beta)
 }
 
+beta.types2 <- function(PAn, unalt_sites){
+  beta <- map(PAn, ~t(.)) %>% map(vegdist, method = "jaccard") %>% map2(.y = map(PAn, ~t(.)), dist2edgelist)
+  beta <- bind_rows(beta, .id = 'taxon') %>% mutate(Z.Score = 1-Z.Score)
+  beta$unalt1 <- beta$Sp1 %in% unalt_sites
+  beta$unalt2 <- beta$Sp2 %in% unalt_sites
+  beta$unalt.pair <- paste(beta$unalt1, beta$unalt2, sep = "-")
+  beta$unalt.pair[beta$unalt.pair == "TRUE-TRUE"] <- "Unaltered-Unaltered"
+  beta$unalt.pair[beta$unalt.pair == "FALSE-FALSE"] <- "Altered-Altered"
+  beta$unalt.pair[beta$unalt.pair == "FALSE-TRUE"] <- "Unaltered-Altered"
+  beta$unalt.pair[beta$unalt.pair == "TRUE-FALSE"] <- "Unaltered-Altered"
+  #ggplot(beta[beta$taxon == "bat",], aes(x = Z.Score, col = alt.pair)) + geom_density(size = 1)
+  return(beta)
+}
+
 # Squares richness estimator, Alroy 2018 ####
   squares<-function(n) {
     n <- n[n>0] # removes any non-sampled species from calculation
