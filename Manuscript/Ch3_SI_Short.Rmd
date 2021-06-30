@@ -35,7 +35,7 @@ library(reshape2)
 ### Materials and Methods
 
 _Data_ 
-Abundance data were dowloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mistnetted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also dowloaded Register metadata for the species and sites in the abundance tables, including coordinates and habitat alteration category for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published individual papers. Sampling and reporting was standardised across the samples, as all were mist-netted samples with consistent mesh size, harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the median number of individuals per sample being `r round(median(colSums(PAn[["bat"]])), 2)` for bats and `r round(median(colSums(PAn[["bird"]])), 2)` for birds.  Samples were combined if they were within the same 11.1 km equal-area grid cell, sourced from the same study, and represented the same habitat and alteration category. The combined data consisted of a total of `r round(sum(PAn[["bat"]]), 0)` bat and `r round(sum(PAn[['bird']]),0)` bird individuals from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
+Abundance data were dowloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mistnetted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also dowloaded Register metadata for the species and sites in the abundance tables, including coordinates and habitat alteration category for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published papers. Sampling and reporting were standardised across the samples, as all were mist-netted samples with consistent mesh size; harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the median number of individuals per sample being `r round(median(colSums(PAn[["bat"]])))` for bats and `r round(median(colSums(PAn[["bird"]])))` for birds.  Samples were combined if they were within the same 11.1 km equal-area grid cell, sourced from the same study, and represented the same habitat and alteration category. The combined data consisted of a total of `r round(sum(PAn[["bat"]]), 0)` bat and `r round(sum(PAn[['bird']]),0)` bird individuals from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
 
 
 ```{r, include = FALSE}
@@ -72,9 +72,9 @@ We estimated richness for bats and birds in altered and intact sites using a cor
 _Biogeographic correction_ 
 The geographic layout of sites can influence the results of a co-occurrence analysis. For instance, if sites are clustered in two regions with no sites in between, there is a good chance that the co-occurrence structure of the assemblage will reflect this clustered layout by exhibiting strong aggregations within the clusters and segregations between clusters. Ideally, we would like to have even sampling over our entire study area, but when this is not possible, we must at least make sure that any comparisons are not influenced by geographic sampling bias. One way to achieve this is to ensure that the sites used to calculate co-occurrences have roughly the same geographic coverage when comparing across different types of sites or time periods.
 
-In this paper, the study extent covers Central and South America south of the Tropic of Cancer. This includes large swathes of the Amazon in Brazil where there are no samples in altered habitats. As a result, the intact sites cover more area than the altered sites, and the geographic coverage of the latter is nested within that of the former. To correct for these biases before calculating co-occurrence, we removed the intact sites covering areas that were not covered by altered sites using the following algorithm. (1) We measured the distance to the closest altered site for all intact sites and vice versa. (2) We found the altered site farthest from its closest intact site. (3) We removed all intact sites whose closest altered neighbour was farther than the the distance in step 2. Note that this approach only works because the geographic coverages is nested; site types that are offset in space would require a different approach. Our original and final sites are plotted in Fig. S1.
+In this paper, the study extent covers Central and South America south of the Tropic of Cancer. This includes large swathes of the Brazilian Amazon, where there are no samples in altered habitats. As a result, the intact sites cover more area than the altered sites, and the geographic coverage of the latter is nested within that of the former. To correct for these biases before calculating co-occurrence, we removed the intact sites covering areas that were not covered by altered sites using the following algorithm: (1) we measured the distance to the closest altered site for all intact sites and vice versa; (2) we found the altered site farthest from its closest intact site; (3) we removed all intact sites whose closest altered neighbour was farther than the the distance in step 2. Note that this approach only works because the geographic coverages are nested; site types that are offset in space would require a different approach. Our original and final sites are plotted in Fig. S1.
 
-The resulting dataset had `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. We then calculated the beta diversity between pairs of sites for bats and birds separately, separating them into altered and intact groups. We used the Ochiai similarity index as the similarity measure for beta diversity, and transformed the results to z-scores to achieve normality for significance testing. Finally, we ran a principal coordinates analysis (PCoA) on the sites using the R function *cmdscale* in the stats package to check for compositional shifts between altered and intact habitats. We tested for significant shifts in the site centroids on the two primary PCoA axes using a simple permutation test. 
+The resulting dataset had `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. We then calculated the beta diversity between pairs of sites for bats and birds separately, separating them into altered and intact groups. We used the Ochiai similarity index as the similarity measure for beta diversity and log-transformed the results to achieve normality for significance testing with the Wilcoxon Rank-sum test. Finally, we ran a principal coordinates analysis (PCoA) on the sites using the R function *cmdscale* in the stats package to check for compositional shifts between altered and intact habitats. We tested for significant shifts in the site centroids on the two primary PCoA axes using a simple permutation test in which the disturbance category of each site was shuffled (1000 reps per taxon). 
 
 _Biotic Interactions_ 
 We used dietary information for bats and birds from the Ecological Register to analyse the effects of food competition on patterns of co-occurrence. We selected all pairs with complete dietary information and classified them as competing or non-competing. Competing pairs shared primary and secondary sources of food, but we allowed the order of these to be reversed (e.g., a frugivore-nectarivore and a nectarivore-frugivore would be equated). Non-competing pairs had no mutual food sources. Pairs with mutual and nonmutual food sources (e.g., a frugivore and an insectivore-frugivore) may experience a complex mix of effects and were therefore removed from the analysis for simplicity. Although species in the same dietary guilds are not necessarily competing, pairs with high dietary overlap have a nonzero probability of experiencing competition for food, while pairs in differing guilds have no chance of competing for food. Therefore, the co-occurrence patterns of competing and non-competing groups should be different if food competition plays a role in structuring the assemblage. 
@@ -103,7 +103,7 @@ where $N_{A^{+}}$ and $N_{A^{-}}$ are the respective numbers of sites with speci
 where $\pi_{A|B^{+}}$ and $p_{A|B^{+}}$ are the respective odds and probability that species A occupies a site given that species B is present, and $\pi_{A|B^{-}}$ and $p_{A|B^{-}}$ are the respective odds and probability that species A occupies a site given that species B is absent. The value of $\psi$, and the calculated probability of obtaining $N_{AB}$ sites of co-occurrence, $p(N_{AB}|\psi)$, are independent of which member of the species pair is arbitrarily chosen as species A.
 
 
-The $\psi$ parameter is defined on the interval $[0,\infty]$ because it is a ratio of odds. If $\psi < 1$, species A is less likely to occur at a site if species B is present, as would be expected if there is competitive exclusion among species or differences in species' habitat preferences. If $\psi > 1$, species A is more likely to occur at a site if species B is present, as would be expected if the species share habitat preferences and do not competitively exclude each other. Finally, if $\psi = 1$, the two species are independently distributed. When $\psi = 1$, Fisher's noncentral hypergeometric distribution reduces to the standard (i.e. centered) hypergeometric distribution, which has frequently been used to evaluate patterns of co-occurrence [@Arita2016]. To our knowledge, our study is the first to use Fisher's noncentral hypergeometric distribution for this purpose.
+The $\psi$ parameter is defined on the interval $[0,\infty]$ because it is a ratio of odds. If $\psi < 1$, species A is less likely to occur at a site if species B is present, as would be expected if there is competitive exclusion among species or differences in species' habitat preferences. If $\psi > 1$, species A is more likely to occur at a site if species B is present, as would be expected if the species share habitat preferences and do not competitively exclude each other. Finally, if $\psi = 1$, the two species are independently distributed. When $\psi = 1$, Fisher's noncentral hypergeometric distribution reduces to the standard (i.e. centered) hypergeometric distribution, which has been used to evaluate patterns of co-occurrence [@Arita2016]. To our knowledge, our study is the first to use Fisher's noncentral hypergeometric distribution for this purpose.
 
 
 We adopt a hierarchical Bayesian modeling approach [@Gelman2014] to estimate averages of $\theta = \text{log}\psi$ for species pairs that have been subdivided into four groups, $g$, on the basis of habitat type (altered, intact) and diet (similar, distinct). At the lower hierarchical level, we model variation in $\theta_i$ for species pairs and groups as
@@ -124,14 +124,11 @@ and standard deviations that vary by group, $\sigma_{g}$. At the upper hierarchi
 p(\overline{\theta_g}) = \frac{1}{5 \sqrt{2 \pi}} e^{\Delta\theta^2 / 5^2}
 \]
 
-and we assign the group standard deviations, $\sigma_{g}$, uniform prior distributions on the interval 0 to 5,
+and we assign the group standard deviations, $\sigma_{g}$, gamma prior distributions with a shape parameter of 2 and a scale parameter of 0.5 [@Chung2013],
+
 
 \[
-p(\sigma_g) = 
-\begin{cases}
-    1/5 & \text{if } 0 \leq \sigma_g \leq 5 \\
-    0   & \text{otherwise}
-\end{cases}.
+p(\sigma_g) = \frac{1}{\Gamma(2)0.5^2} \sigma_g e^{-\sigma_g/0.5} = 4\sigma_g e^{-\sigma_g/0.5}
 \]
 
 These prior distributions were chosen based on preliminary analyses to allow adequate exploration of the parameter space while ensuring that the Markov chain Monte Carlo (MCMC) algorithm never halted by getting stuck in regions of negligible likelihood. These prior distributions should be viewed as weakly informative in the parlance of Bayesian analysis [@Lemoine2019]. 
@@ -142,10 +139,10 @@ p(\overline{\theta_g}|N_{AB}) \propto p(N_{AB}|e^{\overline{\theta_g}+\Delta\the
 p(\Delta\theta|\sigma_g) p(\overline{\theta_g}) p(\sigma_g).
 \]
 
-This expression is a hierarchical version of Bayes formula because the likelihood is the product of two distributions, $p(N_{AB}|e^{\overline{\theta_g}+\Delta\theta}) p(\Delta\theta|\sigma_g)$, rather than being a single distribution. Consequently, the model pools information for individuals pairs to estimate the within-group standard deviations, $\sigma_g$, and then draws values of $\Delta\theta$ from a normal distribution with a mean of 0 and a standard deviation of $\sigma_g$ to yield the pair-level estimates, $\theta_i$ (Eq. 2). Data pooling, in turn, results in shrinkage of pair-level estimates, $\theta_i$, toward the population-level means, $\overline{\theta_g}$.
+This expression is a hierarchical version of Bayes formula because the likelihood is the product of two distributions, $p(N_{AB}|e^{\overline{\theta_g}+\Delta\theta}) p(\Delta\theta|\sigma_g)$, rather than being a single distribution. Consequently, the model pools information for individual pairs to estimate the within-group standard deviations, $\sigma_g$, and then draws values of $\Delta\theta$ from a normal distribution with a mean of 0 and a standard deviation of $\sigma_g$ to yield the pair-level estimates, $\theta_i$ (Eq. 2). Data pooling, in turn, results in shrinkage of pair-level estimates, $\theta_i$, toward the population-level means, $\overline{\theta_g}$.
 
 
-A hierarchical approach is desirable here because pairs yielding weaker evidence (as indexed by smaller likelihoods) exhibit greater shrinkage, and pairs yielding stronger evidence are assigned greater weight in calculating the group-level averages, $\overline{\theta_g}$. Thus, this model fitting procedure accounts for the fact that species pairs with few records of occurrence, by themselves, yield little information on the value of $\theta$, and hence $\psi$. For example, if species A and B are both present at 5 of 25 sites, but there are no sites of co-occurrence (i.e. $N_{AB} = 0$, $N_{A^{+}} = 5$, $N_{A^{-}} = 20$, $N_{B+} = 5$), the maximum likelihood estimate is $\psi = 0$, implying complete segregation of species A and B. However, in this example, evidence of segregation is actually rather weak, as evidenced by the fact that maximum likelihood calculations (based on Eq. 1) yield a 95% confidence interval for $\psi$ that actually encompasses strong?? repulsion to strong attraction (0 to 6.1).
+A hierarchical approach is desirable here because pairs yielding weaker evidence (as indexed by smaller likelihoods) exhibit greater shrinkage, and pairs yielding stronger evidence are assigned greater weight in calculating the group-level averages, $\overline{\theta_g}$. Thus, this model fitting procedure accounts for the fact that species pairs with few records of occurrence, by themselves, yield little information on the value of $\theta$, and hence $\psi$. For example, if species A and B are both present at 5 of 25 sites, but there are no sites of co-occurrence (i.e. $N_{AB} = 0$, $N_{A^{+}} = 5$, $N_{A^{-}} = 20$, $N_{B+} = 5$), the maximum likelihood estimate is $\psi = 0$, implying complete segregation of species A and B. However, in this example, evidence of segregation is actually rather weak, as evidenced by the fact that maximum likelihood calculations (based on Eq. 1) yield a 95% confidence interval for $\psi$ that actually encompasses complete repulsion to strong attraction (0 to 6.1).
 
 
 We estimate posterior distributions using two distinct approaches. First, we use hierarchical Bayesian MCMC methods to analyse full datasets, $N_{AB}$, comprised of all $S (S - 1)/2$ pairwise counts of co-occurrence for each of the two habitat types, where $S$ is the number of species used to calculate the set of pairwise estimates. This approach has the advantage of making use of all available data. However, it also has the disadvantage of not allowing for formal statistical evaluation because a single occupancy distribution for each species is used to generate $(S - 1)/2$ pairwise estimates of co-occurrence, resulting in non-independence.
@@ -159,7 +156,7 @@ p^{*}(\overline{\theta_g}|N_{AB}^*) \approx \frac{1}{D} {\sum_{n = 1}^{D} p(\ove
 
 For (*i*), we first randomly permute a vector of species indices $1,...,S$, and then pair adjacent entries in the permuted vector, leaving $\lfloor S/2 \rfloor$ independent pairs, where $\lfloor x \rfloor$ is the largest integer $\leq x$. There are $S!/2^{\lfloor S/2 \rfloor}/\lfloor S/2 \rfloor!$ distinct independent datasets that can be constructed in this way because there are $S!$ ways permute the vector of $S$ species, $2^{\lfloor S/2 \rfloor}$ distinct ways to swap the ordering of species A and B within pairs, and $\lfloor S/2 \rfloor!$ ways to order the pairs. The number of distinct independent samples is far too large to consider them all. For example, with 100 species, there exist $100!/2^{50}/50! \approx 2.7\times 10^{78}$ distinct independent datasets of 50 pairs that can be constructed. We therefore approximated the bagged posterior distribution using $D$ = 100, as is standard [@Huggins2020].
 
-For both types of analyses described above, we ran models that included all species ("full") and another set that was limited to include only species with occupancies exceeding the median occupancy in its taxon and habitat type ("common-only"). We estimate the posterior distributions using the R package rjags, which provides an interface from R to the JAGS library for Bayesian data analysis [@Lunn2009; @Plummer2006]. To approximate the posterior distributions, we generated 3 MCMC chains of $5^5$ steps each in JAGS, including a burn-in period of 10000 steps, and a thinning interval of 100. We then inspected MCMC plots for the 3 chains and calculated Gelman Rubin statistics, $\hat{R}$, to ensure convergence [@Gelman2014]. For step (*iii*) of our second analysis, we simply concatenated the posterior samples obtained from the $D=100$ trials because each MCMC trial yields a posterior sample of identical size, and all samples are given equal weight when calculating the bagged posterior distributions (Eq. 7).
+For both types of analyses described above, we ran models that included all species ("full") and another set that was limited to include only species with occupancies exceeding the median occupancy in its taxon and habitat type ("common-only"). We estimate the posterior distributions using the R package rjags, which provides an interface from R to the JAGS library for Bayesian data analysis [@Lunn2009; @Plummer2006]. To approximate the posterior distributions, we generated 3 MCMC chains of 50,000 steps each in JAGS, including a burn-in period of 10,000 steps, and a thinning interval of 100. We then inspected MCMC plots for the 3 chains and calculated Gelman Rubin statistics, $\hat{R}$, to ensure convergence [@Gelman2014]. For step (*iii*) of our second analysis, we simply concatenated the posterior samples obtained from the $D=100$ trials because each MCMC trial yields a posterior sample of identical size, and all samples are given equal weight when calculating the bagged posterior distributions (Eq. 7).
 
 The experimental approach presented here represents two distinct innovations that allow us to deal with detection issues and context-dependence of interactions. First, we use a-priori evidence for the possibility of interaction rather than direct interaction data. The resulting set of pairs includes both interacting and non-interacting pairs, but encompasses all of the former. A-priori evidence for many types of interactions could be derived from various functional traits. For example, fruit size and gape size of frugivorous birds can indicate which birds are physically able to disperse which fruits. Diet category, body size, and foraging time can similarly be used to estimate mammal predator-prey relationships [@Pires2015]. This setup frees us from the necessity of sampling all interactions and identifying the contexts under which they are realised while still yielding insights about the impact of interactions community assembly.
 
@@ -214,7 +211,7 @@ docc <- occ %>% group_by(taxon) %>% summarise(
 ```
 
 _Richness and beta diversity_ 
-Based on Chao 1 and cJ1, altered sites have lower alpha richness to intact sites, however the difference is not significant (cJ1 p-values  = `r round(pcj1[1,],3)` and `r round(pcj1[2,],3)`, and Chao 1 p-values  = `r round(pcha[1,], 3)` and `r round(pcha[2,], 3)` for bats and birds, respectively). Average richness for bat samples in intact habitats was 
+Based on Chao 1 and cJ1, altered sites have lower alpha richness to intact sites; however, the difference is not significant (cJ1 p-values  = `r round(pcj1[1,],3)` and `r round(pcj1[2,],3)`, and Chao 1 p-values  = `r round(pcha[1,], 3)` and `r round(pcha[2,], 3)` for bats and birds, respectively). Average richness for bat samples in intact habitats was 
 `r cJ1 %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bat" & .$status == "Unaltered",3]} %>% round(2)` (cJ1) and 
 `r chao %>% group_by(taxon, status) %>% summarise(mean = mean(richness, na.rm = T)) %>% {.[.$taxon == "bat" & .$status == "Unaltered",3]} %>% round(2)` (Chao1), and
 `r cJ1 %>% group_by(taxon, status) %>% summarise(mean = mean(richness)) %>% {.[.$taxon == "bat" & .$status == "Altered",3]} %>% round(2)` (cJ1) and 
@@ -320,6 +317,41 @@ plot_grid(pbird+ theme(legend.position = c(1, 0), legend.justification = c(1, 0)
 
 __Fig. S3.__ 
 Percent of species in bird (left and center) and bat (right) guilds, represented by panels, that co-occur at individual altered sites by type of alteration. Each point is an altered site. There are no bird sites in the suburban category. Key to panels: C = carnivore; F = frugivore; I = insectivore; N = nectarivore; and G = granivore. Multiple letters indicate mixed feeders.
+
+
+
+__Table S1.__ 
+Median values and 95% high density posterior intervals for  $\psi$ and $\sigma_{g}$ of all bat and bird models.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(flextable)
+l <- list.files('../Results/Omega/interaction', recursive = TRUE, full.names = TRUE)
+
+res <- map(l, function(x) {load(x)
+                           return(out)}) %>%
+  setNames(c(paste(ifelse(grepl("bat",l, fixed = TRUE), "bat", "bird"),
+                   ifelse(grepl("medianTRUE", l, fixed = TRUE), "common", "full"),
+                   ifelse(grepl("shared", l, fixed = TRUE), "noTurnover", "")) %>% trimws() %>% str_replace_all(" ", "_"))) %>%
+  bind_rows(.id = "model") %>% filter(!parameter == "deviance")
+
+hdpi95 <- res %>% group_by(model, parameter, status_dietmatch) %>% 
+  summarise(median = median(value), lower = hdi(value)[1], upper = hdi(value)[2]) %>% 
+  separate(status_dietmatch, into = c("status", "Pair_type")) %>%
+  separate(model, into = c("taxon", "model"), extra = "merge") %>%
+  mutate(parameter = recode(parameter, omega = "psi", sigma = "variance"), 
+         Pair_type = recode(Pair_type, Different = "Control", Same = "Competing"), 
+         status = recode(status, Unaltered = "Intact")) %>% 
+ pivot_wider(names_from = parameter, values_from = c(median, lower, upper), names_sort = TRUE) %>%
+  select(taxon, model, status, Pair_type, ends_with("psi"), ends_with("variance"))
+  
+flextable(hdpi95) %>% 
+ set_header_labels(median_psi = "Median ψ", 
+                   lower_psi = "Lower ψ", 
+                   upper_psi = "Upper ψ", 
+                   median_variance = "Median σ",
+                   lower_variance = "Lower σ", 
+                   upper_variance = "Upper σ")
+
+```
 
 
 ### References
