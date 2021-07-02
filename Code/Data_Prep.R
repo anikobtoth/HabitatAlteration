@@ -46,22 +46,25 @@ spp$guild[spp$diet.1 == "nectarivore" & spp$diet.2 == "granivore"] <- "NG"
 
 ##### Site metadata ####
 sitedat <- dat[grep("samples", names(dat))] %>% setNames(c("bat", "bird")) %>% bind_rows(.id = "taxon") %>% 
-  select(taxon, sample.no, sample.name, country, ecozone, latitude, longitude, habitat, altered.habitat, MAT, MAP, richness, fragment.size)
+  select(taxon, reference.no, sample.no, sample.name, country, ecozone, latitude, longitude, habitat, altered.habitat, MAT, MAP, richness, fragment.size)
 sitedat$status[!sitedat$altered.habitat == ""] <- "Altered" 
 sitedat$status[sitedat$altered.habitat == ""] <- "Unaltered" 
 sitedat$siteid <- paste0("X", sitedat$sample.no)
 
+sitedat <- sitedat %>% unite("p.sample", taxon, reference.no, latitude, longitude, habitat, altered.habitat, sep = "_", remove = F) %>% 
+  mutate(p.sample = as.factor(p.sample) %>% as.numeric())
 #### Occurrences ####
 PAn <- dat[grep("register", names(dat))] %>% 
   purrr::map(~filter(.,!species %in% c("sp.", "spp.", "sp. l", "indet")) %>% 
               mutate(name = paste(genus, species, sep = "_")) %>% 
-              dcast(name~sample.no, value.var = "count", fill = 0) %>% 
+              left_join(sitedat, by = c("sample.no", "sample.name", "country", "ecozone")) %>%
+              dcast(name~p.sample, value.var = "count", fill = 0, fun.aggregate = sum) %>% 
               namerows()) %>%
   setNames(c("bat", "bird"))
 
 
 #### Calculate habitat preference ####
-unalt_sites <- sitedat$sample.no[sitedat$status == "Unaltered"]
+unalt_sites <- sitedat$p.sample[sitedat$status == "Unaltered"]
 
 nsamp <- table(sitedat$taxon, sitedat$status)
 

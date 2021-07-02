@@ -58,11 +58,11 @@ dist2edgelist <- function(z, sppDat){  #edge list with link types attached
 matchbiogeo <- function(coords1, coords2) {
   if(min(nrow(coords1), nrow(coords2))==0) {return(0)
   }else{
-    dists <- apply(coords1, 1, function(x) spDistsN1(pts = as.matrix(dplyr::select(coords2, longitude, latitude)), pt = as.numeric(x[3:2]), longlat = TRUE))
+    dists <- apply(coords1, 1, function(x) spDistsN1(pts = as.matrix(dplyr::select(coords2, longitude, latitude)), pt = as.numeric(x[c("longitude", "latitude")]), longlat = TRUE))
     mindist <- min(max(apply(dists,1,min)), max(apply(dists, 2, min))) # take the maximum distance of the closest point of other type for each type of point, take the lesser of these.
     
-    keep1 <- coords1[which(apply(dists, 2, min)<=mindist), 1]
-    keep2 <- coords2[which(apply(dists, 1, min)<=mindist), 1]
+    keep1 <- coords1[which(apply(dists, 2, min)<=mindist), "p.sample"]
+    keep2 <- coords2[which(apply(dists, 1, min)<=mindist), "p.sample"]
     
     return(list(keep1, keep2)) }
   }
@@ -220,7 +220,7 @@ FETmP_ <- function(Talt, Tunalt, altered, unaltered){
   return(out)
 }
 
-#### Forbes similarity ###
+#### similarity ###
 # formats beta diversity results and organises them by altered and unaltered site pairings. 
 beta.types <- function(PAn, unalt_sites){
   beta <- map(PAn, ochiaiMatrix) %>% map(as.dist, upper = F) %>% map2(.y = map(PAn, ~t(.)), dist2edgelist)
