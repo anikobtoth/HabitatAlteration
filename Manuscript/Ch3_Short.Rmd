@@ -196,7 +196,10 @@ __Figure 2.__ Conceptual figure demonstrating the experimental design. (A) All p
 ```{r echo=FALSE, include = T, warnings = FALSE}
 colors <- c("#FFC2AD", "#DF8768", "#83C5BE", "#006D77")
 parameter.labels <- c(omega = "group θ", sigma = "variance (σ)")
-ann <- data.frame(value = -Inf, lab = LETTERS[1:4], parameter = "omega", model = unique(out$model), status_dietmatch = "intact_Different")
+ann <- data.frame(value = -Inf, lab = LETTERS[1:4], 
+                  parameter = "omega", 
+                  model = factor(c("full", "common", "full_noTurnover", "common_noTurnover"), levels = c("full", "common", "full_noTurnover", "common_noTurnover")), 
+                  status_dietmatch = "Unaltered_Different")
 
 specs <- list(geom_density(lwd = 1, alpha = .4),
               facet_grid(model~parameter, scales = "free_x", labeller = labeller(parameter = parameter.labels)), 
@@ -227,6 +230,7 @@ out <- bind_rows(list(full = bat_full,
                       common_noTurnover = bat_common_noTurnover), .id = "model") %>% filter(!parameter == "deviance")
 
 out$model <- factor(out$model, levels = c("full", "common", "full_noTurnover", "common_noTurnover"))
+
 
 ggplot(out, aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + specs
 

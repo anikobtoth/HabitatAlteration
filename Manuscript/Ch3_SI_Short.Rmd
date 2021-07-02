@@ -371,8 +371,6 @@ flextable(out %>% arrange(analysis))
 ```
 
 
-
-
 __Table S2.__ 
 Median values and 95% high density posterior intervals for  $\overline{\theta_{g}}$ and $\sigma_{g}$ of all bat and bird models.
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
