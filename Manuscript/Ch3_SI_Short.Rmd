@@ -16,6 +16,8 @@ Supplementary Text
 
 Figs. S1 to S3
 
+Tables S1 to S2
+
 References (37–51)
 
 
@@ -268,12 +270,12 @@ For bats and birds, respectively,
 `r round(docc[2,4] / docc[2,2]*100)`% disappeared altogether. Relatively many species were sampled only in altered habitats (`r round(docc[1,5]/ docc[1,7]*100)`% of bats and `r round(docc[2,5]/ docc[2,7]*100)`% of birds). These species may exist in intact habitats. However, as we took measures to standardise sampling between altered and intact sites, these species likely represent a group whose abundances have been substantially increased in altered sites. The converse may be true for some species that were only sampled in intact sites.
 
 _Beta diversity and composition_
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 pbat <- beta[[1]]$`Pr(>F)`[1]
 pbird <- beta[[2]]$`Pr(>F)`[1]
 ```
 
-There was no significant disparity in the beta diversity of altered and intact sites for either taxon, regardless of the metric used (ANOVA of multivariate dispersion, $p_{bat}$ = `r round(pbat, 3)`, $p _{bird}$ = `r round(pbird, 3)` for Ochiai index). Multivariate permutation (regardless of the metric) and canonical correspondence analysis detected no change in the composition of bat assemblages between altered and intact sites when using occurrence data, though the latter did detect a shift in composition when abundances were included. Both analyses suggest a shift in the composition of bird communities between altered an intact habitats, with canonical correspondence analysis showing stronger significance when abundance data were included. For a full list of test statistics and p-values, see Table S1. 
+There was no significant disparity in the beta diversity of altered and intact sites for either taxon, regardless of the metric used (ANOVA of multivariate dispersion, $p_{bat}$ = `r round(pbat, 3)`; $p _{bird}$ = `r round(pbird, 3)` for Ochiai index). Multivariate permutation (regardless of the metric) and canonical correspondence analysis detected no change in the composition of bat assemblages between altered and intact sites when using occurrence data, though the latter did detect a shift in composition when abundances were included. Both analyses suggest a shift in the composition of bird communities between altered an intact habitats, with canonical correspondence analysis showing stronger significance when abundance data were included. For a full list of test statistics and p-values, see Table S1. 
 
 
 _Interaction results_ 
