@@ -18,7 +18,7 @@ Figs. S1 to S3
 
 Tables S1 to S2
 
-References (37–51)
+References (38–55)
 
 
 ```{r setup, include=FALSE}
@@ -40,6 +40,7 @@ library(bayestestR)
 ### Materials and Methods
 
 _Data_ 
+
 Abundance data were dowloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mistnetted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also dowloaded Register metadata for the species and sites in the abundance tables, including coordinates and habitat alteration category for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published papers. Sampling and reporting were standardised across the samples, as all were mist-netted samples with consistent mesh size; harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the median number of individuals per sample being `r round(median(colSums(PAn[["bat"]])))` for bats and `r round(median(colSums(PAn[["bird"]])))` for birds.  Samples were combined if they were less than 1 km from one another, sourced from the same study, and represented the same habitat and alteration category. The combined data consisted of a total of `r round(sum(PAn[["bat"]]), 0)` bat and `r round(sum(PAn[['bird']]),0)` bird individuals from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
 
 _Biogeographic correction_ 
@@ -105,7 +106,7 @@ _Beta diversity and composition_
 ```{r betadiv, message=FALSE, warning=FALSE, include=FALSE}
 
 #### Beta diversity and composition analyses #####
-out <- data.frame()
+output <- data.frame()
 input <- list(abundance = PAn, binary = tobinary(PAn))
 
 for(d in c("binary", "abundance")){
@@ -127,7 +128,7 @@ dat <- map(data, select, contains("_"))
 comp2 <- map2(dat, data, function(x, y) cca(x~ID, data = y) %>% anova.cca)
 
 bdc <- list(beta, map(comp1, ~.x$aov.tab), comp2)
-out <- rbind(out, data.frame(analysis = c("betadispersion", "adonis", "cca"), 
+output <- rbind(output, data.frame(analysis = c("betadispersion", "adonis", "cca"), 
                              data = d, 
                              metric = c(metric, metric, "NA"), 
                              map_df(bdc, map_df, ~.x$P[1]) %>% setNames(c("p_bat", "p_bird")), 
@@ -366,8 +367,9 @@ Percent of species in bird (left and center) and bat (right) guilds, represented
 
 __Table S1.__
 Results of beta diversity and composition analyses comparing community patterns in altered and intact habitats. F-statistic and p-values are displayed for bats and birds.
-```{r}
-flextable(out %>% arrange(analysis))
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+output %>% arrange(analysis) %>% mutate(across(where(is.numeric), round, digits = 4)) %>% flextable()
 ```
 
 
@@ -385,12 +387,12 @@ res <- map(l, function(x) {load(x)
   bind_rows(.id = "model") %>% filter(!parameter == "deviance")
 
 hdpi95 <- res %>% group_by(model, parameter, status_dietmatch) %>% 
-  summarise(median = median(value), lower = hdi(value, 0.95)$CI_low, upper = hdi(value, 0.95)$CI_high) %>% 
+  summarise(median = median(value), lower = hdi(value, 0.95)$CI_low, upper = hdi(value, 0.95)$CI_high) %>% mutate(across(where(is.numeric), round, digits = 4)) %>%
   separate(status_dietmatch, into = c("status", "Pair_type")) %>%
   separate(model, into = c("taxon", "model"), extra = "merge") %>%
   mutate(parameter = recode(parameter, omega = "theta", sigma = "variance"), 
          Pair_type = recode(Pair_type, Different = "Control", Same = "Competing"), 
-         status = recode(status, intact = "Intact")) %>% 
+         status = recode(status, Unaltered = "Intact")) %>% 
  pivot_wider(names_from = parameter, values_from = c(median, lower, upper), names_sort = TRUE) %>%
   select(taxon, model, status, Pair_type, ends_with("theta"), ends_with("variance"))
   

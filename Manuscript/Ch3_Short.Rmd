@@ -207,11 +207,7 @@ specs <- list(geom_density(lwd = 1, alpha = .4),
               scale_fill_manual(values = colors, labels = c("Altered control", "Altered competing", "Intact control", "Intact competing")), 
               labs(fill = "legend", col = "legend"), 
               theme(text = element_text(size = 12)),
-              geom_text(data = ann, y = Inf, label = ann$lab, col = "black", fontface = 2, hjust = -1, vjust = 1)
-              )
-
-
-
+              geom_text(data = ann, y = Inf, label = ann$lab, col = "black", fontface = 2, hjust = -1, vjust = 1))
 ```
 
 ```{r echo=FALSE, fig.height=7, fig.width=7, message=FALSE, warning=FALSE, include=T}
