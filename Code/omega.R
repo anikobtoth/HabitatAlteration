@@ -62,9 +62,13 @@ indep_drw <- function(data, reps = 10, pairs){
   return(out)
 }
 
+
+## In the analysis we call this function using type = "interaction", and defaults related = FALSE, bagging = FALSE
 # omega
 omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffects"), bagging = FALSE, reps = 100, medn = TRUE) {
-   ## Prep data ##
+  savedir <- paste0("./Results/Omega/", type, "/")
+  if(dir.exists(savedir)) {saveRDS(100, paste0(savedir, "test.rds"))} else{dir.create(savedir)}
+  ## Prep data ##
   message("Preparing data")
   data <- data %>% filter(taxon == tax)
   
@@ -101,7 +105,7 @@ omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffec
       
       # Priors
       for (i in 1:4) {
-        av.ln.omega[i] ~ dnorm(0,0.01)
+        av.ln.omega[i] ~ dnorm(0,5)
         sigma[i]       ~ dgamma(2, 0.5)       # hyperparameter sigma for random effect
         tau[i]        <- 1 / (sigma[i] * sigma[i]) # convert from sd to precision for dnorm
       }
@@ -265,7 +269,7 @@ omega <- function(data, tax, related = FALSE, type = c("interaction", "maineffec
   out <- out %>% pivot_longer(cols = 1:9, names_to = "Group", values_to= "value") %>%
     separate(Group, into = c("parameter", "status_dietmatch"), sep = "-")
   }
-  save(out, jags.fit, data, file = paste0("./Results/Omega/", type, "/out_jagsfit_", tax, "_median", medn, "_", reps, "reps_", type, "_bagging", bagging, ".RData"))
+  save(out, jags.fit, data, file = paste0(savedir, "out_jagsfit_", tax, "_median", medn, "_", reps, "reps_", type, "_bagging", bagging, ".RData"))
   return(out)
 }
 
