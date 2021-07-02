@@ -188,7 +188,7 @@ bird <- image_read("../../documents/bird_pic.png") %>% image_fill('none') %>% as
 
 ```
 
-__Figure 1.__ Principal coordinates analysis of altered and intact sites for bats (A) and birds (B). There is no significant difference between the composition of altered and intact sites for either taxon, based on a permutation test of the site type centroids (p-values = `r w[1]` and `r w[2]` for bats and birds, respectively). 
+__Figure 1.__ Principal coordinates analysis of altered and intact sites for bats (A) and birds (B) based on the Ochiai dissimilarity index. 
 
 
 __Figure 2.__ Conceptual figure demonstrating the experimental design. (A) All pairwise combinations of species are classified as potentially competing or not competing for food based on basic dietary information. (B) A distribution of $\psi$ is calculated for each pair, shown as an adjacency matrix. From these distributions, (C) the cumulative posterior distribution of group means $\bar{\theta{g}}$ is derived and compared. 
