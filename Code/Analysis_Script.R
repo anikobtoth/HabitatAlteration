@@ -104,13 +104,13 @@ occ %>% group_by(taxon) %>% summarise(
   shared = length(which(altered > 0 & unaltered > 0)), 
   total = length(altered))
 
-#### Format Data for Co-occurrence analysis #####
+#### Interaction Co-occurrence analysis #####
 
 # remove singletons
 #PAn.ns <- map(PAn, clean.empty, minrow = 2)
 
 # Format data (full)
-tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
+tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
   map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
 # shared (common-only)
  shared_bats <- rownames(tables[[1]][[1]])[which(rownames(tables[[1]][[1]]) %in% rownames(tables[[1]][[2]]))]
@@ -121,7 +121,7 @@ tables <- PAn %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownam
 contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>% 
   bind_rows(.id = "taxon") %>% diet_cat(spp, related = TRUE) %>% na.omit()
 
-source('./Code/omega.R', echo=TRUE)
+source('./Code/omega.R')
 # Calculate omega 
 ## interaction, no bagging, no related, clipped to median
 out_bat <- omega(contables, tax = "bat", type = "interaction") 
@@ -131,13 +131,6 @@ out_bird <- omega(contables, tax = "bird", type = "interaction")
 out_bat <- omega(contables, tax = "bat", type = "interaction", medn = FALSE)
 out_bird <- omega(contables, tax = "bird", type = "interaction", medn = FALSE)
 
-## interaction, bagging, no related, clipped to median
-out_bat_bag <- omega(contables, tax = "bat", type = "interaction", bagging = TRUE) 
-out_bird_bag <- omega(contables, tax = "bird", type = "interaction", bagging = TRUE)
-
-## interaction, bagging, no related, all species
-out_bat_bag <- omega(contables, tax = "bat", type = "interaction", bagging = TRUE, medn = FALSE) 
-out_bird_bag <- omega(contables, tax = "bird", type = "interaction", bagging = TRUE, medn = FALSE)
 
 # Code for plotting omega function output
 ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch)) + 
