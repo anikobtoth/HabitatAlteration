@@ -8,6 +8,12 @@ tofac <- function(df){
   return(df)
 }
   
+
+### match character vectors returning values ####
+match_val <- function(chr1, chr2){
+  chr1[which(chr1 %in% chr2)]
+}
+
 ### Abundance to presence-absence 
 # matrix list
 tobinary <- function(PA.LIST){

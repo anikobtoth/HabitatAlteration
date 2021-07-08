@@ -105,38 +105,46 @@ occ %>% group_by(taxon) %>% summarise(
   total = length(altered))
 
 #### Interaction Co-occurrence analysis #####
-
-# remove singletons
-#PAn.ns <- map(PAn, clean.empty, minrow = 2)
+source('./Code/omega.R')
 
 # Format data (full)
 tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
   map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
-# shared (common-only)
- shared_bats <- rownames(tables[[1]][[1]])[which(rownames(tables[[1]][[1]]) %in% rownames(tables[[1]][[2]]))]
- shared_birds <- rownames(tables[[2]][[1]])[which(rownames(tables[[2]][[1]]) %in% rownames(tables[[2]][[2]]))]
- tables <- map2(tables, list(shared_bats, shared_birds), function(x, y) map(x, function(z) return(z[y,])))
 
 # Contingency table
 contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>% 
   bind_rows(.id = "taxon") %>% diet_cat(spp, related = TRUE) %>% na.omit()
 
-source('./Code/omega.R')
-# Calculate omega 
-## interaction, no bagging, no related, clipped to median
+# Calculate theta 
+## clipped to median (common-only)
 out_bat <- omega(contables, tax = "bat", type = "interaction") 
 out_bird <- omega(contables, tax = "bird", type = "interaction")
 
-##  interaction, no bagging, no related, all species
+## all species (full)
 out_bat <- omega(contables, tax = "bat", type = "interaction", medn = FALSE)
 out_bird <- omega(contables, tax = "bird", type = "interaction", medn = FALSE)
 
+## No-turnover models ####
+shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(match_val))
+tables <- map2(tables, shared, function(x, y) map(x, function(z) return(z[y,])))
+
+# Contingency table
+contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>% 
+  bind_rows(.id = "taxon") %>% diet_cat(spp, related = TRUE) %>% na.omit()
+
+# Calculate theta 
+## clipped to median (Common only, no turnover)
+out_bat <- omega(contables, tax = "bat", type = "interaction") 
+out_bird <- omega(contables, tax = "bird", type = "interaction")
+
+## all species (full, no turnover)
+out_bat <- omega(contables, tax = "bat", type = "interaction", medn = FALSE)
+out_bird <- omega(contables, tax = "bird", type = "interaction", medn = FALSE)
 
 # Code for plotting omega function output
 ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch)) + 
   geom_density() + facet_wrap(parameter~., scales = "free_x")
 
-  
 #### Analysis of co-occurrence at altered habitats ####
   # bats
   gld <- c("N", "I", "F", "CI")  
