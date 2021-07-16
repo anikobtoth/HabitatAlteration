@@ -1,5 +1,5 @@
 ---
-title: Competitive interactions are extirpated from human-altered habitats in the Neotropics
+title: Competitive interactions are disrupted by habitat alteration in the Neotropics
 output:
   bookdown::word_document2: default
 bibliography: References.bib
@@ -19,7 +19,7 @@ __Affiliations:__
 
 *Correspondence to aniko.toth@unsw.edu.au
 
-__Abstract:__ Disruption of biotic interactions by habitat destruction dismantles communities even at broad spatial scales, jeopardizing ecosystem functions. However, large scale, assemblage-wide studies of this phenomenon are uncommon and beset by logistical hurdles. Here, we use a novel approach to assess Neotropical bird and bat assemblages, asking whether spatial patterns of co-occurrence among species pairs that compete for food resources differ between altered and intact habitats. We find that competing species pairs of both taxa are more spatially segregated on average in altered habitats than intact habitats. The shift is not driven by compositional differences but by changes in spatial relationships of species. Our results suggest that altered habitats fail to support diverse competitive interactions, reversing patterns observed in the wild.
+__Abstract:__ Wholesale habitat destruction disrupts biotic interactions. Although this process may have far-reaching consequences, assemblage-wide studies of this phenomenon on landscape scales are uncommon and beset by logistical hurdles. Here, we use a novel approach to assess interactions in Neotropical bird and bat assemblages. We ask whether spatial patterns of co-occurrence among species pairs that compete for food resources differ between altered and intact habitats. We find that competing species pairs of both taxa are more spatially segregated on average in altered habitats than intact habitats. The shift is not driven by diversity losses but by changes in spatial relationships of recurring species pairs. Our results suggest that altered habitats fail to support the coexistence of diverse competitive interactions, reversing patterns observed in the wild.
 
 __One sentence summary:__ Coexistence of competing species of Neotropical bats and birds is reduced in human-altered habitats.
 
@@ -38,6 +38,14 @@ library(magick)
 
 knitr::opts_chunk$set(include = FALSE)
 
+inline_hook <- function(x) {
+  if (is.numeric(x)) {
+    format(x, digits = 2)
+  } else x
+}
+
+knitr::knit_hooks$set(inline = inline_hook)
+
 ## Load helper functions
 source('../Code/HelperFunctions.R')
 ## Prep raw data
@@ -47,42 +55,17 @@ source('../Code/Data_Prep.R')
 
 
 __Main text:__
-Human societies rely on ecosystem services, many of which depend on a balance of interspecific interactions that both affect and are affected by spatial patterns of species co-occurrence. For example, population control of a destructive pest species or disease vector by a predator or competitor species requires that both species occur in the same place. Human disturbance may alter or rewire interactions in unpredictable ways [@Bartley2019] and this can have detrimental consequences for ecosystems and people. However, empirical studies quantifying how biotic interactions change under degraded conditions are uncommon. Evidence that human disturbance can decouple predator-prey interactions [@Rodewald2011], increase competition for pollinators [@Holzschuh2011], and simplify or break apart interaction networks [@Haddad2000; @DeAssisBomfim2018] has been gathered mainly at local scales on systems with only a few species due to logistical hurdles. Broad patterns documenting changing interactions in entire assemblages have rarely been revealed, with the possible exception of systems where interaction data has been laboriously compiled over decades, such as plant-pollinator networks, and these are nonetheless beset by sampling inconsistencies (e.g., [@Dore2021]). 
+Biological communities depend on a balance of interspecific interactions. Human disturbance may rewire interactions in unpredictable ways [@Bartley2019], and this can have detrimental consequences for ecosystems and people. However, empirical studies quantifying how biotic interactions change under degraded conditions are uncommon. Evidence that human disturbance can decouple predator-prey interactions [@Rodewald2011], increase competition for pollinators [@Holzschuh2011], and simplify or break apart interaction networks [@Haddad2000; @DeAssisBomfim2018] has been gathered mainly at local scales on systems with only a few species due to logistical hurdles. Broad patterns documenting changing interactions in entire assemblages have rarely been revealed, except for systems where interaction data has been laboriously compiled over decades, such as plant-pollinator networks [@Dore2021]. These are nonetheless beset by sampling inconsistencies [@Dore2021].
 
-Studying biotic interactions is particularly challenging, yet as one of the four main drivers of species distributions  [@McGill2010], it is crucial to understand how assemblage-level interaction dynamics change in various ecological contexts  [@Song2020] and in response to disturbances, to facilitate conservation of species and ecosystems in an uncertain future. For instance, species pairs can exhibit stable or unstable population dynamics depending on the presence or absence of an apex predator in the system [@Karakoc2020], or switch from facilitation to competition along a climate gradient [@Bimler2018]. Competitive interactions can result in coexistence or exclusion, depending on fitness, niche disparity, and priority effects of the species involved [@Grainger2019]. Human habitat alteration has strong potential to change these and other ecological contexts (e.g., by extirpating apex predators, or changing the climate, or concentrating resources) and shift the dynamics of biotic interactions, often without necessarily adding or removing species [@Tylianakis2017].
+Biotic interactions are one of the four main drivers of species distributions [@McGill2010]. Thus, it is crucial to understand how assemblage-level interaction dynamics change in various ecological contexts [@Song2020], to facilitate conservation of species and ecosystems in an uncertain future. For instance, species pairs can exhibit stable or unstable population dynamics depending on the presence or absence of an apex predator [@Karakoc2020], or switch from facilitation to competition along a climate gradient [@Bimler2018]. Competitive interactions can result in coexistence or exclusion, depending on fitness, niche disparity, and priority effects of the species involved [@Grainger2019]. Human habitat alteration has strong potential to influence these processes by extirpating apex predators, changing the climate, or concentrating resources, thereby shifting the dynamics of biotic interactions, often without necessarily adding or removing species [@Tylianakis2017].
 
-Although this interpretation is still contentious [@McGill2010; @Araujo2013; @Ezard2016], it is increasingly recognized that biotic interactions can scale up to influence community assembly at much larger spatiotemporal scales  than that of individual encounters [@Araujo2007; @Pollock2014; @Fraser2020]. For example, competition and facilitation can influence the modern distribution of taxa at landscape scales [@Gotelli2010], at continental scales over millennia [@Toth2019], and drive the diversification and extinction of entire clades over millions of years [@Sepkoski1984; @Alroy2010; @Fraser2020]. Human alteration of interactions can therefore have far-reaching consequences.
+Although this interpretation is still contentious [@McGill2010; @Araujo2013; @Ezard2016], it is increasingly recognized that biotic interactions can scale up to influence community assembly at much larger spatiotemporal scales than that of individual encounters [@Araujo2007; @Pollock2014; @Fraser2020]. For example, competition and facilitation can influence the modern distribution of taxa at landscape scales [@Gotelli2010], at continental scales over millennia [@Toth2019], and drive the diversification and extinction of entire clades over millions of years [@Sepkoski1984; @Alroy2010; @Fraser2020]. Human disruption of interactions can therefore have far-reaching consequences.
 
-```{r, include = FALSE}
-###### Richness - run using raw abundance data ####
-# can only be run on raw data because it requires a singleton count of abundances.
-# cJ1
-cJ1 <- map(PAn, map_dbl, cJ1rich) %>% map(~split(., names(.) %in% unalt_sites)) %>% 
-  map(map, cbind) %>% map(map, data.frame) %>% map(bind_rows, .id = "status") %>% 
-  bind_rows(.id = "taxon") %>% setNames(c("taxon", "status", "richness"))
-cJ1$status <- plyr::revalue(cJ1$status, c("FALSE" = "Altered", "TRUE" = "intact"))
-# summary stats
-cJ1 %>% group_by(taxon, status) %>% summarise(mean.rich = mean(richness), median.rich = median(richness))
+We demonstrate how human habitat alteration influences one type of interspecific interaction (food competition) through its effects on spatial associations of species pairs (meaning that species aggregate or co-occur more often than expected, vs. segregating, co-occurring less often than expected). We introduce a statistical model that elucidates how associations between individual pairs of species collectively result in assemblage-level spatial patterns. We apply the model to assemblages of Neotropical bats and birds downloaded from the Ecological Register [@Alroy2015] consisting of `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. The sites in the Register are classified into two levels of degradation (altered vs. intact habitats; Fig. S1). Our analysis demonstrates that habitat degradation influences spatial patterns of co-occurrence among competitors at regional to continental scales by altering – or even reversing – the average outcome of food competition across regional assemblages. 
 
-# test for significant difference between altered and intact
-cJ1 %>% group_by(taxon) %>% summarise(w=wilcox.test(richness~status, paired=FALSE)$p.value)
-
-# CHAO 1
-chao <- map(PAn, map_dbl, chao1) %>% map(~split(., names(.) %in% unalt_sites)) %>% 
-  map(map, cbind) %>% map(map, data.frame) %>% map(bind_rows, .id = "status") %>% 
-  bind_rows(.id = "taxon") %>% setNames(c("taxon", "status", "richness"))
-chao$status <- plyr::revalue(chao$status, c("FALSE" = "Altered", "TRUE" = "intact"))
-#summary status
-chao %>% group_by(taxon, status) %>% summarise(mean.rich = mean(richness, na.rm = T), median.rich = median(richness, na.rm = T))
-#significance test
-chao %>% group_by(taxon) %>% summarise(w=wilcox.test(richness~status, paired=FALSE)$p.value)
-
-```
-
-Here we show how human habitat alteration influences one type of interspecific interaction (food competition) through its effects on spatial associations of species pairs (meaning aggregation or co-occurring more often than expected vs. segregation, co-occurring less often than expected). Our statistical modeling approach can elucidate how associations between individual pairs of species collectively result in assemblage-level spatial patterns. We apply the model to assemblages of Neotropical bats and birds downloaded from the Ecological Register [@Alroy2015] consisting of `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively, representing two levels of degradation (altered vs. intact habitats; Fig. S1). Our analysis demonstrates that habitat degradation influences spatial patterns of co-occurrence among competitors at regional to continental scales by altering – or even reversing – the average outcome of food competition across regional assemblages. Conventional methods of analyzing community structure are either unable to detect differences in patterns between altered and intact sites or do so without necessarily providing insight about assembly processes.
-
-```{r matchbiogeo, echo = FALSE}
+```{r biogeocorr, echo = FALSE}
 #### Match Biogeography ####
+# separate altered and intact sites
 PAnu <- PAn %>% map(~return(.[,colnames(.) %in% unalt_sites])) # separate intact
 PAna <- PAn %>% map(~return(.[,!colnames(.) %in% unalt_sites])) # and altered sites
 
@@ -107,6 +90,28 @@ coords2.keep <- purrr::map2(coords, PAna, function(x, y) x[x$p.sample %in% colna
 ```
 
 
+```{r richness, include = FALSE}
+###### Richness - run using raw abundance data ####
+# can only be run on raw data because it requires a singleton count of abundances.
+rich <- list(cJ1 = map(PAn, map_dbl, cJ1rich) %>% map(~split(., names(.) %in% unalt_sites)) %>% # corrected 1st order jackknife
+               map(map, cbind) %>% map(map, data.frame), 
+             chao = map(PAn, map_dbl, chao1) %>% map(~split(., names(.) %in% unalt_sites)) %>%  # chao1
+               map(map, cbind) %>% map(map, data.frame) , 
+             fa = map(PAn, map_dbl, fisher.alpha) %>% map(~split(., names(.) %in% unalt_sites)) %>%  # fisher's alpha
+               map(map, cbind) %>% map(map, data.frame)) %>% 
+  map(map, bind_rows, .id = "status") %>% map(bind_rows, .id = "taxon") %>% bind_rows(.id = "metric") %>% 
+  setNames(c("metric", "taxon", "status", "richness")) %>% 
+  mutate(status = recode(status, `FALSE` = "Altered", `TRUE` = "Intact"))
+
+# Summary
+rsumm <- rich %>% group_by(metric, taxon, status) %>% summarise(mean.rich = mean(richness, na.rm = T), median.rich = median(richness, na.rm = T))
+# Significance
+rsig <- rich %>% group_by(metric, taxon) %>% summarise(p=wilcox.test(richness~status, paired=FALSE)$p.value, 
+                                               W=wilcox.test(richness~status, paired=FALSE)$statistic)
+
+```
+
+
 ```{r betacomp, echo=FALSE, message=FALSE, warning=FALSE}
 
 #### Beta diversity and composition analyses #####
@@ -115,9 +120,9 @@ PAnb<- tobinary(PAn)
 PA <- PAnb  ## can run analyses with binary or abudance data
 
 # with bray-curtis index
-dist <- map(PA, ~t(.)) %>% map(vegdist, method = "bray")
-# with Ochiai index
-dist <- map(PA, ochiaiMatrix) %>% map(as.dist, upper = F) %>% map(~return(1-.))
+dist <- map(PA, ~t(.)) %>% map(vegdist, method = "jaccard")
+# with Ochiai index or cosine similarity
+dist <- map(PA, as.matrix) %>% map(cosine) %>% map(as.dist, upper = F) %>% map(~return(1-.))
 
 # beta diversity using betadisper
 beta <- map2(dist, PAn, function(x, y) betadisper(x, group = colnames(y) %in% unalt_sites) %>% anova)
@@ -132,30 +137,38 @@ comp2 <- map2(dat, data, function(x, y) cca(x~ID, data = y) %>% anova.cca)
 
 ```
 
-Specifically, intact and altered habitats did not differ significantly in species richness [@Supplement] or beta diversity quantified by multivariate dispersion [@Anderson2006] with two different dissimilarity metrics (Table S1). Permutational multivariate ANOVA [@Anderson2001] and canonical correspondence analysis [@Legendre2012], which are used to compare species composition, indicated a shift in bird community composition. The latter analysis indicated a shift in bat composition only when abundance rather than occurrence data were included (Table S1). To visualise differences in community composition, we ran a multidimensional scaling analysis which demonstrates that habitat alteration is unlikely to be a strong driver of compositional dissimilarity across sites (Fig. 1). Though some of these classical analyses did detect differences in community patterns between altered and intact sites, they may require abundance data and are not necessarily informative about shifts in processes.
+A suite of classical community analyses using several metrics produces inconsistent results on whether community patterns differ between altered and intact sites [@Supplement]. Specifically, birds have significant changes in community composition without changes in richness or beta diversity (Table S1). Bats have no significant disparity in beta diversity but possible changes in richness and composition, depending on the analysis and metric used (Table S1). We ran a multidimensional scaling analysis which demonstrates visually that compositional dissimilarities between altered and intact habitats are not striking (Fig. 1). In sum, classical analyses detect possible differences between habitat types, but they are not necessarily robust or informative about shifts in processes (as opposed to patterns) such as competitive exclusion and resource partitioning.
 
-To characterise the effect of food competition on community assembly, we considered every possible pairwise combination of species within each taxon. Each pair was classified as potentially competing (henceforth: competing) or not competing (henceforth: control) based on basic dietary guild information (Fig. 2). Competing pairs shared dietary guilds while control pairs shared no dietary sources. For simplicity, we excluded a small proportion of pairs with partially overlapping diets. Sites were classified as altered or intact based on Ecological Register metadata [@Supplement]. The intersection of these two variables produced four experimental groups: competing pairs in intact sites, control pairs in intact sites, competing pairs in altered sites, and control pairs in altered sites. We fit a hierarchical Bayesian model [@Supplement] that yields group-level estimates ($g$) for the average ($\bar{\theta_{g}}$) and standard deviation ($\sigma_{g}$) of a spatial aggregation parameter ($\theta$) that indexes pairwise co-occurrence using Fisher’s noncentral hypergeometric distribution [@Fog2008]. A negative value of $\theta$ indicates spatial segregation of the species pair, whereas a value of approximately 0 indicates independent patterns of occupancy for the pair, and a positive value indicates spatial aggregation. Models were run on all pairs (“full”), then repeated those exceeding the median incidence rate in their taxon and habitat type (“common-only”) to reduce uncertainty from high numbers of pairs with few occurrences. Posterior distributions of competing pairs were compared to the control group in each habitat for each taxon using 95% HDPIs on 1,200 posterior samples (Figs 3-4, Table S2). Though sharing diet guilds clearly does not guarantee that a species pair competes for food, this design ensures that all pairs that do compete are classified into the same group. The inclusion of potentially many non-interacting pairs in the interacting group reduces the power of the model, but differences between the groups will be conservative estimates. Conversely, the pairwise approach results in non-independence of data within each habitat, so the significance of the results cannot be formally evaluated [@Supplement]. With these two considerations acting in opposition, it is difficult to tell which has a dominant effect and this must be accepted as a source of uncertainty in our results. 
+```{r npairs, message=FALSE, warning=FALSE, include=FALSE}
+tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
+  map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
 
-Overall, birds tended to segregate ($\theta < 0$) while bats tended to aggregate ($\theta > 0$; Figs 3-4). This observation represents fundamental difference in the ecology of birds and bats. Bats tend to exhibit limiting morphological similarity [@Kingston2000], share roosts [@Swift1983], display varied foraging behaviours [@Swift1983; @Denzinger2013], and micro-partition resources, habitats, and foraging times [@Aldridge1987; @Nicholls]. By contrast, neotropical bird species are well known for interspecific aggression [@Jankowski2010; @Freeman2016; @Freeman2016a], separating out along elevational gradients [@Jankowski2010], and competitive exclusion [@Terborgh1975; @Remsen1995]. Even control bird pairs are far less likely to aggregate strongly than control bat pairs, suggesting that natural beta diversity and abiotic niche specialization are much more pronounced in birds than bats. Nonetheless, competition for food affected the spatial community structure of  bats and birds in both altered and intact habitats as demonstrated by offsets in the posterior distributions for $\bar{\theta{g}}$ and/or $\sigma_{g}$ of competing and control groups in both taxa (Figs. 3-4, Table S2). Competing pairs consistently exhibited higher variance than control pairs, supporting the conclusion that spatial patterns are more variable among species that share food sources (Fig. S2).
+original <- map(tables, map, ~expand.grid(Sp1 = rownames(.x), Sp2 = rownames(.x))) %>% map(map, diet_cat, spp, related = TRUE) %>% map(bind_rows, .id = "status") %>% bind_rows(.id = "taxon") %>% na.omit() %>% filter(Sp1 != Sp2) %>% select(taxon, Sp1, Sp2, diet.match) %>% distinct() %>% group_by(taxon) %>% summarise(pairs = n(), related = length(which(diet.match == "Related")), pct_related = 100*related/n())
 
-In intact habitats, we found no compelling evidence for assemblage-wide incidence of diet-based competitive exclusion in either taxon. Indeed, competing pairs coexisted equally to or more readily than control pairs on average (i.e., $\overline{\theta{comp}} >= \overline{\theta{contr}}$) for both bats (Fig. 3A-B) and birds (Fig. 4A-B). Because bats tend to aggregate and birds tend to segregate, this translated into stronger attraction of competing bats than control bats and to weaker repulsion of competing birds than control birds. Competing variances were also higher than in the control group, suggesting that mutual food sources encourage resource sharing and partitioning in the wild. This was seen even in models where $\bar{\theta{g}}$ posterior intervals overlapped, such as the full model in bats. In both taxa, this pattern changed in altered habitats.
+```
 
-For bats, the offset in $\bar{\theta{g}}$ between competing and control pairs disappeared in altered habitats, and variances were higher for both competing and control groups. In the common-only model (Fig. 3B), there was some evidence that competing pairs are less likely to coexist than control pairs, though 95% HDPIs were overlapping. While aggregation may still be occurring in some pairs, exclusion was much more common for competing pairs under altered than intact habitats. Full models (Fig. 3A) and common-only models (Fig. 3B) agreed in this respect, but full models have an additional feature: lower $\bar{\theta{g}}$ for both competing and control groups with respect to the intact baseline. For bats, natural coexistence was therefore less common in altered habitats, particularly for rarer species, and partly independent of competitive status.
+To characterize the effect of food competition on community assembly, we instead considered every possible pairwise combination of species within each taxon (`r original %>% filter(taxon =="bat") %>% pull(pairs)` bat and `r original %>% filter(taxon =="bird") %>% pull(pairs)` bird pairs). Each pair was classified as potentially competing (henceforth: competing) or not competing (henceforth: control) based on basic dietary guild data (Fig. 2) from the Ecological Register [@Supplement]. Competing pairs shared dietary guilds while control pairs shared no dietary sources. For simplicity, we excluded pairs with partially overlapping diets (`r original %>% filter(taxon =="bat") %>% pull(pct_related)`% of bat and `r original %>% filter(taxon =="bird") %>% pull(pct_related)`% of bird pairs). The intersection of diet and habitat type produced four experimental groups: competing pairs in intact sites, control pairs in intact sites, competing pairs in altered sites, and control pairs in altered sites. We fit a hierarchical Bayesian model [@Supplement] that yields group-level estimates ($g$) for the average ($\bar{\theta_{g}}$) and standard deviation ($\sigma_{g}$) of a spatial aggregation parameter ($\theta$) that indexes pairwise co-occurrence using Fisher’s noncentral hypergeometric distribution [@Fog2008]. A negative value of $\theta$ indicates spatial segregation of the species pair, whereas a value of approximately 0 indicates independent patterns of occupancy for the pair and a positive value indicates spatial aggregation. Models were run on all pairs (“full”), then repeated on those exceeding the median incidence rate in their taxon and habitat type (“common-only”) to reduce uncertainty due to low occurrences. Posterior distributions of competing pairs were compared to the control group in each habitat for each taxon using 95% high density intervals (HDIs) on 1,200 posterior samples (Figs 3-4, Table S2). Though sharing diet assignments clearly does not guarantee that a species pair competes for food, this design ensures that—barring errors in assignment—all pairs that do compete for food are analyzed in the same group. The inclusion of potentially many pairs that do not truly compete in this group reduces the power of the model but should produce conservative estimates of differences between groups. The pairwise approach results in non-independence of data within each habitat, so the significance of the results cannot be formally evaluated [@Supplement]. Based on these two considerations, it is difficult to say whether the underlying effect is large in absolute terms, which is a source of uncertainty in our results.
 
-For birds, the signal of resource partitioning observed in intact habitats is reversed, with control pairs exhibiting dramatically higher posteriors ($\bar{\theta{g}} > 0$, uncharacteristically for birds) and lower variance, while competing pairs remain just above intact levels of $\bar{\theta{g}}$ (common-only models Fig. 4B) or well below them (full models Fig. 4A) in altered habitats. The higher $\bar{\theta{g}}$ of control pairs suggests that altered habitats supply more opportunities for co-occurrence than intact habitats (for instance, through resource concentration or niche construction), and competing pairs are unable to capitalise on these opportunities. This causes them to instead exhibit exclusion compared to control pairs. The altered control group in the full model returned a broad posterior interval with two peaks, attributable to the uncertainty introduced by myriad species with very low occurrences. Fortunately, the true $\bar{\theta{g}}$ of this group supports our interpretations no matter where it falls in the posterior range. 
+Overall, birds tend to segregate ($\theta < 0$) while bats tend to aggregate ($\theta > 0$; Figs 3-4). This observation represents fundamental difference in the ecology of birds and bats. Bats exhibit limiting morphological similarity [@Kingston2000], share roosts [@Swift1983], display varied foraging behaviours [@Swift1983; @Denzinger2013], and micro-partition resources, habitats, and foraging times [@Aldridge1987]. Thus, they can co-exist locally. By contrast, Neotropical bird species are well known for interspecific aggression [@Freeman2016a], separating out along elevational gradients [@Freeman2016a], and competitive exclusion [@Remsen1995]. Even control bird pairs are far less likely to aggregate strongly than control bat pairs (compare x-axis in Figs. 3-4 $\theta$ panels), suggesting that natural beta diversity and abiotic niche specialization are much more pronounced in birds than bats. Nonetheless, competition for food affects the spatial community structure of both taxa regardless of habitat as demonstrated by offsets in the posterior distributions for $\bar{\theta{g}}$ and/or $\sigma_{g}$ of competing and control groups (Figs. 3-4, Table S2). Competing pairs consistently exhibit higher variance than control pairs, supporting the conclusion that spatial patterns are more variable among species that share food sources (Fig. S2).
 
-We re-ran our models (both “full” and “common-only”) excluding species that were not sampled in both altered and intact habitats (henceforth: no-turnover models). The purpose was to discover whether the main drivers of the observed patterns are (a) compositional disparities between the two habitat types, (b) actual changes in the spatial behavior of common species between the habitat types, or (c) both. There were strong similarities between these no-turnover models and our original models. In bats, there was very little difference between the two model sets (compare Fig. 3C-D to Fig. 3A-B), though the original offsets between competing and control groups increased in both habitat types, supporting hypothesis (b). In birds, the same relationships are observed within habitats, but pairs in intact habitats generally exhibit higher $\bar{\theta{g}}$ (Fig. 4C-D) compared to the original model sets (Fig. 4A-B), both in absolute terms and with respect to altered pairs. This suggests that the opportunities for aggregation are amplified especially for species that were only sampled in altered habitats (i.e., species that thrive primarily in disturbed areas) and supports hypothesis (c). However, competing pairs still exhibit exclusion in altered habitats, and this is very pronounced in both no-turnover models, with $\bar{\theta{g}}$ of competing pairs in altered habitats significantly lower than in any other group. Altered habitats cannot consistently sustain diverse sets of competing pairs, irrespective of whether the species comprising them occur in both types of habitats or primarily in altered habitats. The no-turnover models also exhibit a stronger tendency for partitioning (competing pairs have higher $\bar{\theta{g}}$) in intact habitats, even for species with lower occupancies. This result suggests species that are better able to partition resources are more likely to be found in both habitat types, and, conversely, those that did experience competitive exclusion in intact habitats are less likely to be sampled in any altered habitats.
+In intact habitats, we find no compelling evidence for assemblage-wide incidence of diet-based competitive exclusion in either taxon. Competing pairs coexist equally (full models) to or more readily (common-only models) than control pairs on average (i.e., $\overline{\theta{comp}} >= \overline{\theta{contr}}$) for both bats (Fig. 3A-B) and birds (Fig. 4A-B). Because bats tend to aggregate and birds tend to segregate, this translates into stronger attraction of competing bats than control bats and to weaker repulsion of competing birds than control birds. Competing variances are also higher than in the control group, suggesting that mutual food sources encourage resource sharing and partitioning in the wild. In both taxa, this pattern changed in altered habitats.
 
-We find differences in the community structures of bats and birds in intact habitats, but both taxa exhibited higher coexistence in competing pairs with respect to control pairs, suggesting that resource partitioning occurs most frequently instead of competitive exclusion. Natural patterns changed in altered habitats, even though richness, turnover, and composition were largely similar. Altered habitats afford fewer opportunities for the coexistence of bats but more opportunities for the coexistence of birds, especially those sampled exclusively in altered habitats. Competing pairs, however, exhibited equal or lower coexistence than control pairs under altered conditions. Thus, altered habitats are unable to consistently support rich local communities of competing species through partitioning as seen in intact habitats. The no-turnover analyses indicate that these effects are largely attributable to changes in spatial behaviour, and not merely to differences in species composition.
+For bats, the offset in $\bar{\theta{g}}$ between competing and control pairs disappears in altered habitats, and variances are higher for both competing and control groups. In the common-only model (Fig. 3B), there is some evidence that competing pairs are less likely to coexist than control pairs, though 95% HDIs are overlapping. While aggregation may still occur in some pairs, exclusion is much more common for competing pairs under altered than intact conditions. Full models (Fig. 3A) and common-only models (Fig. 3B) agree in this respect, but full models also exhibit lower $\bar{\theta{g}}$ for both altered groups. For bats, natural coexistence is therefore less common in altered habitats, particularly for rarer species, and irrespective of competitive status.
 
-Overall, habitat alteration reduces or reverses the effect of competition on community structure in both bats and birds. This loss of competitive interactions in altered sites may represent a loss of ecosystem functionality. Continuing loss of functionality could jeopardize ecosystem services that rely on competition or on the persistence of the less dominant species in competitive interactions. Our results add to mounting evidence that human activity changes drivers of community structure without directly adding or removing species, and further suggest that this can play out over landscape scales. Our results shed light on the elusive effect of biotic interactions on community assembly, and our approach helps pave the way for future research seeking to understand how interaction outcomes change across various contexts and at large spatial scales.
+For birds, the resource partitioning observed in intact habitats is reversed, with control pairs exhibiting dramatically higher posteriors ($\bar{\theta{g}} > 0$, uncharacteristically for birds) and lower variance, while competing pairs remain just above intact levels of $\bar{\theta{g}}$ (common-only models Fig. 4B) or well below them (full models Fig. 4A) in altered habitats. This suggests that altered habitats supply more opportunities for co-occurrence than intact habitats (for instance, through resource concentration or niche construction), but competing pairs are unable to capitalize on these opportunities. This causes them to instead exhibit exclusion compared to control pairs. The altered control group in the full model returned an unconverged posterior distribution, but the underlying $\bar{\theta{g}}$ of this group is consistent with our interpretations no matter where it falls in the wide possible range. 
+
+To discover whether compositional differences between habitats were responsible for our results, we re-run our models (both “full” and “common-only”) while excluding species that were not sampled in both altered and intact habitats ("no-turnover" models) [@Supplement]. In bats there is no qualitiative change (Fig. 3C-D), meaning that recurring pairs change their spatial behavior between habitats. In birds, the patterns within habitat types are conserved but the absolute differences between habitat types are reduced (Fig. 4C-D), suggesting that compositional turnover and changes in the spatial associations of recurring pairs both play a role [@Supplement]. 
+
+We find differences in the community structures of bats and birds in intact habitats, but for both taxa there was higher coexistence of competing pairs than expected, suggesting that resource partitioning occurs most frequently instead of competitive exclusion. Patterns changed in altered habitats. Altered habitats afford fewer opportunities for the coexistence of bats but more opportunities for the coexistence of birds, especially those sampled exclusively in altered habitats. Competing pairs, however, exhibited equal or lower coexistence than control pairs under altered conditions, suggesting that competitive exclusion is more common. Thus, altered habitats are unable to consistently support varied local communities of competing species through partitioning, as seen in intact habitats. The no-turnover analyses indicate that these effects are largely attributable to changes in spatial behavior, and not merely to differences in species composition.
+
+Overall, habitat alteration reduces or reverses the effect of competition on community structure in both bats and birds. Our results add to mounting evidence that human activity changes community structure and interactions without necessarily adding or removing species, and further corroborate that this can play out over landscape scales. Though diversity loss is known to influence ecosystem services [@Winfree2018], analogous studies examining the relationships between biotic interactions and functionality of ecosystems are rare (but see e.g. [@Cardinale2002]). Consequences of shifting competition outcomes are therefore poorly understood, but negative scenarios are easy to envision. For example, population control of a destructive pest by a competing species can not take place if the two species are unable to coexist. Our results shed light on the elusive relationship of biotic interactions on community assembly processes, and our approach helps pave the way for future research seeking to understand how interaction outcomes change across various contexts and at large spatial scales.
 
 
 __Acknowledgments:__ We thank the Macquarie University paleobiology lab for discussions that improved this paper. 
 
 __Funding:__ ABT was partially supported by an IMQRES scholarship at Macquarie University.
 
-__Author contributions:__ ABT and JA designed the study, JA curated the data, ABT analyzed data, produced the figures, and wrote the paper. ABT and APA designed, coded, and tested the model. SKL helped design supporting analyses. All authors edited the manuscript.
+__Author contributions:__ ABT and JA designed the study, JA curated the data and provided statistical expertise, ABT analyzed data, produced the figures, and wrote the paper. ABT and APA designed, coded, and tested the model. SKL helped design supporting analyses. All authors edited the manuscript.
 
 __Competing Interests:__ The authors declare no competing interests.
 
@@ -188,7 +201,7 @@ bird <- image_read("bird_pic.png") %>% image_fill('none') %>% as.raster()
 
 ```
 
-__Figure 1.__ Principal coordinates analysis of altered and intact sites for bats (A) and birds (B) based on the Ochiai dissimilarity index. 
+__Figure 1.__ Multidimensional scaling analysis of altered and intact sites for bats (A) and birds (B) based on the Ochiai dissimilarity index [@Hubalek1982]. 
 
 
 __Figure 2.__ Conceptual figure demonstrating the experimental design. (A) All pairwise combinations of species are classified as potentially competing or not competing for food based on basic dietary information. (B) A distribution of $\theta$ is calculated for each pair, shown as an adjacency matrix. From these distributions, (C) the cumulative posterior distribution of group means $\bar{\theta{g}}$ is derived and compared. 
@@ -198,14 +211,14 @@ colors <- c("#FFC2AD", "#DF8768", "#83C5BE", "#006D77")
 parameter.labels <- c(omega = "group θ", sigma = "variance (σ)")
 ann <- data.frame(value = -Inf, lab = LETTERS[1:4], 
                   parameter = "omega", 
-                  model = factor(c("full", "common", "full_noTurnover", "common_noTurnover"), levels = c("full", "common", "full_noTurnover", "common_noTurnover")), 
+                  model = factor(c("full", "common", "full noTurnover", "common noTurnover"), levels = c("full", "common", "full noTurnover", "common noTurnover")), 
                   status_dietmatch = "Unaltered_Different")
 
 specs <- list(geom_density(lwd = 1, alpha = .4),
               facet_grid(model~parameter, scales = "free_x", labeller = labeller(parameter = parameter.labels)), 
               scale_color_manual(values = colors, labels = c("Altered control", "Altered competing", "Intact control", "Intact competing")), 
               scale_fill_manual(values = colors, labels = c("Altered control", "Altered competing", "Intact control", "Intact competing")), 
-              labs(fill = "legend", col = "legend"), 
+              labs(fill = "", col = "", x = "Value", y = "Density"), 
               theme(text = element_text(size = 12)),
               geom_text(data = ann, y = Inf, label = ann$lab, col = "black", fontface = 2, hjust = -1, vjust = 1))
 ```
@@ -223,9 +236,11 @@ bat_full_noTurnover <- out
 out <- bind_rows(list(full = bat_full, 
                       common = bat_common, 
                       full_noTurnover = bat_full_noTurnover, 
-                      common_noTurnover = bat_common_noTurnover), .id = "model") %>% filter(!parameter == "deviance")
+                      common_noTurnover = bat_common_noTurnover), .id = "model") %>% 
+  filter(!parameter == "deviance") %>%
+  mutate(model = recode(model, full_noTurnover = "full noTurnover", common_noTurnover = "common noTurnover"))
 
-out$model <- factor(out$model, levels = c("full", "common", "full_noTurnover", "common_noTurnover"))
+out$model <- factor(out$model, levels = c("full", "common", "full noTurnover", "common noTurnover"))
 
 
 ggplot(out, aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + specs
@@ -250,8 +265,11 @@ bird_full_noTurnover <- out
 out <- bind_rows(list(full = bird_full, 
                       common = bird_common, 
                       full_noTurnover = bird_full_noTurnover, 
-                      common_noTurnover = bird_common_noTurnover), .id = "model") %>% filter(!parameter == "deviance")
-out$model <- factor(out$model, levels = c("full", "common", "full_noTurnover", "common_noTurnover"))
+                      common_noTurnover = bird_common_noTurnover), .id = "model") %>% 
+  filter(!parameter == "deviance") %>%
+  mutate(model = recode(model, full_noTurnover = "full noTurnover", common_noTurnover = "common noTurnover"))
+
+out$model <- factor(out$model, levels = c("full", "common", "full noTurnover", "common noTurnover"))
 
 ggplot(out, aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + specs
 
@@ -259,8 +277,5 @@ ggplot(out, aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + s
 ```
 
 __Figure 4.__ $\bar{\theta{g}}$ and $\sigma_{g}$ posteriors distributions for bird models. Panels as in Fig. 2.
-
-## References
-
 
 
