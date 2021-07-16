@@ -10,35 +10,12 @@ library(vegan)
 library(reshape2)
 library(stringi)
 library(parallel)
-
+library(lsa)
 ## Load helper functions
 source('./Code/HelperFunctions.R')
 
 ## Prep raw data
 source('./Code/Data_Prep.R')
-
-###### Richness - run using raw abundance data ####
-# can only be run on raw data because it requires a singleton count of abundances.
-# cJ1
-cJ1 <- map(PAn, map_dbl, cJ1rich) %>% map(~split(., names(.) %in% unalt_sites)) %>% 
-  map(map, cbind) %>% map(map, data.frame) %>% map(bind_rows, .id = "status") %>% 
-  bind_rows(.id = "taxon") %>% setNames(c("taxon", "status", "richness"))
-cJ1$status <- plyr::revalue(cJ1$status, c("FALSE" = "Altered", "TRUE" = "Unaltered"))
-# summary stats
-cJ1 %>% group_by(taxon, status) %>% summarise(mean.rich = mean(richness), median.rich = median(richness))
-
-# test for significant difference between altered and unaltered
-cJ1 %>% group_by(taxon) %>% summarise(w=wilcox.test(richness~status, paired=FALSE)$p.value)
-
-# CHAO 1
-chao <- map(PAn, map_dbl, chao1) %>% map(~split(., names(.) %in% unalt_sites)) %>% 
-  map(map, cbind) %>% map(map, data.frame) %>% map(bind_rows, .id = "status") %>% 
-  bind_rows(.id = "taxon") %>% setNames(c("taxon", "status", "richness"))
-chao$status <- plyr::revalue(chao$status, c("FALSE" = "Altered", "TRUE" = "Unaltered"))
-#summary status
-chao %>% group_by(taxon, status) %>% summarise(mean.rich = mean(richness, na.rm = T), median.rich = median(richness, na.rm = T))
-#significance test
-chao %>% group_by(taxon) %>% summarise(w=wilcox.test(richness~status, paired=FALSE)$p.value)
 
 
 #### Match Biogeography ####
@@ -64,15 +41,33 @@ coords1.keep <- purrr::map2(coords, PAnu, function(x, y) x[x$p.sample %in% colna
 coords2.keep <- purrr::map2(coords, PAna, function(x, y) x[x$p.sample %in% colnames(y),])
 
 
+###### Richness - run using raw abundance data ####
+# can only be run on raw data because it requires a singleton count of abundances.
+rich <- list(cJ1 = map(PAn, map_dbl, cJ1rich) %>% map(~split(., names(.) %in% unalt_sites)) %>% # corrected 1st order jackknife
+               map(map, cbind) %>% map(map, data.frame), 
+             chao = map(PAn, map_dbl, chao1) %>% map(~split(., names(.) %in% unalt_sites)) %>%  # chao1
+               map(map, cbind) %>% map(map, data.frame) , 
+             fa = map(PAn, map_dbl, fisher.alpha) %>% map(~split(., names(.) %in% unalt_sites)) %>%  # fisher's alpha
+               map(map, cbind) %>% map(map, data.frame)) %>% 
+  map(map, bind_rows, .id = "status") %>% map(bind_rows, .id = "taxon") %>% bind_rows(.id = "metric") %>% 
+  setNames(c("metric", "taxon", "status", "richness")) %>% 
+  mutate(status = recode(status, `FALSE` = "Altered", `TRUE` = "Intact"))
+
+# Summary
+rich %>% group_by(metric, taxon, status) %>% summarise(mean.rich = mean(richness, na.rm = T), median.rich = median(richness, na.rm = T))
+# Significance
+rich %>% group_by(metric, taxon) %>% summarise(p=wilcox.test(richness~status, paired=FALSE)$p.value, 
+                                               W=wilcox.test(richness~status, paired=FALSE)$statistic)
+
 #### Beta diversity and composition analyses #####
 PAnb<- tobinary(PAn)
 
-PA <- PAn  ## can run analyses with binary or abudance data
+PA <- PAnb  ## can run analyses with binary or abudance data
 
 # with bray-curtis index
-dist <- map(PA, ~t(.)) %>% map(vegdist, method = "bray")
-# with Ochiai index
-dist <- map(PA, ochiaiMatrix) %>% map(as.dist, upper = F) %>% map(~return(1-.))
+dist <- map(PA, ~t(.)) %>% map(vegdist, method = "jaccard")
+# with Ochiai index or cosine similarity
+dist <- map(PA, as.matrix) %>% map(cosine) %>% map(as.dist, upper = F) %>% map(~return(1-.))
 
 # beta diversity using betadisper
 beta <- map2(dist, PAn, function(x, y) betadisper(x, group = colnames(y) %in% unalt_sites) %>% anova)
