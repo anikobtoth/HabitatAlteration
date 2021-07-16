@@ -226,35 +226,35 @@ FETmP_ <- function(Talt, Tunalt, altered, unaltered){
   return(out)
 }
 
-#### similarity ###
+#### similarity ####
 # formats beta diversity results and organises them by altered and unaltered site pairings. 
-beta.types <- function(PAn, unalt_sites){
-  beta <- map(PAn, ochiaiMatrix) %>% map(as.dist, upper = F) %>% map2(.y = map(PAn, ~t(.)), dist2edgelist)
-  beta <- bind_rows(beta, .id = 'taxon')
-  beta$unalt1 <- beta$Sp1 %in% unalt_sites
-  beta$unalt2 <- beta$Sp2 %in% unalt_sites
-  beta$unalt.pair <- paste(beta$unalt1, beta$unalt2, sep = "-")
-  beta$unalt.pair[beta$unalt.pair == "TRUE-TRUE"] <- "Unaltered-Unaltered"
-  beta$unalt.pair[beta$unalt.pair == "FALSE-FALSE"] <- "Altered-Altered"
-  beta$unalt.pair[beta$unalt.pair == "FALSE-TRUE"] <- "Unaltered-Altered"
-  beta$unalt.pair[beta$unalt.pair == "TRUE-FALSE"] <- "Unaltered-Altered"
-  #ggplot(beta[beta$taxon == "bat",], aes(x = Z.Score, col = alt.pair)) + geom_density(size = 1)
-  return(beta)
-}
-
-beta.types2 <- function(PAn, unalt_sites){
-  beta <- map(PAn, ~t(.)) %>% map(vegdist, method = "jaccard") %>% map2(.y = map(PAn, ~t(.)), dist2edgelist)
-  beta <- bind_rows(beta, .id = 'taxon') %>% mutate(Z.Score = 1-Z.Score)
-  beta$unalt1 <- beta$Sp1 %in% unalt_sites
-  beta$unalt2 <- beta$Sp2 %in% unalt_sites
-  beta$unalt.pair <- paste(beta$unalt1, beta$unalt2, sep = "-")
-  beta$unalt.pair[beta$unalt.pair == "TRUE-TRUE"] <- "Unaltered-Unaltered"
-  beta$unalt.pair[beta$unalt.pair == "FALSE-FALSE"] <- "Altered-Altered"
-  beta$unalt.pair[beta$unalt.pair == "FALSE-TRUE"] <- "Unaltered-Altered"
-  beta$unalt.pair[beta$unalt.pair == "TRUE-FALSE"] <- "Unaltered-Altered"
-  #ggplot(beta[beta$taxon == "bat",], aes(x = Z.Score, col = alt.pair)) + geom_density(size = 1)
-  return(beta)
-}
+# beta.types <- function(PAn, unalt_sites){
+#   beta <- map(PAn, ochiaiMatrix) %>% map(as.dist, upper = F) %>% map2(.y = map(PAn, ~t(.)), dist2edgelist)
+#   beta <- bind_rows(beta, .id = 'taxon')
+#   beta$unalt1 <- beta$Sp1 %in% unalt_sites
+#   beta$unalt2 <- beta$Sp2 %in% unalt_sites
+#   beta$unalt.pair <- paste(beta$unalt1, beta$unalt2, sep = "-")
+#   beta$unalt.pair[beta$unalt.pair == "TRUE-TRUE"] <- "Unaltered-Unaltered"
+#   beta$unalt.pair[beta$unalt.pair == "FALSE-FALSE"] <- "Altered-Altered"
+#   beta$unalt.pair[beta$unalt.pair == "FALSE-TRUE"] <- "Unaltered-Altered"
+#   beta$unalt.pair[beta$unalt.pair == "TRUE-FALSE"] <- "Unaltered-Altered"
+#   #ggplot(beta[beta$taxon == "bat",], aes(x = Z.Score, col = alt.pair)) + geom_density(size = 1)
+#   return(beta)
+# }
+# 
+# beta.types2 <- function(PAn, unalt_sites){
+#   beta <- map(PAn, ~t(.)) %>% map(vegdist, method = "jaccard") %>% map2(.y = map(PAn, ~t(.)), dist2edgelist)
+#   beta <- bind_rows(beta, .id = 'taxon') %>% mutate(Z.Score = 1-Z.Score)
+#   beta$unalt1 <- beta$Sp1 %in% unalt_sites
+#   beta$unalt2 <- beta$Sp2 %in% unalt_sites
+#   beta$unalt.pair <- paste(beta$unalt1, beta$unalt2, sep = "-")
+#   beta$unalt.pair[beta$unalt.pair == "TRUE-TRUE"] <- "Unaltered-Unaltered"
+#   beta$unalt.pair[beta$unalt.pair == "FALSE-FALSE"] <- "Altered-Altered"
+#   beta$unalt.pair[beta$unalt.pair == "FALSE-TRUE"] <- "Unaltered-Altered"
+#   beta$unalt.pair[beta$unalt.pair == "TRUE-FALSE"] <- "Unaltered-Altered"
+#   #ggplot(beta[beta$taxon == "bat",], aes(x = Z.Score, col = alt.pair)) + geom_density(size = 1)
+#   return(beta)
+# }
 
 # Squares richness estimator, Alroy 2018 ####
   squares<-function(n) {
@@ -292,29 +292,29 @@ cJ1rich<-function(n)	{
 }
 
 ## Ochiai similarity ####
-ochiai<-function(x,y)	{
-  if (is.numeric(x) && is.numeric(y) && min(x) == 0 && min(y) == 0 && length(x) == length(y))	{
-    a <- length(which((x * y) > 0))
-    b <- length(which(x > 0)) - a
-    c <- length(which(y > 0)) - a
-  } else	{
-    a <- length(na.omit(match(x,y)))
-    b <- length(x) - a
-    c <- length(y) - a
-  }
-  return(a / ((a + b) * (a + c))^0.5)
-}
-
-ochiaiMatrix<-function(x)	{
-  x[is.na(x)] <- 0
-  m <- matrix(nrow=ncol(x),ncol=ncol(x))
-  for (i in 1:ncol(x))
-    for (j in 1:ncol(x))
-      m[i,j] <- ochiai(x[,i],x[,j])
-  rownames(m) <- colnames(x)
-  colnames(m) <- colnames(x)
-  return(m)
-}
+# ochiai<-function(x,y)	{
+#   if (is.numeric(x) && is.numeric(y) && min(x) == 0 && min(y) == 0 && length(x) == length(y))	{
+#     a <- length(which((x * y) > 0))
+#     b <- length(which(x > 0)) - a
+#     c <- length(which(y > 0)) - a
+#   } else	{
+#     a <- length(na.omit(match(x,y)))
+#     b <- length(x) - a
+#     c <- length(y) - a
+#   }
+#   return(a / ((a + b) * (a + c))^0.5)
+# }
+# 
+# ochiaiMatrix<-function(x)	{
+#   x[is.na(x)] <- 0
+#   m <- matrix(nrow=ncol(x),ncol=ncol(x))
+#   for (i in 1:ncol(x))
+#     for (j in 1:ncol(x))
+#       m[i,j] <- ochiai(x[,i],x[,j])
+#   rownames(m) <- colnames(x)
+#   colnames(m) <- colnames(x)
+#   return(m)
+# }
 
 
 ### Chao1 richness estimator
