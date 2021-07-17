@@ -2,7 +2,7 @@
 title: Competitive interactions are disrupted by habitat alteration in the Neotropics
 output:
   bookdown::word_document2: default
-bibliography: References.bib
+bibliography: References_journ_abbr.bib
 csl: science.csl
 ---
 
@@ -42,13 +42,14 @@ library(reshape2)
 library(vegan)
 library(flextable)
 library(bayestestR)
+library(lsa)
 ```
 
 ### Materials and Methods
 
 _Data_ 
 
-Abundance data were downloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mistnetted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also downloaded Register metadata for the species and sites in the abundance tables, including coordinates and habitat alteration categories for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published papers. The Ecological Register provides methodologically consistent abundance data, not ad hoc occurrence data. Thus, sampling and reporting were standardized across the samples: all were mist-netted samples with consistent mesh size; harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the median number of individuals per sample being `r median(colSums(PAn[["bat"]]))` for bats and `r median(colSums(PAn[["bird"]]))` for birds.  Samples were combined if they were less than 1 km from one another, sourced from the same study, and represented the same habitat and alteration category. The combined data set consisted of `r sum(PAn[["bat"]])` bat and `r sum(PAn[['bird']]),0` bird individuals constituting `r length(which(PAn[["bat"]] > 0))` bat and `r length(which(PAn[["bird"]] > 0))` bird records from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
+Abundance data were downloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mistnetted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also downloaded Register metadata for the species and sites in the abundance tables, including coordinates and habitat alteration categories for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published papers. The Ecological Register provides methodologically consistent abundance data, not ad hoc occurrence data. Thus, sampling and reporting were standardized across the samples: all were mist-netted samples with consistent mesh size; harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the median number of individuals per sample being `r median(colSums(PAn[["bat"]]))` for bats and `r median(colSums(PAn[["bird"]]))` for birds.  Samples were combined if they were less than 1 km from one another, sourced from the same study, and represented the same habitat and alteration category. The combined data set consisted of `r sum(PAn[["bat"]])` bat and `r sum(PAn[['bird']])` bird individuals constituting `r length(which(PAn[["bat"]] > 0))` bat and `r length(which(PAn[["bird"]] > 0))` bird records from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
 
 _Biogeographic correction_ 
 ```{r biogeocorr, include = FALSE}
@@ -104,7 +105,7 @@ rsig <- rich %>% group_by(metric, taxon) %>% summarise(p=wilcox.test(richness~st
 
 ```
 
-We estimated richness for bats and birds in altered and intact sites using three diversity metrics: a corrected first-order jackknife (cJ1) [@Alroy2020] the canonical Chao1 [@Chao1984] and Fisher’s alpha, which is robust to sample size, widely used, and well-grounded in theory [@Schulte2005]. Each metric was applied to the raw abundance data for all sites. The status of each site was based on the ‘altered.habitat’ field in the site metadata, which is empty if the site is intact and filled with a land use category if the site is altered. Altered sites included cropland, disturbed forest, fragment, pasture, plantation, secondary forest, inhabited area, and combined categories [@Alroy2017], and none of them had sufficient sites to be evaluated individually. We compared richness estimates between altered and intact sites for both taxa using a Wilcoxon rank-sum test.
+We estimated richness for bats and birds in altered and intact sites using three diversity metrics: a corrected first-order jackknife (cJ1) [@Alroy2020], the canonical Chao1 [@Chao1984], and Fisher’s alpha, which is robust to sample size, widely used, and well-grounded in theory [@Schulte2005]. Each metric was applied to the raw abundance data for all sites. The status of each site was based on the ‘altered.habitat’ field in the site metadata, which is empty if the site is intact and filled with a land use category if the site is altered. Altered sites included cropland, disturbed forest, fragment, pasture, plantation, secondary forest, inhabited area, and combined categories [@Alroy2017], and none of them had sufficient sites to be evaluated individually. We compared richness estimates between altered and intact sites for both taxa using a Wilcoxon rank-sum test.
 
 _Beta diversity and composition_ 
 ```{r betacomp, message=FALSE, warning=FALSE, include=FALSE}
@@ -148,7 +149,8 @@ output <- rbind(output, data.frame(analysis = c("beta dispersion", "adonis", "cc
 We compared the beta diversity and composition of altered and intact sites using a suite of classical analyses. A common way to estimate beta diversity differences between two groups of samples is a multivariate dispersion test [@Anderson2006], which can be implemented using the *betadisper* function in the R package *vegan* [@Oksanen2008]. We also compared the composition of altered and intact sites for both taxa with permutational multivariate ANOVA using *adonis* [@Anderson2001] and canonical correspondence analysis using *cca* [@Legendre2012], also from the *vegan* package. Multivariate dispersion and permutational ANOVA require a distance metric, and the choice of distance metrics may influence the results. We therefore ran these analyses using the relatively ubiquitous Jaccard index [@Hubalek1982] and again with the Ochiai index [@Hubalek1982]. Beta diversity and composition can be compared on the basis of abundance data or occurrence data, noting that the Ochiai index is equivalent to cosine similarity when run on abundance data. We ran our analyses with both data types, but we focus on the results obtained with occurrence data, as these are much more common and easily obtained. However, we note those cases where results from abundance data differ quantitatively.
 
 _Biotic interactions_ 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
+PAnb <- tobinary(PAn)
 tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
   map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
 
