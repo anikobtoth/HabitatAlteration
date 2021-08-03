@@ -2,10 +2,11 @@
 title: Competitive interactions are disrupted by habitat alteration in the Neotropics
 output:
   bookdown::word_document2: default
-bibliography: References.bib
+bibliography: References_journ_abbr.bib
 csl: science.csl
 
 ---
+__One sentence summary:__ Coexistence of competing species of Neotropical bats and birds is reduced in human-altered habitats.
 
 __Authors:__ Anikó B. Tóth^1^*, Andrew P. Allen^2^, S. Kathleen Lyons^3^, John Alroy^2^
 
@@ -21,8 +22,6 @@ __Affiliations:__
 
 __Abstract:__ Wholesale habitat destruction disrupts biotic interactions. Although this process may have far-reaching consequences, assemblage-wide studies of this phenomenon on landscape scales are uncommon and beset by logistical hurdles. Here, we use a novel approach to assess interactions in Neotropical bird and bat assemblages. We ask whether spatial patterns of co-occurrence among species pairs that compete for food resources differ between altered and intact habitats. We find that competing species pairs of both taxa are more spatially segregated on average in altered habitats than intact habitats. The shift is not driven by diversity losses but by changes in spatial relationships of recurring species pairs. Our results suggest that altered habitats fail to support the coexistence of diverse competitive interactions, reversing patterns observed in the wild.
 
-__One sentence summary:__ Coexistence of competing species of Neotropical bats and birds is reduced in human-altered habitats.
-
 ```{r setup, include=FALSE}
 library(knitr)
 library(ggplot2)
@@ -35,6 +34,7 @@ library(sp)
 library(stringi)
 library(parallel)
 library(magick)
+library(lsa)
 
 knitr::opts_chunk$set(include = FALSE)
 
@@ -61,7 +61,7 @@ Biotic interactions are one of the four main drivers of species distributions [@
 
 Although this interpretation is still contentious [@McGill2010; @Araujo2013; @Ezard2016], it is increasingly recognized that biotic interactions can scale up to influence community assembly at much larger spatiotemporal scales than that of individual encounters [@Araujo2007; @Pollock2014; @Fraser2020]. For example, competition and facilitation can influence the modern distribution of taxa at landscape scales [@Gotelli2010], at continental scales over millennia [@Toth2019], and drive the diversification and extinction of entire clades over millions of years [@Sepkoski1984; @Alroy2010; @Fraser2020]. Human disruption of interactions can therefore have far-reaching consequences.
 
-We demonstrate how human habitat alteration influences one type of interspecific interaction (food competition) through its effects on spatial associations of species pairs (meaning that species aggregate or co-occur more often than expected, vs. segregating, co-occurring less often than expected). We introduce a statistical model that elucidates how associations between individual pairs of species collectively result in assemblage-level spatial patterns. We apply the model to assemblages of Neotropical bats and birds downloaded from the Ecological Register [@Alroy2015] consisting of `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. The sites in the Register are classified into two levels of degradation (altered vs. intact habitats; Fig. S1). Our analysis demonstrates that habitat degradation influences spatial patterns of co-occurrence among competitors at regional to continental scales by altering – or even reversing – the average outcome of food competition across regional assemblages. 
+We demonstrate how human habitat alteration influences one type of interspecific interaction (food competition) through its effects on spatial associations of species pairs (meaning that species aggregate or co-occur more often than expected, vs. segregating, co-occurring less often than expected). We introduce a statistical model that elucidates how associations between individual pairs of species collectively result in assemblage-level spatial patterns. We apply the model to assemblages of Neotropical bats and birds downloaded from the Ecological Register [@Alroy2015b] consisting of `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. The sites in the Register are classified into two levels of degradation (altered vs. intact habitats; Fig. S1). Our analysis demonstrates that habitat degradation influences spatial patterns of co-occurrence among competitors at regional to continental scales by altering – or even reversing – the average outcome of food competition across regional assemblages. 
 
 ```{r biogeocorr, echo = FALSE}
 #### Match Biogeography ####
@@ -179,7 +179,7 @@ __Data and materials availability:__ All R workflows and cleaned datasets used f
 ```{r echo=FALSE, fig.height=4, fig.width=9, message=FALSE, warning=FALSE, include=T}
 
 # Ordination
-dist <- map(PAn, ochiaiMatrix) %>% map(as.dist, upper = F) %>% map(~return(1-.)) 
+dist <- map(PAnb, as.matrix) %>% map(cosine) %>% map(as.dist, upper = F) %>% map(~return(1-.))
 #dist <- map(PA, ~t(.)) %>% map(vegdist, method = "bray")
 ord <- map(dist, cmdscale, k = 2) %>% map(data.frame)
 ord <- map(ord, ~merge(., y = sitedat, all.x = T, all.y = F, by.x = 0, by.y = "p.sample"))
