@@ -300,7 +300,7 @@ For bats and birds, respectively,
 `r round(docc[1,2] / docc[1,7]*100)`% of all bat and 
 `r round(docc[2,2] / docc[2,7]*100)`% of all bird species decreased their occupancies in altered habitats, and of these, 
 `r round(docc[1,4] / docc[1,2]*100)`% and 
-`r round(docc[2,4] / docc[2,2]*100)`% disappeared altogether. Relatively many species were sampled only in altered habitats (`r round(docc[1,5]/ docc[1,7]*100)`% of bats and `r round(docc[2,5]/ docc[2,7]*100)`% of birds). These species may exist in intact habitats. However, as we took measures to standardise sampling between altered and intact sites, these species likely represent a group whose abundances have been substantially increased in altered sites. The converse may be true for some species that were only sampled in intact sites.
+`r round(docc[2,4] / docc[2,2]*100)`% disappeared altogether. A surprising number of species were sampled only in altered habitats (`r round(docc[1,5]/ docc[1,7]*100)`% of bats and `r round(docc[2,5]/ docc[2,7]*100)`% of birds). These species may exist in intact habitats. However, as we took measures to standardise sampling between altered and intact sites, these species likely represent a group whose abundances have been substantially increased in altered sites. The converse may be true for some species that were only sampled in intact sites (`r round(docc[1,4]/ docc[1,7]*100)`% of bats and `r round(docc[2,4]/ docc[2,7]*100)`% of birds).
 
 _Beta diversity and composition_
 ```{r message=FALSE, warning=FALSE, include=FALSE}
