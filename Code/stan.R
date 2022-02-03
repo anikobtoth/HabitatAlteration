@@ -1,9 +1,10 @@
-library(rstan)
 library(BiasedUrn)
+library(dplyr)
+library(rstan)
 
 # data prep
 data <- contables[contables$taxon=='bat',]
-medn <- TRUE
+medn <- FALSE
 if(medn) {
   occs <- rbind(data %>% select(status, Sp1, presSp1) 
                 %>% setNames(c("status", "sp", "pres")), 
@@ -24,53 +25,48 @@ if(medn) {
 data$diet.match[data$diet.match=='Related'] <- 'Similar' # related diets excluded
 data$sa <- ifelse(data$status=='altered',1,0)  # dummy variable for status
 data$ds <- ifelse(data$diet.match=='Same',1,0) # dummy variable for diet match
-data$gg <- as.numeric(interaction(factor(data$status),factor(data$diet.match)))
-temp <- data
-temp <- temp %>% filter(diet.match != "Similar")
-temp <- temp[temp$presSp1>1&temp$presSp2>1,]
+data$gg <- as.numeric(interaction(factor(data$sa),factor(data$ds)))
+data <- data %>% filter(diet.match != "Similar")
 
 stan_code <- 
 '
 functions {
 
   // loglikelihood
-  real fnchypergeo_lpmf(int[] sb, int[] nsb, int[] occ, 
-                        vector ln_omega, int N_site) {
-    vector[num_elements(sb)] ll_num_summand;
-    vector[num_elements(sb)] ll_den_summand;
-    vector[occ[1] + 1] ll;
-    vector[occ[1] + 1] u;
-    for(i in 0:occ[1]) {
-        u[i+1] = i;
-        ll[i+1] = lchoose(occ[1], u[i+1]) + 
-                  lchoose(N_site - occ[1], occ[2] - u[i+1]);
+  real fnchypergeo_lpmf(int[] sb, int[] nsb, vector ln_omega,
+                        int[] occ, int N_site) {
+    vector[num_elements(sb)] ll_summand;
+    vector[occ[2] - occ[4] + 1] u;
+    vector[occ[2] - occ[4] + 1] ll;
+    for(i in occ[4]:occ[2]) {
+        u[i - occ[4] + 1] = i;
+        ll[i - occ[4] + 1] = lchoose(occ[2], i) + 
+                  lchoose(N_site - occ[2], occ[3] - i);
     }
-    for(i in 1:num_elements(sb)) {
-       ll_num_summand[i] = nsb[i]*ll[sb[i] + 1] + nsb[i]*sb[i]*ln_omega[i];
-       ll_den_summand[i] = nsb[i]*log_sum_exp(ll + u*ln_omega[i]);
+    for(i in 1:num_elements(nsb)) {
+      ll_summand[i] = nsb[i]*(ll[sb[i] - occ[4] + 1] + sb[i]*ln_omega[i] - 
+                              log_sum_exp(ll + u*ln_omega[i]));
     }    
-    return sum(ll_num_summand) - sum(ll_den_summand);
+    return sum(ll_summand);
   }
   
 }
 
 data {
 
-  int<lower=1> N; // number of combinations for occ/gg/sb
-  int<lower=1> N_occ; // number of occupancy patterns for s1/s2
-  int<lower=1> N_site; // number of sites
-  int<lower=1> N_rr; // number of random effects (combinations of occ/gg)
-  int<lower=1> N_gg; // number of groups
-  int<lower=1,upper=N_gg> gg[N_rr]; // group assigment for each combination
-  int<lower=1,upper=N_occ> oo[N]; // index to occ
-  int<lower=0,upper=N_site> sb[N]; // sites with both species
-  int<lower=1> nsb[N]; // frequency of each occ/gg/sb combination
-  int<lower=1,upper=N_rr> rr[N]; // index to random effects
-  int<lower=0,upper=N_site> occ[N_occ,2]; // occupancy table
-  int<lower=1,upper=N> oo_l[N_occ]; // pairs index to occ for gg/sb/nsb (lower)
-  int<lower=1,upper=N> oo_u[N_occ]; // pairs index to occ for gg/sb/nsb (upper)
+  int N_site; // # of sites
+  int N_dat; // # of rows of data (dat)
+  int dat[N_dat,4]; // dat columns: oo, sb, nsb, rr
+  int N_occ; // # of occupancy patterns for s1/s2 (occ)
+  int occ[N_occ,4]; // occ columns: oo, s1, s2, sb_min
+  int occ_idx[N_occ,2]; // row index to occ for dat
+  int N_gg; // # of groups
+  int N_rr; // # of random effects
+  int gg[N_rr]; // group assigments for random effects
+  int N_posthoc; // number of posthoc comparisons
 
 }
+
 
 parameters {
 
@@ -80,30 +76,35 @@ parameters {
 
 }
 
+
 model {
 
   // priors
   ln_omega ~ normal(mu[gg], sigma[gg]);
-  for(i in 1:N_gg) sigma[i] ~ normal(0,5) T[0,];
+  mu ~ normal(0,10);
+  for(i in 1:N_gg) sigma[i] ~ normal(0,10) T[0,];
 
   // loglikelihood
   for (i in 1:N_occ) {
-    target += fnchypergeo_lpmf(sb[oo_l[i]:oo_u[i]] | nsb[oo_l[i]:oo_u[i]],
-                               occ[i],ln_omega[rr[oo_l[i]:oo_u[i]]],N_site);
+    target += fnchypergeo_lpmf(dat[occ_idx[i,1]:occ_idx[i,2],2] | 
+                               dat[occ_idx[i,1]:occ_idx[i,2],3],
+                               ln_omega[dat[occ_idx[i,1]:occ_idx[i,2],4]],
+                               occ[i], N_site);
   }
 
 }
 
-generated quantities {
 
-  vector[(N_gg)*(N_gg - 1)/2] posthoc_mu;
-  vector[(N_gg)*(N_gg - 1)/2] posthoc_sigma;
+generated quantities {
+  
+  vector[N_posthoc] posthoc_mu;
+  vector[N_posthoc] posthoc_sigma;
   int pos = 0;
   
   for(i in 1:(N_gg - 1)) {
     for(j in (i+1):N_gg) {
       pos += 1;
-      posthoc_mu[pos] = ln_omega[i] - ln_omega[j];
+      posthoc_mu[pos] = mu[i] - mu[j];
       posthoc_sigma[pos] = sigma[i] - sigma[j];
     }
   }
@@ -111,12 +112,13 @@ generated quantities {
 }
 '
 
-stan_data_prep <- function(df) {
-  temp <- df
+stan_data_fun <- function(df) {
+  N_site <- df$presSp1[1] + df$absSp1[1]
   df$sb <- df$presBoth
   df$s1 <- apply(df[c('presSp1','presSp2')],1,min)
   df$s2 <- apply(df[c('presSp1','presSp2')],1,max)
-  occ <- unique(df[c('s1','s2')])
+  df$sb_min <- apply(df[c('s1','s2')],1,function(x) max(0,sum(x) - N_site))
+  occ <- unique(df[c('s1','s2','sb_min')])
   occ <- occ[order(occ$s1,occ$s2),]
   occ$oo <- 1:nrow(occ)
   df <- merge(occ,df)
@@ -131,23 +133,69 @@ stan_data_prep <- function(df) {
     df2$nsb[i] <- nrow(df[df$rr==df2$rr[i]&
                           df$sb==df2$sb[i],])
   }
-  return(list(N = nrow(df2),
+  return(list(N_site = N_site,
+              N_dat = nrow(df2),
+              dat = df2[c('oo','sb','nsb','rr')],
               N_occ = nrow(occ),
-              N_site = df$presSp1[1] + df$absSp1[1],
-              N_rr = max(df2$rr),
+              occ = occ[c('oo','s1','s2','sb_min')],
+              occ_idx = cbind(tapply(1:nrow(df2),df2$oo,min),
+                              tapply(1:nrow(df2),df2$oo,max)),
               N_gg = max(df2$gg),
+              N_rr = max(df2$rr),
               gg = unique(df2[c('rr','gg')])[,2],
-              oo = df2$oo,
-              sb = df2$sb,
-              nsb = df2$nsb,
-              rr = df2$rr,
-              occ = occ[c('s1','s2')],
-              oo_l = tapply(1:nrow(df2),df2$oo,min),
-              oo_u = tapply(1:nrow(df2),df2$oo,max)))
+              N_posthoc = max(df2$gg)*(max(df2$gg)-1)/2))
 }
-stan_data <- stan_data_prep(temp)
+stan_data <- stan_data_fun(data)
 
-stan_fit <- stan(model_code=stan_code,data= stan_data)
+# fit model
+stan_fit <- stan(model_code=stan_code,
+                 data= stan_data)
+
+# let's look at summary plots
+stan_sum <- cbind.data.frame(unique(stan_data$dat[c('rr','oo')]),
+                  gg = stan_data$gg,
+                  ln_omega = summary(stan_fit,'ln_omega')$summary[,1])
+stan_sum$log_n <- log(tapply(stan_data$dat$nsb,stan_data$dat$rr,sum))
+temp <- stan_data$occ
+temp$oo <- 1:nrow(temp)
+stan_sum <- merge(stan_sum,temp)
+
+pdf('trends_w_abund.pdf')
+par(mfrow=c(2,2))
+for(i in 1:4) {
+  plot(stan_sum$s1[stan_sum$gg==i],
+     stan_sum$ln_omega[stan_sum$gg==i],col=grey(0.5),
+     xlab = 'abundance', ylab = 'log(omega)')
+  lines(lowess(stan_sum$s1[stan_sum$gg==i],
+      stan_sum$ln_omega[stan_sum$gg==i]),col='red')
+  abline(h=0,lty=2)
+  title(paste0('group ',i))
+}
+dev.off()
+
+pdf('trends_w_npair.pdf')
+par(mfrow=c(2,2))
+for(i in 1:4) {
+  plot(stan_sum$log_n[stan_sum$gg==i],
+       stan_sum$ln_omega[stan_sum$gg==i],col=grey(0.5),
+       xlab = 'log(# of pairs)', ylab = 'log(omega)')
+  lines(lowess(stan_sum$log_n[stan_sum$gg==i],
+               stan_sum$ln_omega[stan_sum$gg==i]),col='red')
+  abline(h=0,lty=2)
+  title(paste0('group ',i))
+}
+dev.off()
+
+pdf('histograms.pdf')
+par(mfrow=c(2,2))
+for(i in 1:4) {
+  hist(stan_sum$ln_omega[stan_sum$gg==i],
+       main = paste0('group ',i),xlab='log(omega)')
+}
+dev.off()
+
+
+## likelihood calculation still need to be corrected below
 
 # test of fnchypergeo_lpmf
 log_sum_exp <- function(x) log(sum(exp(x - max(x)))) + max(x)
