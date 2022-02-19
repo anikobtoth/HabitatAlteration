@@ -157,14 +157,118 @@ return(stan_fit)
 }
 
 
-# let's look at summary plots
+# Fit ML model
+ml_stan_code <- 
+  '
+functions {
+
+  // PMF for Fisher noncentral hypergeometric distribution
+  real fnchypergeo_lpmf(int[] sb, int[] nsb, vector theta,
+                        int[] occ, int N_site) {
+    vector[1 + min(occ) - (sum(occ) > N_site ? sum(occ) - N_site : 0)] u;
+    vector[1 + min(occ) - (sum(occ) > N_site ? sum(occ) - N_site : 0)] ll;
+    vector[num_elements(sb)] ll_summand;
+    int sb_min = sum(occ) > N_site ? sum(occ) - N_site : 0;
+    int sb_max = min(occ);
+    for(i in sb_min:sb_max) {
+        u[i - sb_min + 1] = i;
+        ll[i - sb_min + 1] = lchoose(occ[1], i) + 
+                  lchoose(N_site - occ[1], occ[2] - i);
+    }
+    for(i in 1:num_elements(nsb)) {
+      ll_summand[i] = nsb[i]*(ll[sb[i] - sb_min + 1] + sb[i]*theta[i] - 
+                              log_sum_exp(ll + u*theta[i]));
+    }    
+    return sum(ll_summand);
+  }
+  
+}
+
+data {
+
+  int N_site; // # of sites
+  int N_dat; // # of rows in data table (dat)
+  int dat[N_dat,4]; // dat columns: oo, sb, nsb, rr
+  int N_occ; // # of rows in occupancy table (occ)
+  int occ[N_occ,2]; // occ columns: s1, s2
+  int occ_idx[N_occ,2]; // row index to occ for dat
+  int N_gg; // # of groups (IGNORED)
+  int N_rr; // # of FIXED effects
+  int gg[N_rr]; // group assigments for fixed effects (IGNORED)
+  int N_posthoc; // number of posthoc comparisons (IGNORED)
+
+}
+
+parameters {
+
+  vector[N_rr] omega; // FIXED effects
+
+}
+
+model {
+
+  // loglikelihood
+  for (i in 1:N_occ) {
+    target += fnchypergeo_lpmf(dat[occ_idx[i,1]:occ_idx[i,2],2] | 
+                               dat[occ_idx[i,1]:occ_idx[i,2],3],
+                               omega[dat[occ_idx[i,1]:occ_idx[i,2],4]],
+                               occ[i], N_site);
+  }
+
+}
+'
+ml_model <- optimizing(stan_model(model_code=ml_stan_code),
+                       data = stan_data,hessian=TRUE,
+                       init = list(theta=summary(stan_fit,'theta')[[1]][,1]))
+
+
+# Summary data for plots
 stan_sum <- cbind.data.frame(unique(stan_data$dat[c('rr','oo')]),
-                  gg = stan_data$gg,
-                  ln_omega = summary(stan_fit,'ln_omega')$summary[,1])
+                             gg = stan_data$gg,
+                             theta_bayes = summary(stan_fit,'theta')$summary[,1],
+                             theta_ml = ml_model$par)
 stan_sum$log_n <- log(tapply(stan_data$dat$nsb,stan_data$dat$rr,sum))
 temp <- stan_data$occ
 temp$oo <- 1:nrow(temp)
 stan_sum <- merge(stan_sum,temp)
+stan_sum$max_sb <- tapply(stan_data$dat$sb,stan_data$dat$rr,max)
+stan_sum$min_sb <- tapply(stan_data$dat$sb,stan_data$dat$rr,min)
+stan_sum$sb_min <- apply(stan_sum[c('s1','s2')],1,
+                         function(x) max(0,sum(x)-stan_data$N_site))
+stan_sum$sb_max <- stan_sum$s1
+stan_sum$theta_ml[stan_sum$max_sb==stan_sum$sb_min] <- -Inf
+stan_sum$theta_ml[stan_sum$min_sb==stan_sum$sb_max] <- Inf
+
+# difference between Bayes estimate and maximum likelihood estimate
+stan_sum$diff_ml <- stan_sum$theta_bayes - stan_sum$theta_ml
+stan_sum$diff_ml[stan_sum$diff_ml == -Inf] <- -4
+stan_sum$diff_ml[stan_sum$diff_ml == Inf] <- 4
+pdf('shrinkage1.pdf')
+plot(stan_sum$log_n ,stan_sum$diff_ml,pch=16,col=alpha('black',0.1),axes=FALSE,
+     xlab='',las=3,ylab='',cex=0.75)
+abline(h=0,lty=2)
+mtext(expression(number~of~pairs),side=1,line=2.5,cex=1.1)
+mtext(expression("shrinkage "~(theta[i] - hat(theta[i]))),side=2,
+      line=2.5,cex=1.1)
+axis(1,at=log(10^(0:3)),labels=parse(text=paste0('10^{',0:3,'}')))
+axis(2,at=c(-4,-2,-1,0,1,2,4),expression(-infinity,-2,-1,0,1,2,infinity))
+box()
+# Add break lines along y-axis     
+axis.break(2, -3, style = "zigzag",brw=0.03)
+axis.break(2, 3, style = "zigzag",brw=0.03)
+dev.off()
+
+
+# difference between maximum likelihood estimate and group mean
+pdf('shrinkage2.pdf')
+stan_sum$diff_mean <- stan_sum$theta_ml-summary(stan_fit,'mu')[[1]][,1][stan_sum$gg]
+plot(stan_sum$diff_mean,stan_sum$diff_ml,col=alpha('black',0.1),pch=16,
+     xlab='',ylab='',cex=0.75,ylim=c(-2.25,2.25))
+mtext(expression("deviation from group mean "~(hat(theta[i])-bar(theta[g(i)]))),
+      side=1,line=2.5,cex=1.1)
+mtext(expression("shrinkage "~(theta[i] - hat(theta[i]))),side=2,
+      line=2.5,cex=1.1)
+dev.off()
 
 # summary plots
 ggplot(stan_sum, aes(x = s1, y = ln_omega)) + 
@@ -185,74 +289,99 @@ ggplot(stan_sum, aes(x =ln_omega)) +
 
 
 
-## likelihood calculation still need to be corrected below
-
-# test of fnchypergeo_lpmf
+# Log-likelihood function for NHD
 log_sum_exp <- function(x) log(sum(exp(x - max(x)))) + max(x)
-fnchypergeo <- function(sb,occ,ln_omega,N_site) {
-  u <- ll <- ll_num_summand <- ll_den_summand <- numeric()
-  for(i in 0:occ[1]) {
-    u[i+1] = i
-    ll[i+1] = lchoose(occ[1], u[i+1]) +
-              lchoose(N_site - occ[1], occ[2] - u[i+1])
+fnchypergeo_lpmf <- function(sb, s1, s2, n_site, omega) {
+  sb_min <- max(c(0,s1 + s2 - n_site))
+  sb_max <- min(c(s1,s2))
+  u <- ll <- ans <- numeric()
+  for(i in sb_min:sb_max) {
+    u[i - sb_min + 1] = i;
+    ll[i - sb_min + 1] = lchoose(s1, i) + lchoose(n_site - s1, s2 - i)
   }
-  for(i in 1:length(sb)) {
-    ll_num_summand[i] = ll[sb[i] + 1] + sb[i]*ln_omega
-    ll_den_summand[i] = log_sum_exp(ll + u*ln_omega)
-  }
-  return(ll_num_summand -ll_den_summand)
+  if(length(sb) > 1) {
+    for(i in 1:length(sb)) {
+      ans[i] = ll[sb[i] - sb_min + 1] + sb[i]*omega - log_sum_exp(ll + u*omega)
+    }
+  } else {
+    for(i in 1:length(omega)) {
+      ans[i] = ll[sb - sb_min + 1] + sb*omega[i] - log_sum_exp(ll + u*omega[i])
+    }
+  }    
+  return(ans)
 }
-sb <- 0:4; occ <- c(4,6); N_site <- 42; omega <- 1.5
-log(dFNCHypergeo(sb,occ[1],N_site - occ[1],occ[2],omega)) # biased urn
-fnchypergeo(sb,occ,log(omega),N_site) # our function
 
-# Fisher Information
-score_fnchypergeo <- function(sb,occ,ln_omega,N_site) {
-  u <- ll <- numeric()
-  for(i in 0:occ[1]) {
-    u[i+1] = i
-    ll[i+1] = lchoose(occ[1], u[i+1]) +
-      lchoose(N_site - occ[1], occ[2] - u[i+1])
+
+# Check log-likelihood function
+sb <- 2:4; s1 <- 40; s2 <- 4; n_site <- 42; psi <- 1.5
+log(dFNCHypergeo(sb,s1,n_site - s1,s2,psi)) # BiasedUrn
+fnchypergeo_lpmf(sb,s1,s2,n_site,log(psi)) # our function
+
+
+# Score function
+fnchypergeo_score <- function(sb, s1, s2, n_site, omega) {
+  sb_min <- max(c(0,s1 + s2 - n_site))
+  sb_max <- min(c(s1,s2))
+  u <- ll <- ans <- numeric()
+  for(i in sb_min:sb_max) {
+    u[i - sb_min + 1] = i;
+    ll[i - sb_min + 1] = lchoose(s1, i) + lchoose(n_site - s1, s2 - i)
   }
   ans <- numeric()
-  for(i in 1:length(ln_omega)) {
-   ans[i] <- sb - sum(u*exp(ll + u*ln_omega[i]))/
-             sum(exp(ll + u*ln_omega[i]))
+  if(length(sb) > 1) {
+    for(i in 1:length(sb)) {
+      ans[i] <- sb[i] - 
+        exp(log_sum_exp(log(u) + ll + u*omega) - log_sum_exp(ll + u*omega))
+    }
+  } else {
+    for(i in 1:length(omega)) {
+      ans[i] = sb - 
+        exp(log_sum_exp(log(u) + ll + u*omega[i]) - log_sum_exp(ll + u*omega[i]))
+    }
+  }       
+  return(ans)
+}
+
+# Check score function
+(fnchypergeo_lpmf(1, 5, 20,50,1.11)-fnchypergeo_lpmf(1, 5, 20,50,1.09))/(1.11-1.09)
+fnchypergeo_score(1, 5, 20,50,1.1)
+
+# Fisher Information function
+fnchypergeo_FI <- function(s1, s2, n_site, omega) {
+  sb_min <- max(c(0,s1 + s2 - n_site))
+  sb_max <- min(c(s1,s2))
+  ans<- numeric()
+  u <- ll <- ans <- numeric()
+  for(i in sb_min:sb_max) {
+    u[i - sb_min + 1] = i;
+    ll[i - sb_min + 1] = lchoose(s1, i) + lchoose(n_site - s1, s2 - i)
+  }
+  for(i in 1:length(omega)) {
+    ans[i] <-
+      exp(log_sum_exp(2*log(u) + ll + u*omega[i])-log_sum_exp(ll + u*omega[i])) - 
+      exp(log_sum_exp(log(u) + ll + u*omega[i])-log_sum_exp(ll + u*omega[i]))^2
   }
   return(ans)
 }
-D_fnchypergeo(sb,occ,log(omega),N_site)
-FI_fnchypergeo <- function(ln_omega,occ,N_site) {
-  ans <- numeric()
-  for(i in 1:length(ln_omega)) {
-    p <- exp(fnchypergeo(0:occ[1],occ,ln_omega[i],N_site))
-    d <- D_fnchypergeo(0:occ[1],occ,ln_omega[i],N_site)
-    ans[i] <- sum(p*d^2)
+
+# Check Fisher Information function
+fnchypergeo_FIb <- function(s1, s2, n_site, omega) {
+  sb_min <- max(c(0,s1 + s2 - n_site))
+  sb_max <- min(c(s1,s2))
+  ans<- numeric()
+  for(i in 1:length(omega)) {
+    scores <- fnchypergeo_score(sb_min:sb_max, s1, s2, n_site, omega[i])^2
+    probs  <- exp(fnchypergeo_lpmf(sb_min:sb_max, s1, s2, n_site, omega[i]))
+    ans[i] <- sum(scores*probs)
   }
   return(ans)
 }
-o.sq <- seq(-10,10,.01)
-plot(o.sq,FI_fnchypergeo(o.sq,c(2,2),N_site),las=1,
-     xlab=expression(omega),type='l',ylim=c(0,2.6),
-     ylab=expression(Fisher~Information~I[X](omega)))
-lines(o.sq,FI_fnchypergeo(o.sq,c(4,4),N_site),
-      lty=2)
-lines(o.sq,FI_fnchypergeo(o.sq,c(8,8),N_site),
-      lty=3)
-lines(o.sq,FI_fnchypergeo(o.sq,c(16,16),N_site),
-      lty=4)
-legend('topleft',legend=c('2,2','4,4','8,8','16,16'),
-       lty=1:4,cex=0.5,bty='n')
+fnchypergeo_FI(1,5,50,-5:5)
+fnchypergeo_FIb(1,5,50,-5:5)
 
-area <- numeric()
-for(i in 1:nrow(stan_data$occ)) {
-  f <- function(x)
-    sqrt(FI_fnchypergeo(x,as.vector(unlist(stan_data$occ[i,])),N_site))
-  area2[i] <- integrate(f,-25,25,subdivisions=1e4)$value
-}
-area
 
-write.csv(stan_data$occ,'table.csv')
+
+# IGNORE BELOW FOR RIGHT NOW
 
 # sensitivity analysis
 test.dat <- data.frame(oo=numeric(),   # occupancy pattern: c(2,4,8,16)
@@ -272,161 +401,12 @@ for(i in c(2,4,8,16)) {
     for(k in -2:2) {
       for(l in 1:10) {
         grp <- grp + 1
-        rnd <- rFNCHypergeo(j, i, 42 - i, i, exp(k))
+        rnd <- rFNCHypergeo(j, i, 50 - i, i, exp(k))
         test.dat <- rbind(test.dat,
                           data.frame(oo=occ,size=j,lomega=k,rep=l,
-                                     grp=grp,m1=i,m2=42-i,n=i,sb=rnd))
+                                     grp=grp,m1=i,m2=50-i,n=i,sb=rnd))
       }
     }
   }
 }
-
-stan_code <-
-'
-functions {
-
-  // loglikelihood
-  real fnchypergeo_lpmf(int[] sb, int[] occ, vector ln_omega, int N_site) {
-    vector[num_elements(sb)] ll_num_summand;
-    vector[num_elements(sb)] ll_den_summand;
-    vector[occ[1] + 1] ll;
-    vector[occ[1] + 1] u;
-    for(i in 0:occ[1]) {
-        u[i+1] = i;
-        ll[i+1] = lchoose(occ[1], u[i+1]) +
-                  lchoose(N_site - occ[1], occ[2] - u[i+1]);
-    }
-    for(i in 1:num_elements(sb)) {
-       ll_num_summand[i] = ll[sb[i] + 1] + sb[i]*ln_omega[i];
-       ll_den_summand[i] = log_sum_exp(ll + u*ln_omega[i]);
-    }
-    return sum(ll_num_summand) - sum(ll_den_summand);
-  }
-
-  // jeffreys prior
-  real jeffreys_lpdf(vector ln_omega, int[] occ, int N_site,
-                     real jnormalize) {
-    vector[num_elements(ln_omega)] jeffreys;
-    vector[occ[1] + 1] ll;
-    vector[occ[1] + 1] u;
-    vector[occ[1] + 1] u2;
-    vector[3] l_sum;
-    for(i in 0:occ[1]) {
-        u[i+1] = i;
-        ll[i+1] = lchoose(occ[1], u[i+1]) +
-                  lchoose(N_site - occ[1], occ[2] - u[i+1]);
-    }
-    u2 = u .* u;
-    for(i in 1:num_elements(ln_omega)) {
-      l_sum[1] = sum(exp(ll + u*ln_omega[i]));
-      l_sum[2] = sum(u .* exp(ll + u*ln_omega[i]));
-      l_sum[3] = sum(u2 .* exp(ll + u*ln_omega[i]));
-      jeffreys[i] = 0.5*log(l_sum[3]/l_sum[1] - (l_sum[2]/l_sum[1])^2);
-    }
-    return sum(jeffreys - jnormalize);
-  }
-
-}
-
-data {
-
-  int<lower=1> N; // number of pairs
-  int<lower=1> N_occ; // number of unique occupancy patterns
-  int<lower=1> N_site; // number of sites
-  int<lower=1,upper=600> gg[N]; // group assigment for each pair
-  int<lower=1,upper=N_occ> oo[N]; // occupancy pattern for each pair
-  int<lower=0,upper=N_site> sb[N]; // sites with both species
-  int<lower=0,upper=N_site> occ[N_occ,2]; // occupancy table
-  int<lower=1,upper=N> oo_l[N_occ]; // pairs index to occ for gg/sb (lower)
-  int<lower=1,upper=N> oo_u[N_occ]; // pairs index to occ for gg/sb (upper)
-  vector[N_occ] jnormalize; // number of pairs
-
-}
-
-parameters {
-
-  vector[600] ln_omega;
-
-}
-
-transformed parameters {
-
-  vector[N] ln_omega_pr = ln_omega[gg];
-
-}
-
-model {
-
-  // loglikelihood
-  for (i in 1:N_occ) {
-   // ln_omega ~ jeffreys(occ[i], N_site, jnormalize[i]);
-    target += fnchypergeo_lpmf(sb[oo_l[i]:oo_u[i]] | occ[i],
-                               ln_omega_pr[oo_l[i]:oo_u[i]],N_site);
-  }
-
-}
-'
-area <- numeric()
-for(i in 1:nrow(stan_data$occ)) {
-  f <- function(x)
-    sqrt(FI_fnchypergeo(x,as.vector(unlist(stan_data$occ[i,])),N_site))
-  area[i] <- integrate(f,-25,25,subdivisions=1e4)$value
-}
-area
-
-stan_data <- list(N = nrow(test.dat),
-                  N_occ = max(test.dat$oo),
-                  N_site = 42,
-                  gg = test.dat$grp,
-                  oo = test.dat$oo,
-                  sb = test.dat$sb,
-                  occ = unique(test.dat[c('m1','n')]),
-                  oo_l = tapply(1:nrow(test.dat),test.dat$oo,min),
-                  oo_u = tapply(1:nrow(test.dat),test.dat$oo,max),
-                  jnormalize = log(area))
-
-stan_fit3 <- stan(model_code=stan_code,pars=c('ln_omega'),
-                 data= stan_data,chains=1)
-
-dog <- summary(stan_fit)$summary
-
-test.dat2 <- unique(test.dat[1:8])
-test.dat2$ln_omega <- summary(stan_fit2,'ln_omega')$summary[,1]
-test.dat2$bias <- test.dat2$ln_omega - test.dat2$lomega
-test.summary <- aggregate(ln_omega~size+lomega+m1,test.dat2,mean)
-test.summary$ln_omega_sd <- aggregate(ln_omega~size+lomega+m1,test.dat2,sd)[,4]
-test.summary$bias <- aggregate(bias~size+lomega+m1,test.dat2,mean)[,4]
-test.summary$bias_se <- aggregate(bias~size+lomega+m1,test.dat2,sd)[,4]/sqrt(10)
-test.summary$lomega_plot <- test.summary$lomega + (log10(test.summary$size)-2)/10
-
-pdf('dog.pdf')
-  par(mfrow=c(2,2))
-  plot.f <-function(temp) {
-    plot(temp$lomega_plot,temp$bias,
-        xlab=expression(log(omega)),ylab=expression(bias),
-        ylim=c(-1,1))
-    abline(h=0,col=grey(0.5))
-    ltyy <- 0
-    for(i in c(10,100,1000)) {
-      temp2 <- temp[test.summary$size==i,]
-      ltyy <- ltyy + 1
-      lines(temp2$lomega_plot,temp2$bias,lty=ltyy)
-      for(i in 1:5) {
-        segments(temp2$lomega_plot[i],temp2$bias[i]-qt(0.975,9)*temp2$bias_se[i],
-                 temp2$lomega_plot[i],temp2$bias[i]+qt(0.975,9)*temp2$bias_se[i])
-      }
-    }
-  }
-  plot.f(test.summary[test.summary$m1==2,])
-  plot.f(test.summary[test.summary$m1==4,])
-  plot.f(test.summary[test.summary$m1==8,])
-  plot.f(test.summary[test.summary$m1==16,])
-dev.off()
-
-test <- rFNCHypergeo(1000, 1, 41, 1,exp(-2))
-
-ll <- function(x) -sum(fnchypergeo(test,c(1,1),x,41))
-
-optim(0,ll,method='Brent',lower=-10,upper=10)$par
-
 
