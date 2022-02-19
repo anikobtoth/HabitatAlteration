@@ -157,9 +157,11 @@ return(stan_fit)
 }
 
 
-# Fit ML model
-ml_stan_code <- 
-  '
+
+stan_theta_ML <- function(stan_data){
+  # Fit ML model
+  ml_stan_code <- 
+    '
 functions {
 
   // PMF for Fisher noncentral hypergeometric distribution
@@ -220,6 +222,10 @@ model {
 ml_model <- optimizing(stan_model(model_code=ml_stan_code),
                        data = stan_data,hessian=TRUE,
                        init = list(theta=summary(stan_fit,'theta')[[1]][,1]))
+
+return(ml_model)
+}
+
 
 
 # Summary data for plots
