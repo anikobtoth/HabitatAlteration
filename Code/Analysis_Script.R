@@ -100,7 +100,7 @@ occ %>% group_by(taxon) %>% summarise(
   total = length(altered))
 
 #### Interaction Co-occurrence analysis #####
-source('./Code/omega.R')
+#source('./Code/stan.R')
 
 # Format data (full)
 tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
@@ -111,13 +111,23 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
   bind_rows(.id = "taxon") %>% diet_cat(spp, related = TRUE) %>% na.omit()
 
 # Calculate theta 
-## clipped to median (common-only)
-out_bat <- omega(contables, tax = "bat", type = "interaction") 
-out_bird <- omega(contables, tax = "bird", type = "interaction")
+## Bats full
+stan_data <- stan_data_fun(filter(contables, taxon == "bat"), medn = F)
+stan_fit <- stan_theta(stan_data)
 
-## all species (full)
-out_bat <- omega(contables, tax = "bat", type = "interaction", medn = FALSE)
-out_bird <- omega(contables, tax = "bird", type = "interaction", medn = FALSE)
+## Birds full
+stan_data <- stan_data_fun(filter(contables, taxon == "bird"), medn = F)
+stan_fit <- stan_theta(stan_data)
+
+#Plot
+stan_fit %>% extract() %>% `[[`(1) %>% data.frame() %>% 
+  pivot_longer(names_to = "group", cols = 1:4) %>% 
+  mutate(group = as.factor(group) %>% recode(`X1` = "Intact control", 
+                                             `X2` = "Altered control", 
+                                             `X3` = "Intact competing", 
+                                             `X4` = "Altered competing")) %>% 
+  ggplot(aes(x = value, col = group)) + geom_density(lwd = 1.5) 
+
 
 ## No-turnover models ####
 shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(match_val))
@@ -128,17 +138,18 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
   bind_rows(.id = "taxon") %>% diet_cat(spp, related = TRUE) %>% na.omit()
 
 # Calculate theta 
-## clipped to median (Common only, no turnover)
-out_bat <- omega(contables, tax = "bat", type = "interaction") 
-out_bird <- omega(contables, tax = "bird", type = "interaction")
+## Bats no turnover
+stan_data <- stan_data_fun(filter(contables, taxon == "bat"), medn = F)
+stan_fit <- stan_theta(stan_data)
 
-## all species (full, no turnover)
-out_bat <- omega(contables, tax = "bat", type = "interaction", medn = FALSE)
-out_bird <- omega(contables, tax = "bird", type = "interaction", medn = FALSE)
+## Birds no turnover
+stan_data <- stan_data_fun(filter(contables, taxon == "bird"), medn = F)
+stan_fit <- stan_theta(stan_data)
+
 
 # Code for plotting omega function output
-ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch)) + 
-  geom_density() + facet_wrap(parameter~., scales = "free_x")
+#ggplot(out %>% filter(!parameter %in% c("deviance")), aes(x = value, col = status_dietmatch)) + 
+#  geom_density() + facet_wrap(parameter~., scales = "free_x")
 
 #### Analysis of co-occurrence at altered habitats ####
   # bats

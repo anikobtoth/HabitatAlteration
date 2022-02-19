@@ -3,33 +3,71 @@ library(dplyr)
 library(rstan)
 
 # data prep
-data <- contables[contables$taxon=='bat',]
-medn <- FALSE
-if(medn) {
-  occs <- rbind(data %>% select(status, Sp1, presSp1) 
-                %>% setNames(c("status", "sp", "pres")), 
-                data %>% select(status, Sp2, presSp2) 
-                %>% setNames(c("status", "sp", "pres"))) %>% 
-    unique()  
-  meds <- occs %>% group_by(status) %>% 
-    summarise(med = median(pres)) %>% pull(med)
-  alt <- occs %>% filter(status == "altered" & pres > meds[1]) %>% 
-    pull("sp")
-  unalt <- occs %>% filter(status == "unaltered" & pres > meds[2]) %>% 
-    pull("sp")
-  data <- rbind(data %>% filter(status == "altered" 
-                                & Sp1 %in% alt & Sp2 %in% alt),
-                data %>% filter(status == "unaltered" 
-                                & Sp1 %in% unalt & Sp2 %in% unalt))
-}
-data$diet.match[data$diet.match=='Related'] <- 'Similar' # related diets excluded
-data$sa <- ifelse(data$status=='altered',1,0)  # dummy variable for status
-data$ds <- ifelse(data$diet.match=='Same',1,0) # dummy variable for diet match
-data$gg <- as.numeric(interaction(factor(data$sa),factor(data$ds)))
-data <- data %>% filter(diet.match != "Similar")
+#df <- contables[contables$taxon=='bat',]
+#medn <- FALSE
 
-stan_code <- 
-'
+stan_data_fun <- function(df, medn) {
+  if(medn) {
+    occs <- rbind(df %>% select(status, Sp1, presSp1) 
+                  %>% setNames(c("status", "sp", "pres")), 
+                  df %>% select(status, Sp2, presSp2) 
+                  %>% setNames(c("status", "sp", "pres"))) %>% 
+      unique()  
+    meds <- occs %>% group_by(status) %>% 
+      summarise(med = median(pres)) %>% pull(med)
+    alt <- occs %>% filter(status == "altered" & pres > meds[1]) %>% 
+      pull("sp")
+    unalt <- occs %>% filter(status == "unaltered" & pres > meds[2]) %>% 
+      pull("sp")
+    df <- rbind(df %>% filter(status == "altered" 
+                                  & Sp1 %in% alt & Sp2 %in% alt),
+                  df %>% filter(status == "unaltered" 
+                                  & Sp1 %in% unalt & Sp2 %in% unalt))
+  }
+  df$diet.match[df$diet.match=='Related'] <- 'Similar' # related diets excluded
+  df$sa <- ifelse(df$status=='altered',1,0)  # dummy variable for status
+  df$ds <- ifelse(df$diet.match=='Same',1,0) # dummy variable for diet match
+  df$gg <- as.numeric(interaction(factor(df$sa),factor(df$ds)))
+  df <- df %>% filter(diet.match != "Similar")
+  
+  N_site <- df$presSp1[1] + df$absSp1[1]
+  df$sb <- df$presBoth
+  df$s1 <- apply(df[c('presSp1','presSp2')],1,min)
+  df$s2 <- apply(df[c('presSp1','presSp2')],1,max)
+  df$sb_min <- apply(df[c('s1','s2')],1,function(x) max(0,sum(x) - N_site))
+  occ <- unique(df[c('s1','s2','sb_min')])
+  occ <- occ[order(occ$s1,occ$s2),]
+  occ$oo <- 1:nrow(occ)
+  df <- merge(occ,df)
+  rr <- unique(df[c('oo','gg')])
+  rr <- rr[order(rr$oo,rr$gg),]
+  rr$rr <- 1:nrow(rr)
+  df <- merge(rr,df)
+  df2 <- unique(df[c('oo','s1','s2','gg','rr','sb')])
+  df2 <- df2[order(df2$rr,df2$sb),]
+  df2$nsb <- 0
+  for(i in 1:nrow(df2)) {
+    df2$nsb[i] <- nrow(df[df$rr==df2$rr[i]&
+                            df$sb==df2$sb[i],])
+  }
+  return(list(N_site = N_site,
+              N_dat = nrow(df2),
+              dat = df2[c('oo','sb','nsb','rr')],
+              N_occ = nrow(occ),
+              occ = occ[c('oo','s1','s2','sb_min')],
+              occ_idx = cbind(tapply(1:nrow(df2),df2$oo,min),
+                              tapply(1:nrow(df2),df2$oo,max)),
+              N_gg = max(df2$gg),
+              N_rr = max(df2$rr),
+              gg = unique(df2[c('rr','gg')])[,2],
+              N_posthoc = max(df2$gg)*(max(df2$gg)-1)/2))
+}
+
+stan_theta <- function(stan_data){
+
+  
+  stan_code <- 
+    '
 functions {
 
   // loglikelihood
@@ -112,44 +150,12 @@ generated quantities {
 }
 '
 
-stan_data_fun <- function(df) {
-  N_site <- df$presSp1[1] + df$absSp1[1]
-  df$sb <- df$presBoth
-  df$s1 <- apply(df[c('presSp1','presSp2')],1,min)
-  df$s2 <- apply(df[c('presSp1','presSp2')],1,max)
-  df$sb_min <- apply(df[c('s1','s2')],1,function(x) max(0,sum(x) - N_site))
-  occ <- unique(df[c('s1','s2','sb_min')])
-  occ <- occ[order(occ$s1,occ$s2),]
-  occ$oo <- 1:nrow(occ)
-  df <- merge(occ,df)
-  rr <- unique(df[c('oo','gg')])
-  rr <- rr[order(rr$oo,rr$gg),]
-  rr$rr <- 1:nrow(rr)
-  df <- merge(rr,df)
-  df2 <- unique(df[c('oo','s1','s2','gg','rr','sb')])
-  df2 <- df2[order(df2$rr,df2$sb),]
-  df2$nsb <- 0
-  for(i in 1:nrow(df2)) {
-    df2$nsb[i] <- nrow(df[df$rr==df2$rr[i]&
-                          df$sb==df2$sb[i],])
-  }
-  return(list(N_site = N_site,
-              N_dat = nrow(df2),
-              dat = df2[c('oo','sb','nsb','rr')],
-              N_occ = nrow(occ),
-              occ = occ[c('oo','s1','s2','sb_min')],
-              occ_idx = cbind(tapply(1:nrow(df2),df2$oo,min),
-                              tapply(1:nrow(df2),df2$oo,max)),
-              N_gg = max(df2$gg),
-              N_rr = max(df2$rr),
-              gg = unique(df2[c('rr','gg')])[,2],
-              N_posthoc = max(df2$gg)*(max(df2$gg)-1)/2))
-}
-stan_data <- stan_data_fun(data)
-
 # fit model
 stan_fit <- stan(model_code=stan_code,
-                 data= stan_data)
+                 data= stan_data, cores = detectCores()*0.5) 
+return(stan_fit)
+}
+
 
 # let's look at summary plots
 stan_sum <- cbind.data.frame(unique(stan_data$dat[c('rr','oo')]),
@@ -160,39 +166,23 @@ temp <- stan_data$occ
 temp$oo <- 1:nrow(temp)
 stan_sum <- merge(stan_sum,temp)
 
-pdf('trends_w_abund.pdf')
-par(mfrow=c(2,2))
-for(i in 1:4) {
-  plot(stan_sum$s1[stan_sum$gg==i],
-     stan_sum$ln_omega[stan_sum$gg==i],col=grey(0.5),
-     xlab = 'abundance', ylab = 'log(omega)')
-  lines(lowess(stan_sum$s1[stan_sum$gg==i],
-      stan_sum$ln_omega[stan_sum$gg==i]),col='red')
-  abline(h=0,lty=2)
-  title(paste0('group ',i))
-}
-dev.off()
+# summary plots
+ggplot(stan_sum, aes(x = s1, y = ln_omega)) + 
+  geom_point() + facet_wrap(~gg) + 
+  geom_smooth(method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "occupancy of rarer species in pattern")
 
-pdf('trends_w_npair.pdf')
-par(mfrow=c(2,2))
-for(i in 1:4) {
-  plot(stan_sum$log_n[stan_sum$gg==i],
-       stan_sum$ln_omega[stan_sum$gg==i],col=grey(0.5),
-       xlab = 'log(# of pairs)', ylab = 'log(omega)')
-  lines(lowess(stan_sum$log_n[stan_sum$gg==i],
-               stan_sum$ln_omega[stan_sum$gg==i]),col='red')
-  abline(h=0,lty=2)
-  title(paste0('group ',i))
-}
-dev.off()
+ggplot(stan_sum, aes(x = log_n, y = ln_omega)) + 
+  geom_point() + facet_wrap(~gg) + 
+  geom_smooth(method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "log(number of pairs)")
 
-pdf('histograms.pdf')
-par(mfrow=c(2,2))
-for(i in 1:4) {
-  hist(stan_sum$ln_omega[stan_sum$gg==i],
-       main = paste0('group ',i),xlab='log(omega)')
-}
-dev.off()
+ggplot(stan_sum, aes(x =ln_omega)) + 
+  geom_histogram(bins = 12) + 
+  facet_wrap(~gg) + labs(x = "log(omega)")
+
 
 
 ## likelihood calculation still need to be corrected below
@@ -203,13 +193,13 @@ fnchypergeo <- function(sb,occ,ln_omega,N_site) {
   u <- ll <- ll_num_summand <- ll_den_summand <- numeric()
   for(i in 0:occ[1]) {
     u[i+1] = i
-    ll[i+1] = lchoose(occ[1], u[i+1]) + 
+    ll[i+1] = lchoose(occ[1], u[i+1]) +
               lchoose(N_site - occ[1], occ[2] - u[i+1])
   }
   for(i in 1:length(sb)) {
     ll_num_summand[i] = ll[sb[i] + 1] + sb[i]*ln_omega
     ll_den_summand[i] = log_sum_exp(ll + u*ln_omega)
-  }    
+  }
   return(ll_num_summand -ll_den_summand)
 }
 sb <- 0:4; occ <- c(4,6); N_site <- 42; omega <- 1.5
@@ -221,7 +211,7 @@ score_fnchypergeo <- function(sb,occ,ln_omega,N_site) {
   u <- ll <- numeric()
   for(i in 0:occ[1]) {
     u[i+1] = i
-    ll[i+1] = lchoose(occ[1], u[i+1]) + 
+    ll[i+1] = lchoose(occ[1], u[i+1]) +
       lchoose(N_site - occ[1], occ[2] - u[i+1])
   }
   ans <- numeric()
@@ -256,7 +246,7 @@ legend('topleft',legend=c('2,2','4,4','8,8','16,16'),
 
 area <- numeric()
 for(i in 1:nrow(stan_data$occ)) {
-  f <- function(x) 
+  f <- function(x)
     sqrt(FI_fnchypergeo(x,as.vector(unlist(stan_data$occ[i,])),N_site))
   area2[i] <- integrate(f,-25,25,subdivisions=1e4)$value
 }
@@ -291,7 +281,7 @@ for(i in c(2,4,8,16)) {
   }
 }
 
-stan_code <- 
+stan_code <-
 '
 functions {
 
@@ -303,18 +293,18 @@ functions {
     vector[occ[1] + 1] u;
     for(i in 0:occ[1]) {
         u[i+1] = i;
-        ll[i+1] = lchoose(occ[1], u[i+1]) + 
+        ll[i+1] = lchoose(occ[1], u[i+1]) +
                   lchoose(N_site - occ[1], occ[2] - u[i+1]);
     }
     for(i in 1:num_elements(sb)) {
        ll_num_summand[i] = ll[sb[i] + 1] + sb[i]*ln_omega[i];
        ll_den_summand[i] = log_sum_exp(ll + u*ln_omega[i]);
-    }    
+    }
     return sum(ll_num_summand) - sum(ll_den_summand);
   }
 
   // jeffreys prior
-  real jeffreys_lpdf(vector ln_omega, int[] occ, int N_site, 
+  real jeffreys_lpdf(vector ln_omega, int[] occ, int N_site,
                      real jnormalize) {
     vector[num_elements(ln_omega)] jeffreys;
     vector[occ[1] + 1] ll;
@@ -323,7 +313,7 @@ functions {
     vector[3] l_sum;
     for(i in 0:occ[1]) {
         u[i+1] = i;
-        ll[i+1] = lchoose(occ[1], u[i+1]) + 
+        ll[i+1] = lchoose(occ[1], u[i+1]) +
                   lchoose(N_site - occ[1], occ[2] - u[i+1]);
     }
     u2 = u .* u;
@@ -378,7 +368,7 @@ model {
 '
 area <- numeric()
 for(i in 1:nrow(stan_data$occ)) {
-  f <- function(x) 
+  f <- function(x)
     sqrt(FI_fnchypergeo(x,as.vector(unlist(stan_data$occ[i,])),N_site))
   area[i] <- integrate(f,-25,25,subdivisions=1e4)$value
 }
