@@ -70,26 +70,27 @@ stan_theta <- function(stan_data){
     '
 functions {
 
-  // loglikelihood
-  real fnchypergeo_lpmf(int[] sb, int[] nsb, vector ln_omega,
+// PMF for Fisher noncentral hypergeometric distribution
+  real fnchypergeo_lpmf(int[] sb, int[] nsb, vector theta,
                         int[] occ, int N_site) {
+    vector[1 + min(occ) - (sum(occ) > N_site ? sum(occ) - N_site : 0)] u;
+    vector[1 + min(occ) - (sum(occ) > N_site ? sum(occ) - N_site : 0)] ll;
     vector[num_elements(sb)] ll_summand;
-    vector[occ[2] - occ[4] + 1] u;
-    vector[occ[2] - occ[4] + 1] ll;
-    for(i in occ[4]:occ[2]) {
-        u[i - occ[4] + 1] = i;
-        ll[i - occ[4] + 1] = lchoose(occ[2], i) + 
-                  lchoose(N_site - occ[2], occ[3] - i);
+    int sb_min = sum(occ) > N_site ? sum(occ) - N_site : 0;
+    int sb_max = min(occ);
+    for(i in sb_min:sb_max) {
+        u[i - sb_min + 1] = i;
+        ll[i - sb_min + 1] = lchoose(occ[1], i) + 
+                  lchoose(N_site - occ[1], occ[2] - i);
     }
     for(i in 1:num_elements(nsb)) {
-      ll_summand[i] = nsb[i]*(ll[sb[i] - occ[4] + 1] + sb[i]*ln_omega[i] - 
-                              log_sum_exp(ll + u*ln_omega[i]));
+      ll_summand[i] = nsb[i]*(ll[sb[i] - sb_min + 1] + sb[i]*theta[i] - 
+                              log_sum_exp(ll + u*theta[i]));
     }    
     return sum(ll_summand);
   }
   
 }
-
 data {
 
   int N_site; // # of sites
