@@ -170,80 +170,269 @@ This framework also allows the modeler to quantify the effect of various externa
 
 Recent studies repeatedly point out that nonrandom co-occurrence should not be construed as evidence for interaction between species pairs [@Freilich2018;@Thurman2019; @Blanchet2020]. In our framework, we have independent evidence of potential interactions (diet) and examine the relationship between putative interactions and co-occurrence, using non-interacting pairs as a control. Controls are rarely used in co-occurrence research, with most studies preferring to discard pairs with associations that are not seen as significant (e.g. [@Araujo2011; @Lyons2016]). Research using such an approach is exactly what is needed to understand under what circumstances, and to what extent, interactions lead to nonrandom spatial associations, what factors affect the relationships, and how they change under shifting conditions.
 
-_Model_
-
-In the main text we present a hierarchical Bayesian model that estimates the co-occurrence scores of our experimental groups (altered-interacting, altered-control, intact-interacting, intact-control). This section provides the model details. 
-
-The hypergeometric distribution is frequently used as a null model of species co-occurrence  because it can be used to calculate the probability that two species *A* and *B* will co-occur at $N_{AB}$ sites, assuming the two species are independently distributed [@Arita2016]. Here we extend this approach by characterising $N_{AB}$ using Fisher’s *noncentral* hypergeometric distribution [@Fog2008],
-
-\[
-p(N_{AB}|\psi) = 
-\frac{{N_{A^{+}} \choose N_{AB}}{N_{A^{-}}\choose N_{B^{+}} - N_{AB}} \psi^{N_{AB}} }
-{\sum_{n} {N_{A^{+}}\choose n}{N_{A^{-}}\choose N_{B^{+}} - n} \psi^{n}}
-\]
-
-where $N_{A^{+}}$ and $N_{A^{-}}$ are the respective numbers of sites with species A present and absent, $N_{B^{+}}$ is the number of sites with species B present, and $\binom{n}{k} = \frac{n!}{k! (n-k)!}$ is a binomial coefficient. The denominator of this probability mass function (pmf) is the numerator summed over the range of possible values ($n$) for the numbers of co-occurring sites, $\text{max}(0,N_{A^{+}}+N_{A^{-}}-N_{B^{+}}) \leq n \leq \text{min}(N_{A^{+}},N_{B^{+}})$. In contrast to the standard (i.e., centered) hypergeometric distribution, the noncentral form of this distribution directly quantifies patterns of co-occurrence for species pairs using a single fitted parameter,
-
-\[
-\psi = \frac{\pi_{A|B^{+}}}{\pi_{A|B^{-}}} =\frac{p_{A|B^{+}} (1 - p_{A|B^{-}})} {(1-p_{A|B^{+}}) p_{A|B^{-}}}
-\]
-
-where $\pi_{A|B^{+}}$ and $p_{A|B^{+}}$ are the respective odds and probability that species A occupies a site given that species B is present, and $\pi_{A|B^{-}}$ and $p_{A|B^{-}}$ are the respective odds and probability that species A occupies a site given that species B is absent. The value of $\psi$, and the calculated probability of obtaining $N_{AB}$ sites of co-occurrence, $p(N_{AB}|\psi)$, are independent of which member of the species pair is arbitrarily chosen as species A.
 
 
-The $\psi$ parameter is defined on the interval $[0,\infty]$ because it is a ratio of odds. If $\psi < 1$, species A is less likely to occur at a site if species B is present, as would be expected if there is competitive exclusion among species or differences in species' habitat preferences. If $\psi > 1$, species A is more likely to occur at a site if species B is present, as would be expected if the species share habitat preferences and do not competitively exclude each other. Finally, if $\psi = 1$, the two species are independently distributed. When $\psi = 1$, Fisher's noncentral hypergeometric distribution reduces to the standard (i.e. centered) hypergeometric distribution in Eq. (1) above. To our knowledge, our study is the first to use Fisher's noncentral hypergeometric distribution for species co-occurrence analyses.
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+
+_Fisher's noncentral hypergeometric distribution_
+We assume that the probability that the number of sites of co-occurrence,
+$N_{AB}$, for a given pair of taxa, A and B, adheres to Fisher's noncentral
+hypergeometric distribution (NHD) [@Fog2008],
+
+\begin{equation}
+\tag{S1.a}
+f(N_{AB} \mid \theta) =
+\frac{\binom{N_{A}}{N_{AB}} \binom{N_{(A)}}{N_{B} - N_{AB}} \exp(N_{AB} \theta)}
+{P_0(\theta)}
+\end{equation}
+
+where $N_{A}$ and $N_{(A)}$ are the respective numbers of sites with taxon A
+present and absent, $N_{A} + N_{(A)}$ is the total number of sites, $N_{B}$ is
+the number of sites with taxon B present, and $\binom{n}{k} = n!/k!/(n-k)!$ is a
+binomial coefficient. The denominator of this probability mass function (pmf),
+$P_0(\theta)$, is the numerator summed over the range of possible values for the
+number of co-occurring sites [@McCullagh1952], 
+
+\begin{equation}
+\tag{S1.b}
+P_k(\theta) = \sum_{n = \max(0,N_{B}-N_{(A)})}^{\min(N_{A},N_{B})} 
+\binom{N_{A}}{n} \binom{N_{(A)}}{N_{B} - n} 
+\exp(n \theta) n^k
+\end{equation}
+
+This pmf has one fitted parameter,
+
+\begin{equation}
+\tag{S1.c}
+\theta = \log(\psi) =\log \left( \frac{\pi_{B|A}}{\pi_{B|(A)}} \right) = 
+\log \left( \frac{p_{B|A} (1 - p_{B|(A)})}{(1-p_{B|A}) p_{B|(A)}} \right)
+\end{equation}
+
+which is the logarithm of the odds ratio $\psi = \pi_{B|A}/\pi_{B|(A)}$, where
+$\pi_{B|A}$ and $p_{B|A}$ are the respective odds and probability that taxon B
+occupies a site given that taxon A is present, and $\pi_{B|(A)}$ and $p_{B|(A)}$
+are the respective odds and probability that taxon B occupies a site given that
+taxon A is absent. The values of $\theta$ and the probability of $N_{AB}$
+co-occurrences, $f(N_{AB}|\theta)$, are independent of which member of the taxon
+pair is arbitrarily chosen as taxon A. The NHD is typically parameterized using
+$\psi$ rather than $\theta$, but $\psi$ has a lower bound of 0, making it less
+convenient for model fitting and biological interpretation.
 
 
-We adopt a hierarchical Bayesian modeling approach [@Gelman2014] to estimate averages of $\theta = \text{log}(\psi)$ for species pairs that have been subdivided into four groups, $g$, based on habitat type (altered, intact) and diet (similar = competing, distinct = control). At the lower hierarchical level, we model variation in $\theta_i$ for species pairs and groups as
+The NHD parameter $\theta$ directly quantifies spatial patterns of co-occurrence
+for a taxon pair. If $\theta < 0$, taxon B is less likely to occur at a site if
+taxon A is present, as we would expect if there was competitive exclusion or
+differences in habitat preferences between the two taxa. If $\theta>0$, taxon B
+is more likely to occur at a site if taxon A is present, as we would expect if
+the taxa shared habitat preferences and did not competitively exclude each
+other. Finally, if $\theta = 0$, the two taxon are independently distributed.
+When $\theta = 0$, the NHD reduces to the standard (i.e.\ centered)
+hypergeometric distribution, which has frequently been used to evaluate patterns
+of co-occurrence [@Arita2016].
+To our knowledge, our study is the first to use the noncentral form of the
+hypergeometric distribution for this purpose. 
 
-\[
-\theta_i = \overline{\theta_{g(i)}} + \Delta\theta_i
-\]
+In light of the rich array of methodologies already available for quantifying species associations, the use of a novel method must be justified. First, while it is mathematically related to existing null-model-based co-occurrence metrics which have been shown to be relatively reliable (e.g. mid-P variant of Fisher's Exact Test, see [@Keil2021]), $\theta$ is a direct parametrization of the effect of one species on the occurrence of another (Equation S1.c). Rather than using the observed data to accept or reject the significance of a co-occurrence pattern as older methods do, it attempts to estimate the underlying effect that produces the observed data (similar to the difference between a p-value and a correlation coefficient). For this reason, existing methods are not commensurate with our approach, and we do not attempt to draw any direct comparisons. 
 
-where $g(i)$ is a function that indexes the group assignment of each species pair $i$, and $\Delta\theta_i$ is a deviation from the group mean $\overline{\theta_{g(i)}}$. We assume that these deviations are normally distributed with means of 0,
-
-\[
-p(\Delta\theta|\sigma_{g}) = \frac{1}{\sigma_{g} \sqrt{2 \pi}} e^{-\frac{1}{2} (\frac{\Delta\theta}{\sigma_{g}})^2 }
-\]
-
-and standard deviations that vary by group, $\sigma_{g}$. At the upper hierarchical level, we assign the group averages, $\overline{\theta_g}$, normal prior distributions with means of 0 and standard deviations of 5,
-
-\[
-p(\overline{\theta_g}) = \frac{1}{5 \sqrt{2 \pi}} e^{-\frac{1}{2} (\frac{\overline{\theta_g}}{5})^2 }
-\]
-
-and we assign the group standard deviations, $\sigma_{g}$, gamma prior distributions with a shape parameter of 2 and a scale parameter of 0.5 [@Chung2013],
+This parametric approach represents a significant conceptual advance for several reasons. First, it theoretically allows for the assocation of species pairs to vary even if their observed occurrences are the same, as we should expect in real life. This distinction becomes important when a Bayesian model is used to estimate the value of the parameter. Second, it is strongly biologically interpretable, quantifying specifically the effect of one species’ occupancy on another’s while being easily programmable in Stan. Third, $\theta$ is not sensitive to the number of sites in the study assemblage, making formal comparisons and meta-analyses possible down the track. With these improvements, our analysis is sufficiently different from existing co-occurrence approaches that a direct comparison between the two is not only not sensible but also not needed to justify the new analysis. Should the comparison between the two approaches yield different results, we should be more confident in the results of the present approach above the results from null model analyses. However, we perform some analyses to demonstrate the behaviour of the NHD parameter.
 
 
-\[
-p(\sigma_g) = \frac{1}{\Gamma(2)0.5^2} \sigma_g e^{-\sigma_g/0.5}
-\]
+To explore properties of the NHD, we calculate how the distribution of $N_{AB}$
+values varies with $\theta$ (ranging from -2 to 2) for occurrence values that
+span the majority of taxa in our datasets ($N_{A}$ and $N_{B}$ ranging from 2 to
+8; Figure S2). The total number of sites for these calculations was set at 50, which is
+similar to the values for the bird and bat datasets we analyzed (47 and 53,
+respectively). Besides demonstrating that increases in $\theta$ correspond to higher probabilities of more frequent co-occurrences, as we would expect from a reliable metric, two noteworthy observations arise from these calculations. First,
+if occurrences of the two taxa are low relative to the total number of sites
+($N_{A}=N_{B}=2$), $N_{AB}=0$ is the most likely outcome even when $\theta=2$,
+which corresponds > 7-fold higher odds of taxon B occurring at a site if taxon A
+is present (solid red line in Figure S2). Second, as the numbers of sites
+occupied by the two taxa increases, the distribution of $N_{AB}$ values exhibits
+a greater shift in mode with changes in $\theta$: when $N_{A}=N_{B}=2$, the mode
+for $N_{AB}$ remains at 0 for all three $\theta$ values (-2, 0, 2), whereas when
+$N_{A}=N_{B}=8$, the mode shifts from 0 (at $\theta=-2$) to 4 (at $\theta=2$).
 
-These prior distributions were chosen based on preliminary analyses to allow adequate exploration of the parameter space while ensuring that the Markov chain Monte Carlo (MCMC) algorithm never halted by getting stuck in regions of negligible likelihood. These prior distributions should be viewed as weakly informative in the parlance of Bayesian analysis [@Lemoine2019]. 
-The posterior distributions of the group-level averages, $p(\overline{\theta_g}|N_{AB})$, are proportional to the product of two likelihood distributions (Eqs. 1 and 3) and two prior distributions (Eqs. 4 and 5),
 
-\[
-p(\overline{\theta_g}|N_{AB}) \propto p(N_{AB}|e^{\overline{\theta_g}+\Delta\theta})
-p(\Delta\theta|\sigma_g) p(\overline{\theta_g}) p(\sigma_g).
-\]
+To understand the maximum likelihood of the NHD, we take logarithms of both sides of
+Eq.\ (S1.a), and differentiate with respect to $\theta$, yielding an expression
+for the \emph{score}, defined as the gradient of the log-likelihood in relation
+to the parameter of interest (in this case $\theta$):
 
-This expression is a hierarchical version of Bayes' formula because the likelihood is the product of two distributions, $p(N_{AB}|e^{\overline{\theta_g}+\Delta\theta}) p(\Delta\theta|\sigma_g)$, rather than being a single distribution. Consequently, the model pools information for individual pairs to estimate the within-group standard deviations, $\sigma_g$, and then draws values of $\Delta\theta$ from a normal distribution with a mean of 0 and a standard deviation of $\sigma_g$ to yield the pair-level estimates, $\theta_i$ (Eq. 2). Data pooling, in turn, results in shrinkage of pair-level estimates, $\theta_i$, toward the population-level means, $\overline{\theta_g}$.
+\begin{equation}
+\tag{S2}
+\frac{\partial \log f(N_{AB} \mid \theta)}{\partial \theta} = 
+N_{AB} - P_1(\theta)/P_0(\theta)
+\end{equation}
 
-A hierarchical approach is desirable here because pairs yielding weaker evidence (as indexed by smaller likelihoods) exhibit greater shrinkage, and pairs yielding stronger evidence are assigned greater weight in calculating the group-level averages, $\overline{\theta_g}$. Thus, this model fitting procedure accounts for the fact that species pairs with few records of occurrence, by themselves, yield little information on the value of $\theta$, and hence $\psi$. For example, if species A and B are both present at 5 of 25 sites, but there are no sites of co-occurrence (i.e. $N_{AB} = 0$, $N_{A^{+}} = 5$, $N_{A^{-}} = 20$, $N_{B+} = 5$), we obtain a point estiamte of $\psi = 0$, following Eq.(1), suggesting complete segregation of species A and B. However, in this example, evidence of segregation is actually rather weak because, assuming that species are independently distributed (i.e. $\psi = 1$), we would expect $N_{AB} = 0$ with probablity 0.29.
+The quantity $P_1(\theta)/P_0(\theta)$ is the expectation (i.e.\ average) for
+the NHD (Generalized linear models McCullagh, P. (Peter), 1952-; Nelder, John A.
+2nd ed. London ; New York : Chapman and Hall 1989). Given that the maximum
+likelihood for $\theta$, $\hat{\theta}$, is achieved when $\partial \log
+f(N_{AB} \mid \theta) / \partial \theta = 0$, Eq.\ (S2) implies that
+$\hat{\theta}$ corresponds to the NHD with a mean equal to the observed number
+of co-occurrences, $N_{AB}$. (While there is no exact analytical expression for
+this mean, accurate approximations have been derived [@Eisinga2011]. Consequently, the estimate of
+$\hat{\theta}$ inferred from a single observation is biologically uninformative
+whenever the observed number of co-occurring sites is equal to the minimum or
+maximum possible values, i.e.\ $\hat{\theta}=-\infty$ if
+$N_{AB}=\max(0,N_{B}-N_{(A)})$, and $\hat{\theta}=\infty$ if
+$N_{AB}=\min(N_{A},N_{B})$.
 
-We use hierarchical Bayesian MCMC methods to analyse full datasets, $N_{AB}$, comprised of all $S (S - 1)/2$ pairwise counts of co-occurrence for each of the two habitat types, where $S$ is the number of species used to calculate the set of pairwise estimates. This approach has the advantage of making use of all available data. However, it also has the disadvantage of not allowing for formal statistical evaluation because a single occupancy distribution for each species is used to generate $S(S - 1)/2$ pairwise estimates of co-occurrence, resulting in non-independence.
 
-We ran models that included all species ("full") and another set that was limited to include only species with occupancies exceeding the median occupancy in its taxon and habitat type ("common-only"). We estimate the posterior distributions using the R package rjags, which provides an interface from R to the JAGS library for Bayesian data analysis [@Lunn2009; @Plummer2006]. To approximate the posterior distributions, we generated 3 MCMC chains of 50,000 steps each in JAGS, including a burn-in period of 10,000 steps, and a thinning interval of 100. We then inspected MCMC plots for the 3 chains and calculated Gelman Rubin statistics, $\hat{R}$, to ensure convergence [@Gelman2014]. 
+Our capacity to infer $\theta$ from observations is fundamentally constrained by
+the Fisher Information, which is the variance of the score [@Ly2017]. We
+can characterize how the Fisher information varies with $\theta$,
+$I(\theta)$, by combining Eqs.\ (S1) and (S2):
 
-The experimental approach presented here represents two distinct innovations that allow us to deal with detection issues and context-dependence of interactions. First, we use a priori evidence for the possibility of interaction rather than direct interaction data. The resulting set of pairs includes both interacting and non-interacting pairs but encompasses all of the former. A priori evidence for many types of interactions could be derived from various functional traits. For example, fruit size and gape size of frugivorous birds can indicate which birds are physically able to disperse which fruits. Diet category and body size can similarly be used to estimate mammal predator-prey relationships [@Pires2015]. This setup frees us from the necessity of sampling all interactions and identifying the contexts under which they are realised while still yielding insights about the impact of interactions on community assembly.
+\begin{equation}
+\tag{S3}
+\begin{split}
+I(\theta) & = E \left[
+\left( \frac{\partial \log f(N_{AB} \mid \theta)}{\partial \theta} \right)^2 
+\mid \theta \right] = \\
+& = \sum_{n = \max(0,N_{B}-N_{(A)})}^{\min(N_{A},N_{B})} 
+f(n \mid \theta) \left( \frac{\partial 
+\log f(n \mid \theta)}{\partial \theta} \right)^2 =
+\frac{P_2(\theta)}{P_0(\theta)} - 
+\left( \frac{P_1(\theta)}{P_0(\theta)} \right)^2
+\end{split}
+\end{equation}
 
-Second, we use non-interacting pairs of species in the assemblage to contextualise association patterns for interacting species pairs. The inclusion of an experimental control group is a central tenet of science, but non-interacting pairs or those having associations not significantly different from chance associations are routinely discarded or ignored in co-occurrence research and interaction research more generally, while raw co-occurrence scores are often interpreted at face value (e.g., any negative score equals exclusion). The importance of a control is demonstrated clearly in the basic differences between bats and birds in this study, as bats associate far more positively than birds irrespective of any interaction. Our use of non-interacting pairs as a control can be applied to a broad variety of interactions. A plant-pollinator network could for instance be decomposed into groups of pairs that facilitate one another (plant-pollinator pairs), do not interact, and even compete (plant-plant pairs that compete for pollinators or pollinator-pollinator pairs that compete for nectar). In each case, the effect of the competing group(s) can be evaluated against all pairs that do not exhibit the interaction(s) in question.
+Remarkably, Eq.\ (S3) demonstrates that, when the NHD is parameterized using
+$\theta$, the Fisher Information is
+$P_2(\theta)/P_0(\theta)-(P_1(\theta)/P_0(\theta))^2$, which is also the
+variance of the NHD [@McCullagh1952].
+Parameterizing the NHD using the odds ratio $\psi$ would yield a different
+expression for the Fisher Information.
+
+
+Calculations performed using Eq.\ (S3) demonstrate that the Fisher Information
+generally increases with the taxon occurrences $N_{A}$ and $N_{B}$ (Figure S3).
+Loosely speaking, this result indicates that the distribution of co-occurrence
+values, $N_{AB}$, changes more rapidly which changes in $\theta$ for taxon
+pairs with greater numbers of occurrences, consistent with Figure S1. Thus,
+$\theta$ can be estimated more efficiently from taxon pairs with more
+occurrences. Importantly, however, Fisher Information eventually declines as the
+numbers of occurrences for the two taxa approach the total number of sites (note
+the depressed yellow curve for $N_{A} = N_{B} = 40$ in Figure S3). This decline
+occurs due to an increasing lower bound on the minimum number of co-occurrences
+($=\max(0,N_{B}-N_{(A))}$). Also noteworthy, the Fisher Information eventually
+approaches 0 for very low and very high values of $\theta$, regardless of
+$N_{A}$ and $N_{B}$, because the distributions of $N_{AB}$ values eventually
+become concentrated on this lower bound as $\theta$ declines, and on the upper
+bound $\min(N_{A},N_{B})$ as $\theta$ increases.
+
+
+_Specifying the model_
+The analysis above highlights three key issues that arise when fitting the NHD
+to occurrence data:
+
+(i)  A non-overlapping distribution (i.e.\ $N_{AB} = 0$) will be observed with
+higher probability for a taxon pair with lower occurrence values ($N_{A}$ and
+$N_{B}$), irrespective of $\theta$.
+
+(ii)  A \emph{single} observation of a non-overlapping distribution will not 
+\emph{by itself} be biologically informative about the value of $\theta$ (i.e.$\hat{\theta}=-\infty$).
+
+(iii) The information about $\theta$ contained in a \emph{single} observation is
+generally lower for a taxon pair with lower occurrence values.
+
+In other words, the parameter $\theta$ suffers from similar constraints as existing metrics of species association. These constraints are seldom considered explicity by published co-occurrence analyses, except by throwing out pairs that do not yield biological information by themselves. To address these issues, we present a novel approach, which we term "occupancy analysis". Rather than separately estimate $\theta$ for each taxon pair, we instead \emph{combine} observations into occupancy groups,
+$\mathcal{S}_i$, defined as having identical values for $N_{A}$ and $N_{B}$,
+with $N_{A} \leq N_{B}$. We then calculate the likelihood for each occupancy
+group based on a single $\theta$ value, $\theta_i$. This likelihood is simply
+the product of the likelihoods for the co-occurrence observations in the
+occupancy group, $N_{AB}^j$, with $j \in \mathcal{S}_i$. The likelihood
+for a set of observations, $\vect{N_{AB}}$, is therefore
+
+\begin{equation}
+\tag{S4}
+p(\vect{N_{AB}} \mid \theta_i) = \prod_{j \in \mathcal{S}_i} p(N_{AB}^j|\theta_i)
+\end{equation}
+
+This approach partly addresses issues (*i*) and (*ii*) because $N_{AB} = 0$ is less
+likely to be observed for an entire set of observations than a single
+observation, and the maximum likelihood estimate for $\theta_i$ will be finite
+provided that at least 1 observation of $N_{AB}$ in the occupancy pattern is
+$>\max(0,N_{B}-N_{(A)})$ and $<\min(N_{A},N_{B})$. It also addresses issue
+(*iii*) because the Fisher Information is additive [@Ly2017],
+meaning that it increases linearly with the number of observations.
+
+
+To further address issues (*i*) and (*ii*), rather than separately calculating
+$\theta_i$ for each set, we instead adopt a hierarchical Bayesian modeling
+approach (Gelman, Carlin, Stern, & Rubin; Bayesian Data Analysis) to estimate
+averages for $\theta_i$ that have been subdivided into four groups,
+$g$, on the basis of habitat type (altered, unaltered) and diet (similar,
+distinct). At the lower (i.e.\ set) level, we assume that the $\theta_i$ values
+are all normally distributed with means and standard deviations that can vary
+among groups
+
+\begin{equation}
+\tag{S5}
+\theta_i \sim \mathcal{N}(\overline{\theta}_{g(i)}, \sigma_{g(i)})
+\end{equation}
+
+where $g(i)$ is a function that indexes the group assignment of each set. At the
+upper (i.e.\ community) level, we assign the group means, $\overline{\theta}_g$,
+a normal prior distribution with a mean of 0 and a standard deviation of 10,
+
+\begin{equation}
+\tag{S6}
+\overline{\theta}_g \sim \mathcal{N}(0, 10)
+\end{equation}
+
+and we assign the group standard deviations, $\sigma_{g}$, a half-normal prior
+distribution with location and scale parameters of 0 and 10, respectively, on
+the interval $[0,\infty]$,
+
+\begin{equation}
+\tag{S7}
+\sigma_{g} \sim \mathcal{H}(0, 10)
+\end{equation}
+
+These prior distributions were chosen to allow adequate exploration of the
+parameter space using the Markov chain Monte Carlo (MCMC) algorithm while
+ensuring that the algorithm never halted by getting stuck in regions of
+parameter space with negligible likelihood. These prior distributions should be
+viewed as very weakly informative in the parlance of Bayesian analysis [@Lemoine2019].
+
+
+The posterior distributions for the group-level averages, $\overline{\theta}_g$,
+are proportional to the product of two likelihood distributions (Eqs.\ S4 and
+S5) and two prior distributions (Eqs.\ S6 and S7). Consequently, the model pools
+data across sets of pairs to estimate the group means,
+$\overline{\theta_g}$, and standard deviations, $\sigma_g$, and then, for each
+set of occurrences, $i$, draws from a normal distribution of mean
+$\overline{\theta_{g(i)}}$ and standard deviation $\sigma_{g(i)}$ to obtain a
+$\theta_i$ estimate. Data pooling, in turn, results in shrinkage of estimates of
+$\theta_i$ toward the population-level means, $\overline{\theta_g}$. A
+hierarchical approach is desirable here because sets of pairs yielding weaker
+evidence (as indexed by smaller likelihoods) exhibit greater shrinkage, and sets
+yielding stronger evidence are assigned greater weight in calculating the
+group-level means and standard deviations.
+
+Occupancy analysis confers two major advantages over previous approaches. Though its estimates for single pairs suffer from the same constraints as classic co-occurrence analysis, it uses more information than co-occurrence analysis for groups of pairs, making its estimates of $\theta$ much more robust than, e.g., taking the mean co-occurrence value of a set of species pairs. Second, the algorithm is formulated in such a way that adding species does not increase the computing time of the model, meaning hyper-diverse datasets for which co-occurrence analysis is not feasible can be analysed with this method. 
+
+_Fitting the model_
+We estimate the posterior distributions using the R package RStan, which
+provides an interface from R to the Stan probabilistic programming language (new
+reference). To approximate the posterior distributions, we generate 4 MCMC
+chains of $2 \times 10^3$ steps, including a warm-up period of $10^3$ steps. We
+then inspect MCMC plots for the 4 chains and calculated Gelman Rubin statistics,
+$\hat{R}$, to ensure convergence [@Gelman2013].
+
 
 _Model interpretation_
 
-In this framework, a change in the posterior distributions of $\psi$ and therefore $\overline{\theta_g}$ can exhibit several patterns, which point to various biological processes (Fig. S2). Competing pairs can display lower $\overline{\theta_g}$ than non-competing pairs, which means that diffuse competition tends to lead to exclusion with respect to opportunity for co-occurrence (Fig. S2A). This is the case even if all $\overline{\theta_g}$ are positive, as exclusion does not necessarily present as a negative association. Because competing and non-competing pairs are comprised of the same species data in different pairwise arrangements, the $\overline{\theta_g}$ of non-competing pairs represents the opportunity for coexistence in the absence of food competition. A deviation toward lower $\overline{\theta_g}$ from this baseline is evidence that competing pairs are not coexisting as often as expected--a systematic pattern of exclusion at the group level. Conversely, a higher $\overline{\theta_g}$ in competing pairs confirms that similarity in resource use leads to co-occurrence without causing exclusion, suggesting that competing pairs tend to partition or share adequate resources (Fig. S2B). If the $\overline{\theta_g}$ of competing and non-competing pairs do not differ significantly, but the $\sigma_{g}$ (variance) of competing pairs is higher, this points to stronger spatial patterns (both coexistence and exclusion) in pairs that compete for food, and vice versa (Fig. S2D). If there is no difference in $\overline{\theta_g}$ or $\sigma_{g}$ between the two groups, then there is insufficient evidence to support the hypothesis that diffuse competition is influencing the structure of the assemblage at the landscape scale (Fig. S2C).
+In this framework, a change in the posterior distributions of $\psi$ and therefore $\overline{\theta_g}$ can exhibit several patterns, which point to various biological processes (Fig. S4). Competing pairs can display lower $\overline{\theta_g}$ than non-competing pairs, which means that diffuse competition tends to lead to exclusion with respect to opportunity for co-occurrence (Fig. S4A). This is the case even if all $\overline{\theta_g}$ are positive, as exclusion does not necessarily present as a negative association. Because competing and non-competing pairs are comprised of the same species data in different pairwise arrangements, the $\overline{\theta_g}$ of non-competing pairs represents the opportunity for coexistence in the absence of food competition. A deviation toward lower $\overline{\theta_g}$ from this baseline is evidence that competing pairs are not coexisting as often as expected--a systematic pattern of exclusion at the group level. Conversely, a higher $\overline{\theta_g}$ in competing pairs confirms that similarity in resource use leads to co-occurrence without causing exclusion, suggesting that competing pairs tend to partition or share adequate resources (Fig. S4B). If the $\overline{\theta_g}$ of competing and non-competing pairs do not differ significantly, but the $\sigma_{g}$ (variance) of competing pairs is higher, this points to stronger spatial patterns (both coexistence and exclusion) in pairs that compete for food, and vice versa (Fig. S4D). If there is no difference in $\overline{\theta_g}$ or $\sigma_{g}$ between the two groups, then there is insufficient evidence to support the hypothesis that diffuse competition is influencing the structure of the assemblage at the landscape scale (Fig. S4C).
 
 The $\overline{\theta_g}$ and $\sigma_{g}$ of competing and non-competing pairs might also differ between altered and intact sites in our example. If the relationship between competing and non-competing pairs is different, this means that alteration has changed the outcome of biotic interactions, e.g., by promoting partitioning over exclusion or vice versa. More subtly, the extent of disparity between the two groups could differ without qualitatively changing the relationship, which indicates that naturally existing mechanisms have been enhanced or dampened. On the other hand, $\overline{\theta_g}$ or $\sigma_{g}$ could simply be higher or lower across the board, suggesting that alteration leads to changes in community structure that do not necessarily involve the rewiring of competitive interations. In all cases, posteriors represent assemblage-level patterns and do not imply that all pairs in the group exhibit the same pattern as does their group, merely that there is a group tendency toward one process over another.
+
+The experimental approach presented here represents two distinct innovations that allow us to deal with detection issues and context-dependence of interactions. First, we use a priori evidence for the possibility of interaction rather than direct interaction data. The resulting set of pairs includes both interacting and non-interacting pairs but encompasses all of the former. A priori evidence for many types of interactions could be derived from various functional traits. For example, fruit size and gape size of frugivorous birds can indicate which birds are physically able to disperse which fruits. Diet category and body size can similarly be used to estimate mammal predator-prey relationships [@Pires2015]. This setup frees us from the necessity of sampling all interactions and identifying the contexts under which they are realised while still yielding insights about the impact of interactions on community assembly.
+
+Second, we use non-interacting pairs of species in the assemblage to contextualise association patterns for interacting species pairs. The inclusion of an experimental control group is a central tenet of science, but non-interacting pairs or those having associations not significantly different from chance associations are routinely discarded or ignored in co-occurrence research and interaction research more generally, while raw pairwise co-occurrence scores are often interpreted at face value (e.g., any negative score equals exclusion). Our use of non-interacting pairs as a control can be applied to a broad variety of interactions. A plant-pollinator network could for instance be decomposed into groups of pairs that facilitate one another (plant-pollinator pairs), do not interact, and even compete (plant-plant pairs that compete for pollinators or pollinator-pollinator pairs that compete for nectar). In each case, the effect of the competing group(s) can be evaluated against all pairs that do not exhibit the interaction(s) in question.
 
 _The effect of turnover_
 
@@ -323,9 +512,9 @@ We re-ran our models (both “full” and “common-only”) excluding species t
 
 _Altered site types_
 
- Strong aggregations form when species occur together at several sites and are both absent from other sites. To help understand our results, we calculated the representation of dietary guilds at various different types of altered sites (Fig. S3). Carnivore-insectivore (9 species) and frugivore bats (69 species) co-occur disproportionately in plantations. Plantations and forest fragments support the highest proportion of insectivore bats (98 species) living in altered habitats, and nectarivores (24 species) co-occur disproportionately in plantations and croplands (Fig. S3).
+ Strong aggregations form when species occur together at several sites and are both absent from other sites. To help understand our results, we calculated the representation of dietary guilds at various different types of altered sites (Fig. S5). Carnivore-insectivore (9 species) and frugivore bats (69 species) co-occur disproportionately in plantations. Plantations and forest fragments support the highest proportion of insectivore bats (98 species) living in altered habitats, and nectarivores (24 species) co-occur disproportionately in plantations and croplands (Fig. S5).
  
-For birds, the single site in a zone of human habitation supports a disproportionate ratio of birds with simple diets (nectarivores, frugivores, invertivores, and granivores). Croplands are the main supporter of frugivore-granivore birds. Many of our alteration categories included only one or two sites, which is insufficient to draw definitive conclusions about how bat and bird guilds aggregate over the altered landscape. However, our results (Fig. S3) suggest that plantations are an important aggregation point for bats, particularly frugivores and nectarivores. The data for site types are even sparser for birds, but the primary habitat types are forest fragment, combined, disturbed forest, and plantation. These site types vary in their importance to individual bird guilds. Birds with fruit or nectar in their diets showed a variety of site preferences, while insectivores were most strongly aggregated in combined and inhabited sites.
+For birds, the single site in a zone of human habitation supports a disproportionate ratio of birds with simple diets (nectarivores, frugivores, invertivores, and granivores). Croplands are the main supporter of frugivore-granivore birds. Many of our alteration categories included only one or two sites, which is insufficient to draw definitive conclusions about how bat and bird guilds aggregate over the altered landscape. However, our results (Fig. S5) suggest that plantations are an important aggregation point for bats, particularly frugivores and nectarivores. The data for site types are even sparser for birds, but the primary habitat types are forest fragment, combined, disturbed forest, and plantation. These site types vary in their importance to individual bird guilds. Birds with fruit or nectar in their diets showed a variety of site preferences, while insectivores were most strongly aggregated in combined and inhabited sites.
 
 
 ```{r, echo = FALSE, include = TRUE, fig.height=5.5, fig.width = 7}
@@ -364,9 +553,114 @@ box()
 __Fig. S1.__ 
 Maps of Neotropical bat and bird sites before (top) and after (bottom) biogeographic matching procedure, with altered sites represented in red and intact sites represented in blue.
 
+```{r figs2, dpi=200, echo=FALSE, fig.cap="\\label{fig:figs2}Effects of taxon occurrence (indexed by $N_{A}$ and $N_{B}$) and spatial aggregation ($\\theta>0$) and segregation ($\\theta<0$) on the probability distribution of co-occurrences, $f(N_{AB} \\mid \\theta)$. Probabilities were calculated using Eq.\\ (S1) based on a total of $N_{A} + N_{(A)}=50$ sites. Probabilities $<10^{-3}$ are not plotted."}
+library(scales)
+
+log_sum_exp <- function(x) log(sum(exp(x - max(x)))) + max(x)
+fnchypergeo_lpmf <- function(sb, s1, s2, n_site, theta) {
+  sb_min <- max(c(0,s1 + s2 - n_site))
+  sb_max <- min(c(s1,s2))
+  u <- ll <- ans <- numeric()
+  for(i in sb_min:sb_max) {
+    u[i - sb_min + 1] = i;
+    ll[i - sb_min + 1] = lchoose(s1, i) + lchoose(n_site - s1, s2 - i)
+  }
+  if(length(sb) > 1) {
+    for(i in 1:length(sb)) {
+      ans[i] = ll[sb[i] - sb_min + 1] + sb[i]*theta - log_sum_exp(ll + u*theta)
+    }
+  } else {
+    for(i in 1:length(theta)) {
+      ans[i] = ll[sb - sb_min + 1] + sb*theta[i] - log_sum_exp(ll + u*theta[i])
+    }
+  }    
+  return(ans)
+}
 
 
-__Fig. S2.__ Interpretations of average $\overline{\theta_g}$ posterior density distributions. The dark curve indicates competing pairs and the lighter curve indicates control pairs. In (A) competing pairs co-occur less on average than control pairs, so higher spatial segregation than expected suggesting a pattern of competitive exclusion. In (B) competing pairs co-occur more than control pairs on average, suggesting that they micro-partition resources at the same sites more than expected. In (C) there is little or no separation of the posterior distributions, meaning that food competition does not aggregate or segregate pairs outside of expectations; however, other interaction types could still play an important role. (D) Both strong aggregation and segregation are observed in competing pairs, so variance is higher than expected.
+ll_plot <- function(s1, s2, n_site, theta,...) {
+  sb_min <- max(c(0,s1 + s2 - n_site))
+  sb_max <- min(c(s1,s2))
+  x <- sb_min:sb_max
+  y <- fnchypergeo_lpmf(sb_min:sb_max, s1, s2, n_site, theta)
+  lines(x,y,lwd=1.8,type='o',pch=16,cex=0.5,...)
+}
+
+my.cols <- c('red','blue')
+plot(0,0,xlim=c(0,9),ylim=c(-7,0),type='n',
+     xlab=expression("Number of co-occurrences,"~italic(N[AB])),
+     ylab = expression("Probability,"~italic(f)(italic(N[AB])~"|"~italic("\u03B8"))),
+     axes=FALSE)
+axis(1,at=0:9,labels=0:9)
+axis(2,at=log(10^seq(-3,0,1)),labels=parse(text=paste0('10^{',seq(-3,0,1),'}')),
+     las=1)
+box()
+ll_plot(2,2,50,-2,col=alpha(my.cols[1],0.5),lty=3) 
+ll_plot(2,2,50,0,col=alpha(my.cols[1],0.5),lty=2)
+ll_plot(2,2,50,2,col=alpha(my.cols[1],0.5),lty=1)
+ll_plot(8,8,50,-2,col=alpha(my.cols[2],0.5),lty=3) 
+ll_plot(8,8,50,0,col=alpha(my.cols[2],0.5),lty=2)
+ll_plot(8,8,50,2,col=alpha(my.cols[2],0.5),lty=1)
+legend('topright',bty='n',lwd=1.8,
+       legend=expression(italic("\u03B8")~"="~-2,
+                         italic("\u03B8")~"="~0,
+                         italic("\u03B8")~"="~2,'',
+                         italic(N[A])~"="~italic(N[B])~"="~2,
+                         italic(N[A])~"="~italic(N[B])~"="~8),
+       lty=c(3,2,1,0,1,1),
+       col=c(rep('black',4),my.cols))
+```
+
+
+```{r figs3, dpi=200, echo=FALSE, fig.cap="\\label{fig:figs3}Effects of occurrence ($N_{A}$ and $N_{B}$) and spatial aggregation ($\\theta$) on the probability distribution of co-occurrences. Probabilities were calculated using Eq.\ (S3), assuming a total of $N_{A} + N_{(A)}=50$ sites."}
+log_sum_exp <- function(x) log(sum(exp(x - max(x)))) + max(x)
+fnchypergeo_FI <- function(s1, s2, n_site, theta) {
+  sb_min <- max(c(0,s1 + s2 - n_site))
+  sb_max <- min(c(s1,s2))
+  ans<- numeric()
+  u <- ll <- ans <- numeric()
+  for(i in sb_min:sb_max) {
+    u[i - sb_min + 1] = i;
+    ll[i - sb_min + 1] = lchoose(s1, i) + lchoose(n_site - s1, s2 - i)
+  }
+  for(i in 1:length(theta)) {
+    ans[i] <-
+      exp(log_sum_exp(2*log(u) + ll + u*theta[i])-log_sum_exp(ll + u*theta[i])) - 
+      exp(log_sum_exp(log(u) + ll + u*theta[i])-log_sum_exp(ll + u*theta[i]))^2
+  }
+  return(ans)
+}
+
+o.sq <- seq(-10,10,.01)
+plot(o.sq,fnchypergeo_FI(2, 2, 50, o.sq),las=1,
+     xlab=expression("NHD Parameter, "~italic("\u03B8")),type='l',ylim=c(0,3),
+     ylab=expression("Fisher Information, "~italic(I)(italic("\u03B8"))),
+     col=hcl.colors(5)[1],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(2, 8, 50, o.sq),
+      lty=2,col=hcl.colors(5)[1],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(8, 8, 50, o.sq),
+      lty=3,col=hcl.colors(5)[2],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(8, 16, 50, o.sq),
+      lty=4,col=hcl.colors(5)[2],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(16, 16, 50, o.sq),
+      lty=5,col=hcl.colors(5)[3],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(32, 32, 50, o.sq),
+      lty=6,col=hcl.colors(5)[4],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(40, 40, 50, o.sq),
+      lty=7,col=hcl.colors(5)[5],lwd=1.5)
+legend('topleft',legend=expression(italic(N[A])~"="~italic(N[B])~"="~2,
+                                   italic(N[A])~"="~2~", "~italic(N[B])~"="~8,
+                                   italic(N[A])~"="~italic(N[B])~"="~8,
+                                   italic(N[A])~"="~8~", "~italic(N[B])~"="~16,
+                                   italic(N[A])~"="~italic(N[B])~"="~16,
+                                   italic(N[A])~"="~italic(N[B])~"="~32,
+                                   italic(N[A])~"="~italic(N[B])~"="~40),
+       lty=1:7,bty='n',col=hcl.colors(5)[c(1,1,2,2,3,4,5)],lwd=1.5,cex=0.75)
+```
+
+
+
+__Fig. S4.__ Interpretations of average $\overline{\theta_g}$ posterior density distributions. The dark curve indicates competing pairs and the lighter curve indicates control pairs. In (A) competing pairs co-occur less on average than control pairs, so higher spatial segregation than expected suggesting a pattern of competitive exclusion. In (B) competing pairs co-occur more than control pairs on average, suggesting that they micro-partition resources at the same sites more than expected. In (C) there is little or no separation of the posterior distributions, meaning that food competition does not aggregate or segregate pairs outside of expectations; however, other interaction types could still play an important role. (D) Both strong aggregation and segregation are observed in competing pairs, so variance is higher than expected.
 
 ```{r, echo = FALSE}
 #load("../Results/d2_d5_summary_tables_nr_ns_100r_relatedexcl.RData")
@@ -403,7 +697,7 @@ plot_grid(pbird+ theme(legend.position = c(1, 0), legend.justification = c(1, 0)
 
 ```
 
-__Fig. S3.__ 
+__Fig. S5.__ 
 Percent of species in (A) bird and (B) bat guilds, represented by panels, that co-occur at individual altered sites by type of alteration. Each point is a site. Key to panels: C = carnivore; F = frugivore; I = insectivore; N = nectarivore; and G = granivore. Multiple letters indicate mixed feeders.
 
 __Table S1.__
