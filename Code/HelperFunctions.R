@@ -328,6 +328,24 @@ chao1 <- function(n) {
   return(S + (s1^2 / (2*s2)))
 }
 
+# Plotting 
+  
+plot_stanfit <- function(stanfit){
+    stanfit %>% extract() %>% `[[`(1) %>% data.frame() %>% 
+      pivot_longer(names_to = "group", cols = 1:4) %>% 
+      mutate(group = as.factor(group) %>% recode(`X1` = "Intact control", 
+                                                 `X2` = "Altered control", 
+                                                 `X3` = "Intact competing", 
+                                                 `X4` = "Altered competing")) %>%
+      separate(group, into = c("status", "interaction"), remove = FALSE) %>%
+      ggplot(aes(x = value, y = status, fill = interaction, col = interaction)) + 
+      geom_density_ridges(lwd = 1, alpha = 0.4) +
+      scale_y_discrete(expand = c(0, 0)) +
+      scale_color_manual(values = c("#045FB4", "#2E2E2E")) +
+      scale_fill_manual(values = c("#045FB4", "#2E2E2E")) + 
+      labs(x = "group θ", y = element_blank()) + theme_ridges()
+}
+  
 #  Emulate ggplot default colours
 gg_color_hue <- function(n) {
   hues = seq(15, 375, length = n + 1)
