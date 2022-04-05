@@ -113,11 +113,21 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
 # Calculate theta 
 ## Bats full
 stan_data <- stan_data_fun(filter(contables, taxon == "bat"), medn = F)
-bat_full <- stan_theta(stan_data)
+stan_fit <- stan_theta(stan_data)
 
 ## Birds full
 stan_data <- stan_data_fun(filter(contables, taxon == "bird"), medn = F)
-bat_noTurnover <- stan_theta(stan_data)
+stan_fit <- stan_theta(stan_data)
+
+#Plot
+stan_fit %>% extract() %>% `[[`(1) %>% data.frame() %>% 
+  pivot_longer(names_to = "group", cols = 1:4) %>% 
+  mutate(group = as.factor(group) %>% recode(`X1` = "Intact control", 
+                                             `X2` = "Altered control", 
+                                             `X3` = "Intact competing", 
+                                             `X4` = "Altered competing")) %>% 
+  ggplot(aes(x = value, col = group)) + geom_density(lwd = 1.5) 
+
 
 ## No-turnover models ####
 shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(match_val))
@@ -130,11 +140,11 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
 # Calculate theta 
 ## Bats no turnover
 stan_data <- stan_data_fun(filter(contables, taxon == "bat"), medn = F)
-bird_full <- stan_theta(stan_data)
+stan_fit <- stan_theta(stan_data)
 
 ## Birds no turnover
 stan_data <- stan_data_fun(filter(contables, taxon == "bird"), medn = F)
-bird_noTurnover <- stan_theta(stan_data)
+stan_fit <- stan_theta(stan_data)
 
 
 #### Analysis of co-occurrence at altered habitats ####
