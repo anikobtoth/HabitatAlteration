@@ -712,32 +712,26 @@ __Table S2.__
 Median values and 95% high density posterior intervals for $\overline{\theta_{g}}$ and $\sigma_{g}$ of all bat and bird models.
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-l <- list.files('../Results/Omega/interaction', recursive = TRUE, full.names = TRUE)
+l <- list.files('../Results/stan', full.names = TRUE, pattern = "stan6")
 
-res <- map(l, function(x) {load(x)
-                           return(out)}) %>%
+res <- map(l, ~readRDS(.x) %>% format_stanfit("mu")) %>%
   setNames(c(paste(ifelse(grepl("bat",l, fixed = TRUE), "bat", "bird"),
-                   ifelse(grepl("medianTRUE", l, fixed = TRUE), "common", "full"),
-                   ifelse(grepl("shared", l, fixed = TRUE), "noTurnover", "")) %>% trimws() %>% str_replace_all(" ", "_"))) %>%
-  bind_rows(.id = "model") %>% filter(!parameter == "deviance")
+                   ifelse(grepl("shared", l, fixed = TRUE), "noTurnover", "full")) %>% trimws() %>% str_replace_all(" ", "_"))) %>% 
+  bind_rows(.id = "model")
 
-hdpi95 <- res %>% group_by(model, parameter, status_dietmatch) %>% 
-  summarise(median = median(value), lower = hdi(value, 0.95)$CI_low, upper = hdi(value, 0.95)$CI_high) %>% mutate(across(where(is.numeric), round, digits = 4)) %>%
-  separate(status_dietmatch, into = c("status", "Pair_type")) %>%
-  separate(model, into = c("taxon", "model"), extra = "merge") %>%
-  mutate(parameter = recode(parameter, omega = "theta", sigma = "variance"), 
-         Pair_type = recode(Pair_type, Different = "Control", Same = "Competing"), 
-         status = recode(status, Unaltered = "Intact")) %>% 
- pivot_wider(names_from = parameter, values_from = c(median, lower, upper), names_sort = TRUE) %>%
-  select(taxon, model, status, Pair_type, ends_with("theta"), ends_with("variance"))
+res2 <- map(l, ~readRDS(.x) %>% format_stanfit("sigma")) %>%
+  setNames(c(paste(ifelse(grepl("bat",l, fixed = TRUE), "bat", "bird"),
+                   ifelse(grepl("shared", l, fixed = TRUE), "noTurnover", "full")) %>% trimws() %>% str_replace_all(" ", "_"))) %>% 
+  bind_rows(.id = "model")
+
+res$sigma <- res2$sigma
+
+hdpi95 <- res %>% group_by(model, group) %>% 
+  summarise(`Median θ` = median(mu), `Lower θ` = hdi(mu, 0.95)$CI_low, `Upper θ` = hdi(mu, 0.95)$CI_high, `Median σ` = median(sigma), `Lower σ` = hdi(sigma, 0.95)$CI_low, `Upper σ` = hdi(sigma, 0.95)$CI_high) %>% mutate(across(where(is.numeric), round, digits = 4)) %>%
+  separate(group, into = c("status", "Pair_type")) %>%
+  separate(model, into = c("taxon", "model"), extra = "merge") 
   
-flextable(hdpi95) %>% 
- set_header_labels(median_theta = "Median θ", 
-                   lower_theta = "Lower θ", 
-                   upper_theta = "Upper θ", 
-                   median_variance = "Median σ",
-                   lower_variance = "Lower σ", 
-                   upper_variance = "Upper σ")
+flextable(hdpi95)
 
 ```
 
