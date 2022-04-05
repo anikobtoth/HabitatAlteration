@@ -329,20 +329,25 @@ chao1 <- function(n) {
 }
 
 # Plotting 
-  
-plot_stanfit <- function(stanfit){
-    stanfit %>% extract() %>% `[[`(1) %>% data.frame() %>% 
-      pivot_longer(names_to = "group", cols = 1:4) %>% 
-      mutate(group = as.factor(group) %>% recode(`X1` = "Intact control", 
-                                                 `X2` = "Altered control", 
-                                                 `X3` = "Intact competing", 
-                                                 `X4` = "Altered competing")) %>%
-      separate(group, into = c("status", "interaction"), remove = FALSE) %>%
-      ggplot(aes(x = value, y = status, fill = interaction, col = interaction)) + 
+library(rstan)
+library(ggridges)
+format_stanfit <- function(stanfit, name = "mu"){
+  stanfit %>% extract() %>% `[[`(name) %>% data.frame() %>% 
+    pivot_longer(names_to = "group", cols = 1:4, values_to = name) %>% 
+    mutate(group = as.factor(group) %>% recode(`X1` = "Intact control", 
+                                               `X2` = "Altered control", 
+                                               `X3` = "Intact competing", 
+                                               `X4` = "Altered competing")) %>%
+    separate(group, into = c("status", "interaction"), remove = FALSE)
+}  
+plot_stanfit <- function(formattedstanfit){
+     formattedstanfit %>%
+      ggplot(aes(x = mu, y = status, fill = interaction, col = interaction)) + 
       geom_density_ridges(lwd = 1, alpha = 0.4) +
       scale_y_discrete(expand = c(0, 0)) +
       scale_color_manual(values = c("#045FB4", "#2E2E2E")) +
       scale_fill_manual(values = c("#045FB4", "#2E2E2E")) + 
+      coord_cartesian(clip = "off") +
       labs(x = "group θ", y = element_blank()) + theme_ridges()
 }
   
