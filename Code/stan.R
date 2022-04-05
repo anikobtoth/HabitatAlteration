@@ -2,10 +2,7 @@ library(BiasedUrn)
 library(dplyr)
 library(rstan)
 
-# data prep
-#df <- contables[contables$taxon=='bat',]
-#medn <- FALSE
-
+# prepare data from contables 
 stan_data_fun <- function(df, medn) {
   if(medn) {
     occs <- rbind(df %>% select(status, Sp1, presSp1) 
@@ -54,7 +51,7 @@ stan_data_fun <- function(df, medn) {
               N_dat = nrow(df2),
               dat = df2[c('oo','sb','nsb','rr')],
               N_occ = nrow(occ),
-              occ = occ[c('oo','s1','s2','sb_min')],
+              occ = occ[c('s1','s2')],
               occ_idx = cbind(tapply(1:nrow(df2),df2$oo,min),
                               tapply(1:nrow(df2),df2$oo,max)),
               N_gg = max(df2$gg),
@@ -63,14 +60,14 @@ stan_data_fun <- function(df, medn) {
               N_posthoc = max(df2$gg)*(max(df2$gg)-1)/2))
 }
 
+# bayesian model
 stan_theta <- function(stan_data){
 
-  
   stan_code <- 
     '
 functions {
 
-// PMF for Fisher noncentral hypergeometric distribution
+  // PMF for Fisher noncentral hypergeometric distribution
   real fnchypergeo_lpmf(int[] sb, int[] nsb, vector theta,
                         int[] occ, int N_site) {
     vector[1 + min(occ) - (sum(occ) > N_site ? sum(occ) - N_site : 0)] u;
@@ -91,13 +88,14 @@ functions {
   }
   
 }
+
 data {
 
   int N_site; // # of sites
-  int N_dat; // # of rows of data (dat)
+  int N_dat; // # of rows in data table (dat)
   int dat[N_dat,4]; // dat columns: oo, sb, nsb, rr
-  int N_occ; // # of occupancy patterns for s1/s2 (occ)
-  int occ[N_occ,4]; // occ columns: oo, s1, s2, sb_min
+  int N_occ; // # of rows in occupancy table (occ)
+  int occ[N_occ,2]; // occ columns: s1, s2
   int occ_idx[N_occ,2]; // row index to occ for dat
   int N_gg; // # of groups
   int N_rr; // # of random effects
@@ -106,20 +104,18 @@ data {
 
 }
 
-
 parameters {
 
   vector[N_gg] mu; // means
   vector<lower=0>[N_gg] sigma; // standard deviations
-  vector[N_rr] ln_omega; // random effects
+  vector[N_rr] theta; // random effects
 
 }
-
 
 model {
 
   // priors
-  ln_omega ~ normal(mu[gg], sigma[gg]);
+  theta ~ normal(mu[gg], sigma[gg]);
   mu ~ normal(0,10);
   for(i in 1:N_gg) sigma[i] ~ normal(0,10) T[0,];
 
@@ -127,12 +123,11 @@ model {
   for (i in 1:N_occ) {
     target += fnchypergeo_lpmf(dat[occ_idx[i,1]:occ_idx[i,2],2] | 
                                dat[occ_idx[i,1]:occ_idx[i,2],3],
-                               ln_omega[dat[occ_idx[i,1]:occ_idx[i,2],4]],
+                               theta[dat[occ_idx[i,1]:occ_idx[i,2],4]],
                                occ[i], N_site);
   }
 
 }
-
 
 generated quantities {
   
@@ -150,16 +145,14 @@ generated quantities {
 
 }
 '
-
 # fit model
 stan_fit <- stan(model_code=stan_code,
                  data= stan_data, cores = detectCores()*0.5) 
 return(stan_fit)
 }
 
-
-
-stan_theta_ML <- function(stan_data){
+# maximum likelihood model
+stan_theta_ML <- function(stan_data, stan_fit){
   # Fit ML model
   ml_stan_code <- 
     '
@@ -227,75 +220,79 @@ ml_model <- optimizing(stan_model(model_code=ml_stan_code),
 return(ml_model)
 }
 
+# summary stats
+stan_summary <- function(stan_data, stan_fit, ml_model){
+  # Summary data for plots
+  stan_sum <- cbind.data.frame(unique(stan_data$dat[c('rr','oo')]),
+                               gg = stan_data$gg,
+                               theta_bayes = summary(stan_fit,'theta')$summary[,1],
+                               theta_ml = ml_model$par)
+  stan_sum$log_n <- log(tapply(stan_data$dat$nsb,stan_data$dat$rr,sum))
+  temp <- stan_data$occ
+  temp$oo <- 1:nrow(temp)
+  stan_sum <- merge(stan_sum,temp)
+  stan_sum$max_sb <- tapply(stan_data$dat$sb,stan_data$dat$rr,max)
+  stan_sum$min_sb <- tapply(stan_data$dat$sb,stan_data$dat$rr,min)
+  stan_sum$sb_min <- apply(stan_sum[c('s1','s2')],1,
+                           function(x) max(0,sum(x)-stan_data$N_site))
+  stan_sum$sb_max <- stan_sum$s1
+  stan_sum$theta_ml[stan_sum$max_sb==stan_sum$sb_min] <- -Inf
+  stan_sum$theta_ml[stan_sum$min_sb==stan_sum$sb_max] <- Inf
+  
+  # difference between Bayes estimate and maximum likelihood estimate
+  stan_sum$diff_ml <- stan_sum$theta_bayes - stan_sum$theta_ml
+  stan_sum$diff_ml[stan_sum$diff_ml == -Inf] <- -4
+  stan_sum$diff_ml[stan_sum$diff_ml == Inf] <- 4
+  stan_sum$diff_mean <- stan_sum$theta_ml-summary(stan_fit,'mu')[[1]][,1][stan_sum$gg]
+  return(stan_sum)
+}
 
+# visualise shrinkage by comparing bayesian and ml estimates
+stan_shrinkage_plots <- function(stan_sum){
+  par(mfrow = c(2,1), mar = c(3.5,4,1,1))
+  
+  # difference between maximum likelihood estimate and group mean
+  plot(stan_sum$diff_mean,stan_sum$diff_ml,col=alpha('black',0.1),pch=16,
+       xlab='',ylab='',cex=0.75,ylim=c(-2.25,2.25), las = 1)
+  mtext(expression("deviation from group mean "~(hat(theta[i])-bar(theta[g(i)]))),
+        side=1,line=2.5,cex=1.1)
+  mtext(expression("shrinkage "~(theta[i] - hat(theta[i]))),side=2,
+        line=2.5,cex=1.1)
+  # shrinkage plotted against number of pairs per occupancy group
+  plot(stan_sum$log_n ,stan_sum$diff_ml,pch=16,col=alpha('black',0.1),axes=FALSE,
+       xlab='',las=3,ylab='',cex=0.75, las = 1)
+  abline(h=0,lty=2)
+  mtext(expression(number~of~pairs),side=1,line=2.5,cex=1.1)
+  mtext(expression("shrinkage "~(theta[i] - hat(theta[i]))),side=2,
+        line=2.5,cex=1.1)
+  axis(1,at=log(10^(0:3)),labels=parse(text=paste0('10^{',0:3,'}')))
+  axis(2,at=c(-4,-2,-1,0,1,2,4),expression(-infinity,-2,-1,0,1,2,infinity), las = 1)
+  box()
+  # Add break lines along y-axis     
+  axis.break(2, -3, style = "zigzag",brw=0.03)
+  axis.break(2, 3, style = "zigzag",brw=0.03)
+}
 
-# Summary data for plots
-stan_sum <- cbind.data.frame(unique(stan_data$dat[c('rr','oo')]),
-                             gg = stan_data$gg,
-                             theta_bayes = summary(stan_fit,'theta')$summary[,1],
-                             theta_ml = ml_model$par)
-stan_sum$log_n <- log(tapply(stan_data$dat$nsb,stan_data$dat$rr,sum))
-temp <- stan_data$occ
-temp$oo <- 1:nrow(temp)
-stan_sum <- merge(stan_sum,temp)
-stan_sum$max_sb <- tapply(stan_data$dat$sb,stan_data$dat$rr,max)
-stan_sum$min_sb <- tapply(stan_data$dat$sb,stan_data$dat$rr,min)
-stan_sum$sb_min <- apply(stan_sum[c('s1','s2')],1,
-                         function(x) max(0,sum(x)-stan_data$N_site))
-stan_sum$sb_max <- stan_sum$s1
-stan_sum$theta_ml[stan_sum$max_sb==stan_sum$sb_min] <- -Inf
-stan_sum$theta_ml[stan_sum$min_sb==stan_sum$sb_max] <- Inf
-
-# difference between Bayes estimate and maximum likelihood estimate
-stan_sum$diff_ml <- stan_sum$theta_bayes - stan_sum$theta_ml
-stan_sum$diff_ml[stan_sum$diff_ml == -Inf] <- -4
-stan_sum$diff_ml[stan_sum$diff_ml == Inf] <- 4
-pdf('shrinkage1.pdf')
-plot(stan_sum$log_n ,stan_sum$diff_ml,pch=16,col=alpha('black',0.1),axes=FALSE,
-     xlab='',las=3,ylab='',cex=0.75)
-abline(h=0,lty=2)
-mtext(expression(number~of~pairs),side=1,line=2.5,cex=1.1)
-mtext(expression("shrinkage "~(theta[i] - hat(theta[i]))),side=2,
-      line=2.5,cex=1.1)
-axis(1,at=log(10^(0:3)),labels=parse(text=paste0('10^{',0:3,'}')))
-axis(2,at=c(-4,-2,-1,0,1,2,4),expression(-infinity,-2,-1,0,1,2,infinity))
-box()
-# Add break lines along y-axis     
-axis.break(2, -3, style = "zigzag",brw=0.03)
-axis.break(2, 3, style = "zigzag",brw=0.03)
-dev.off()
-
-
-# difference between maximum likelihood estimate and group mean
-pdf('shrinkage2.pdf')
-stan_sum$diff_mean <- stan_sum$theta_ml-summary(stan_fit,'mu')[[1]][,1][stan_sum$gg]
-plot(stan_sum$diff_mean,stan_sum$diff_ml,col=alpha('black',0.1),pch=16,
-     xlab='',ylab='',cex=0.75,ylim=c(-2.25,2.25))
-mtext(expression("deviation from group mean "~(hat(theta[i])-bar(theta[g(i)]))),
-      side=1,line=2.5,cex=1.1)
-mtext(expression("shrinkage "~(theta[i] - hat(theta[i]))),side=2,
-      line=2.5,cex=1.1)
-dev.off()
-
+# Check for bias in theta estimates
 # summary plots
-ggplot(stan_sum, aes(x = s1, y = ln_omega)) + 
-  geom_point() + facet_wrap(~gg) + 
+ggplot(stan_sum, aes(x = s1, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~gg) + 
   geom_smooth(method = "loess") + 
   geom_line(aes(y = 0), lty = 2) + 
   labs(x = "occupancy of rarer species in pattern")
 
-ggplot(stan_sum, aes(x = log_n, y = ln_omega)) + 
-  geom_point() + facet_wrap(~gg) + 
+ggplot(stan_sum, aes(x = log_n, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~gg) + 
   geom_smooth(method = "loess") + 
   geom_line(aes(y = 0), lty = 2) + 
   labs(x = "log(number of pairs)")
 
-ggplot(stan_sum, aes(x =ln_omega)) + 
+# Check distribution of estimates (normal distribution is good)
+ggplot(stan_sum, aes(x =theta_bayes)) + 
   geom_histogram(bins = 12) + 
-  facet_wrap(~gg) + labs(x = "log(omega)")
+  facet_wrap(~gg) + labs(x = "theta")
 
-
-
+## SANITY CHECKS ####
 # Log-likelihood function for NHD
 log_sum_exp <- function(x) log(sum(exp(x - max(x)))) + max(x)
 fnchypergeo_lpmf <- function(sb, s1, s2, n_site, omega) {
@@ -318,12 +315,10 @@ fnchypergeo_lpmf <- function(sb, s1, s2, n_site, omega) {
   return(ans)
 }
 
-
 # Check log-likelihood function
-sb <- 2:4; s1 <- 40; s2 <- 4; n_site <- 42; psi <- 1.5
-log(dFNCHypergeo(sb,s1,n_site - s1,s2,psi)) # BiasedUrn
-fnchypergeo_lpmf(sb,s1,s2,n_site,log(psi)) # our function
-
+# sb <- 2:4; s1 <- 40; s2 <- 4; n_site <- 42; psi <- 1.5
+# log(dFNCHypergeo(sb,s1,n_site - s1,s2,psi)) # BiasedUrn
+# fnchypergeo_lpmf(sb,s1,s2,n_site,log(psi)) # our function
 
 # Score function
 fnchypergeo_score <- function(sb, s1, s2, n_site, omega) {
@@ -350,8 +345,8 @@ fnchypergeo_score <- function(sb, s1, s2, n_site, omega) {
 }
 
 # Check score function
-(fnchypergeo_lpmf(1, 5, 20,50,1.11)-fnchypergeo_lpmf(1, 5, 20,50,1.09))/(1.11-1.09)
-fnchypergeo_score(1, 5, 20,50,1.1)
+# (fnchypergeo_lpmf(1, 5, 20,50,1.11)-fnchypergeo_lpmf(1, 5, 20,50,1.09))/(1.11-1.09)
+# fnchypergeo_score(1, 5, 20,50,1.1)
 
 # Fisher Information function
 fnchypergeo_FI <- function(s1, s2, n_site, omega) {
@@ -383,37 +378,10 @@ fnchypergeo_FIb <- function(s1, s2, n_site, omega) {
   }
   return(ans)
 }
-fnchypergeo_FI(1,5,50,-5:5)
-fnchypergeo_FIb(1,5,50,-5:5)
+# fnchypergeo_FI(1,5,50,-5:5)
+# fnchypergeo_FIb(1,5,50,-5:5)
 
 
-
-# IGNORE BELOW FOR RIGHT NOW
-
-# sensitivity analysis
-test.dat <- data.frame(oo=numeric(),   # occupancy pattern: c(2,4,8,16)
-                       size = numeric(), # sample size: c(1e1,1e2,1e3)
-                       lomega=numeric(), # lomega: -2:2
-                       rep = numeric(), # rep number: 1:10
-                       grp=numeric(), # group id: 1:600
-                       m1=numeric(), # Sp2 present
-                       m2=numeric(), # Sp2 absent
-                       n=numeric(), # total for Sp1
-                       sb=numeric()) # number with both
-occ <- 0
-grp <- 0
-for(i in c(2,4,8,16)) {
-  occ <- occ + 1
-  for(j in c(1e1,1e2,1e3)) {
-    for(k in -2:2) {
-      for(l in 1:10) {
-        grp <- grp + 1
-        rnd <- rFNCHypergeo(j, i, 50 - i, i, exp(k))
-        test.dat <- rbind(test.dat,
-                          data.frame(oo=occ,size=j,lomega=k,rep=l,
-                                     grp=grp,m1=i,m2=50-i,n=i,sb=rnd))
-      }
-    }
-  }
-}
-
+######
+#####
+####
