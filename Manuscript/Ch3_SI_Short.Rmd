@@ -424,9 +424,15 @@ then inspect MCMC plots for the 4 chains and calculated Gelman Rubin statistics,
 $\hat{R}$, to ensure convergence [@Gelman2013].
 
 
+_Model robustness checks_
+We ran a series of checks to test that the model is robust and not subject to common biases. First, we estimated the shrinkage present in our model results by comparing the bayesian model output to the same model calculated using maximum likelihood. Shrinkage refers to the tendency of observations with less information to gravitate toward the group mean in hierachical models. We want to see relatively little shrinkage in most sets, but more in occupancy sets with fewer pairs. We also want to see increased shrinkage in sets that fall farther from the group mean. These properties were observed for both bats and birds (Figs. S4-S5). 
+
+We also examined our model output for near normal distribution and common biases. We plotted $\theta_g}$ estimates of each occupancy pair set against the number of pairs in the set and against the occupancy of the rarer species in the set. There were no consistent trends across the four experimental groups for either taxa, indicating that $\theta_g}$ does not suffer from bias due to these factors (Figs. S6-S11). 
+
+
 _Model interpretation_
 
-In this framework, a change in the posterior distributions of $\psi$ and therefore $\overline{\theta_g}$ can exhibit several patterns, which point to various biological processes (Fig. S4). Competing pairs can display lower $\overline{\theta_g}$ than non-competing pairs, which means that diffuse competition tends to lead to exclusion with respect to opportunity for co-occurrence (Fig. S4A). This is the case even if all $\overline{\theta_g}$ are positive, as exclusion does not necessarily present as a negative association. Because competing and non-competing pairs are comprised of the same species data in different pairwise arrangements, the $\overline{\theta_g}$ of non-competing pairs represents the opportunity for coexistence in the absence of food competition. A deviation toward lower $\overline{\theta_g}$ from this baseline is evidence that competing pairs are not coexisting as often as expected--a systematic pattern of exclusion at the group level. Conversely, a higher $\overline{\theta_g}$ in competing pairs confirms that similarity in resource use leads to co-occurrence without causing exclusion, suggesting that competing pairs tend to partition or share adequate resources (Fig. S4B). If the $\overline{\theta_g}$ of competing and non-competing pairs do not differ significantly, but the $\sigma_{g}$ (variance) of competing pairs is higher, this points to stronger spatial patterns (both coexistence and exclusion) in pairs that compete for food, and vice versa (Fig. S4D). If there is no difference in $\overline{\theta_g}$ or $\sigma_{g}$ between the two groups, then there is insufficient evidence to support the hypothesis that diffuse competition is influencing the structure of the assemblage at the landscape scale (Fig. S4C).
+In this framework, a change in the posterior distributions of $\psi$ and therefore $\overline{\theta_g}$ can exhibit several patterns, which point to various biological processes (Fig. S12). Competing pairs can display lower $\overline{\theta_g}$ than non-competing pairs, which means that diffuse competition tends to lead to exclusion with respect to opportunity for co-occurrence (Fig. S12A). This is the case even if all $\overline{\theta_g}$ are positive, as exclusion does not necessarily present as a negative association. Because competing and non-competing pairs are comprised of the same species data in different pairwise arrangements, the $\overline{\theta_g}$ of non-competing pairs represents the opportunity for coexistence in the absence of food competition. A deviation toward lower $\overline{\theta_g}$ from this baseline is evidence that competing pairs are not coexisting as often as expected--a systematic pattern of exclusion at the group level. Conversely, a higher $\overline{\theta_g}$ in competing pairs confirms that similarity in resource use leads to co-occurrence without causing exclusion, suggesting that competing pairs tend to partition or share adequate resources (Fig. S12B). If the $\overline{\theta_g}$ of competing and non-competing pairs do not differ significantly, but the $\sigma_{g}$ (variance) of competing pairs is higher, this points to stronger spatial patterns (both coexistence and exclusion) in pairs that compete for food, and vice versa (Fig. S12D). If there is no difference in $\overline{\theta_g}$ or $\sigma_{g}$ between the two groups, then there is insufficient evidence to support the hypothesis that diffuse competition is influencing the structure of the assemblage at the landscape scale (Fig. S12C).
 
 The $\overline{\theta_g}$ and $\sigma_{g}$ of competing and non-competing pairs might also differ between altered and intact sites in our example. If the relationship between competing and non-competing pairs is different, this means that alteration has changed the outcome of biotic interactions, e.g., by promoting partitioning over exclusion or vice versa. More subtly, the extent of disparity between the two groups could differ without qualitatively changing the relationship, which indicates that naturally existing mechanisms have been enhanced or dampened. On the other hand, $\overline{\theta_g}$ or $\sigma_{g}$ could simply be higher or lower across the board, suggesting that alteration leads to changes in community structure that do not necessarily involve the rewiring of competitive interations. In all cases, posteriors represent assemblage-level patterns and do not imply that all pairs in the group exhibit the same pattern as does their group, merely that there is a group tendency toward one process over another.
 
@@ -505,16 +511,16 @@ Both multivariate permutation (regardless of the metric) and canonical correspon
 
 _Interaction results_ 
 
-Co-occurrence model results are covered extensively in the main text. See Table S1 for 95% high-density posterior intervals for all model runs. 
+Occupancy model results are covered extensively in the main text. See Table S1 for 95% high-density posterior intervals for all model runs. 
 
-We re-ran our models (both “full” and “common-only”) excluding species that were not sampled in both altered and intact habitats (no-turnover models). The purpose was to discover whether the main drivers of the observed patterns are (a) compositional disparities between the two habitat types, (b) actual changes in the spatial behavior of common species between the habitat types, or (c) both. There were strong similarities between these no-turnover models and our original models. In bats, there was very little difference between the two model sets (compare Fig. 3C-D to Fig. 3A-B), though the original offsets between competing and control groups increased in both habitat types, supporting hypothesis (b). In birds, the same relationships are observed within habitats, but pairs in intact habitats generally exhibit higher $\bar{\theta{g}}$ (Fig. 4C-D) compared to the original model sets (Fig. 4A-B), both in absolute terms and with respect to altered pairs. This suggests that the opportunities for aggregation are amplified, especially for species that were only sampled in altered habitats (i.e., species that thrive primarily in disturbed areas) and supports hypothesis (c). However, competing pairs still exhibit exclusion in altered habitats, and this is very pronounced in both no-turnover models, with $\bar{\theta{g}}$ of competing pairs in altered habitats being significantly lower than in any other group. Altered habitats cannot consistently sustain diverse sets of competing pairs, irrespective of whether the species comprising them occur in both types of habitats or primarily in altered habitats. The no-turnover models also exhibit a stronger tendency for partitioning (competing pairs have higher $\bar{\theta{g}}$) in intact habitats, even for species with lower occupancies. This result suggests that species that are better able to partition resources are more likely to be found in both habitat types, and, conversely, those that did experience competitive exclusion in intact habitats are less likely to be sampled in any altered habitats.
+We re-ran our models excluding species that were not sampled in both altered and intact habitats (no-turnover models). The purpose was to discover whether the main drivers of the observed patterns are (a) compositional disparities between the two habitat types, (b) actual changes in the spatial behavior of common species between the habitat types, or (c) both. There were strong similarities between these no-turnover models and our original models. In bats, there was very little difference between the two model sets (compare Fig. 3A to 3B), supporting hypothesis (b). In birds, the same relationships are observed between habitats, but competing pairs in altered habitats have a $\bar{\theta{g}}$ equal to control pairs (Fig. 4A-B) compared to the original model sets (Fig. 4A), in which competing pairs have a slightly lower median $\bar{\theta{g}}$. This suggests that competing species occurring only in altered habitats co-occur less than those occurring in both habitats and supports hypothesis (c). However, competing pairs still exhibit coexistence in intact habitats, and the relationship is still lost in altered habitats. Altered habitats cannot consistently sustain diverse sets of competing pairs, irrespective of whether the species comprising them occur in both types of habitats or primarily in altered habitats.
 
 
 _Altered site types_
 
- Strong aggregations form when species occur together at several sites and are both absent from other sites. To help understand our results, we calculated the representation of dietary guilds at various different types of altered sites (Fig. S5). Carnivore-insectivore (9 species) and frugivore bats (69 species) co-occur disproportionately in plantations. Plantations and forest fragments support the highest proportion of insectivore bats (98 species) living in altered habitats, and nectarivores (24 species) co-occur disproportionately in plantations and croplands (Fig. S5).
+ Strong aggregations form when species occur together at several sites and are both absent from other sites. To help understand our results, we calculated the representation of dietary guilds at various different types of altered sites (Fig. S13). Carnivore-insectivore (9 species) and frugivore bats (69 species) co-occur disproportionately in plantations. Plantations and forest fragments support the highest proportion of insectivore bats (98 species) living in altered habitats, and nectarivores (24 species) co-occur disproportionately in plantations and croplands (Fig. S13).
  
-For birds, the single site in a zone of human habitation supports a disproportionate ratio of birds with simple diets (nectarivores, frugivores, invertivores, and granivores). Croplands are the main supporter of frugivore-granivore birds. Many of our alteration categories included only one or two sites, which is insufficient to draw definitive conclusions about how bat and bird guilds aggregate over the altered landscape. However, our results (Fig. S5) suggest that plantations are an important aggregation point for bats, particularly frugivores and nectarivores. The data for site types are even sparser for birds, but the primary habitat types are forest fragment, combined, disturbed forest, and plantation. These site types vary in their importance to individual bird guilds. Birds with fruit or nectar in their diets showed a variety of site preferences, while insectivores were most strongly aggregated in combined and inhabited sites.
+For birds, the single site in a zone of human habitation supports a disproportionate ratio of birds with simple diets (nectarivores, frugivores, invertivores, and granivores). Croplands are the main supporter of frugivore-granivore birds. Many of our alteration categories included only one or two sites, which is insufficient to draw definitive conclusions about how bat and bird guilds aggregate over the altered landscape. However, our results (Fig. S13) suggest that plantations are an important aggregation point for bats, particularly frugivores and nectarivores. The data for site types are even sparser for birds, but the primary habitat types are forest fragment, combined, disturbed forest, and plantation. These site types vary in their importance to individual bird guilds. Birds with fruit or nectar in their diets showed a variety of site preferences, while insectivores were most strongly aggregated in combined and inhabited sites.
 
 
 ```{r, echo = FALSE, include = TRUE, fig.height=5.5, fig.width = 7}
@@ -658,9 +664,90 @@ legend('topleft',legend=expression(italic(N[A])~"="~italic(N[B])~"="~2,
        lty=1:7,bty='n',col=hcl.colors(5)[c(1,1,2,2,3,4,5)],lwd=1.5,cex=0.75)
 ```
 
+```{r figs4, echo = FALSE, include = TRUE, fig.height=7, fig.width = 5, dpi = 200}
+data_bat_full <- readRDS("../Results/stan/Model_data_bats_all_full.rds")
+bat_full <- readRDS("../Results/stan/stan6_bats_all_full.rds")
+ml_bat_full <- readRDS("../Results/stan/ML_bats_all_full.rds")
+sum_bat <- stan_summary(data_bat_full, bat_full, ml_bat_full)
+stan_shrinkage_plots(sum_bat)
 
+```
 
-__Fig. S4.__ Interpretations of average $\overline{\theta_g}$ posterior density distributions. The dark curve indicates competing pairs and the lighter curve indicates control pairs. In (A) competing pairs co-occur less on average than control pairs, so higher spatial segregation than expected suggesting a pattern of competitive exclusion. In (B) competing pairs co-occur more than control pairs on average, suggesting that they micro-partition resources at the same sites more than expected. In (C) there is little or no separation of the posterior distributions, meaning that food competition does not aggregate or segregate pairs outside of expectations; however, other interaction types could still play an important role. (D) Both strong aggregation and segregation are observed in competing pairs, so variance is higher than expected.
+__Fig. S4.__ Results of shrinkage tests for bat model with all species, depicting shrinkage with respect to deviation from the group mean and with respect to the number of pairs in each set.
+
+```{r figs5, echo = FALSE, include = TRUE, fig.height=7, fig.width = 5, dpi = 200}
+data_bird_full <- readRDS("../Results/stan/Model_data_birds_all_full.rds")
+bird_full <- readRDS("../Results/stan/stan6_birds_all_full.rds")
+ml_bird_full <- readRDS("../Results/stan/ML_birds_all_full.rds")
+sum_bird <- stan_summary(data_bird_full, bird_full, ml_bird_full)
+stan_shrinkage_plots(sum_bird)
+```
+
+__Fig. S5.__ Results of shrinkage tests for bird model with all species, depicting shrinkage with respect to deviation from the group mean and with respect to the number of pairs in each set.
+
+```{r figs6, echo = FALSE, include = TRUE, fig.height=5, fig.width = 5, dpi = 200}
+ggplot(sum_bat, aes(x =theta_bayes)) + 
+  geom_histogram(bins = 12) + 
+  facet_wrap(~group) + labs(x = "theta")
+
+```
+
+__Fig. S6.__ 
+
+```{r figs7, echo = FALSE, include = TRUE, fig.height=5, fig.width = 5, dpi = 200}
+ggplot(sum_bat, aes(x = s1, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
+  geom_smooth(method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "occupancy of rarer species in pattern")
+
+```
+
+__Fig. S7.__ 
+
+```{r figs8, echo = FALSE, include = TRUE, fig.height=5, fig.width = 5, dpi = 200}
+ggplot(sum_bat, aes(x = log_n, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
+  geom_smooth(method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "log(number of pairs)")
+
+```
+
+__Fig. S8.__
+
+```{r figs9, echo = FALSE, include = TRUE, fig.height=5, fig.width = 5, dpi = 200}
+ggplot(sum_bird, aes(x =theta_bayes)) + 
+  geom_histogram(bins = 12) + 
+  facet_wrap(~group) + labs(x = "theta")
+
+```
+
+__Fig. S9.__ 
+
+```{r figs10, echo = FALSE, include = TRUE, fig.height=5, fig.width = 5, dpi = 200}
+ggplot(sum_bird, aes(x = s1, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
+  geom_smooth(method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "occupancy of rarer species in pattern")
+
+```
+
+__Fig. S10.__ 
+
+```{r figs11, echo = FALSE, include = TRUE, fig.height=5, fig.width = 5, dpi = 200}
+ggplot(sum_bird, aes(x = log_n, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
+  geom_smooth(method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "log(number of pairs)")
+
+```
+
+__Fig. S11.__
+
+__Fig. S12.__ Interpretations of average $\overline{\theta_g}$ posterior density distributions. The dark curve indicates competing pairs and the lighter curve indicates control pairs. In (A) competing pairs co-occur less on average than control pairs, so higher spatial segregation than expected suggesting a pattern of competitive exclusion. In (B) competing pairs co-occur more than control pairs on average, suggesting that they micro-partition resources at the same sites more than expected. In (C) there is little or no separation of the posterior distributions, meaning that food competition does not aggregate or segregate pairs outside of expectations; however, other interaction types could still play an important role. (D) Both strong aggregation and segregation are observed in competing pairs, so variance is higher than expected.
 
 ```{r, echo = FALSE}
 #load("../Results/d2_d5_summary_tables_nr_ns_100r_relatedexcl.RData")
@@ -697,7 +784,7 @@ plot_grid(pbird+ theme(legend.position = c(1, 0), legend.justification = c(1, 0)
 
 ```
 
-__Fig. S5.__ 
+__Fig. S13.__ 
 Percent of species in (A) bird and (B) bat guilds, represented by panels, that co-occur at individual altered sites by type of alteration. Each point is a site. Key to panels: C = carnivore; F = frugivore; I = insectivore; N = nectarivore; and G = granivore. Multiple letters indicate mixed feeders.
 
 __Table S1.__
