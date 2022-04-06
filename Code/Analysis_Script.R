@@ -114,10 +114,12 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
 ## Bats full
 stan_data <- stan_data_fun(filter(contables, taxon == "bat"), medn = F)
 stan_fit <- stan_theta(stan_data)
+ml_model <- stan_theta_ML(stan_data, stan_fit)
 
 ## Birds full
 stan_data <- stan_data_fun(filter(contables, taxon == "bird"), medn = F)
 stan_fit <- stan_theta(stan_data)
+ml_model <- stan_theta_ML(stan_data, stan_fit)
 
 #Plot
 stan_fit %>% extract() %>% `[[`(1) %>% data.frame() %>% 
@@ -127,7 +129,6 @@ stan_fit %>% extract() %>% `[[`(1) %>% data.frame() %>%
                                              `X3` = "Intact competing", 
                                              `X4` = "Altered competing")) %>% 
   ggplot(aes(x = value, col = group)) + geom_density(lwd = 1.5) 
-
 
 ## No-turnover models ####
 shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(match_val))
