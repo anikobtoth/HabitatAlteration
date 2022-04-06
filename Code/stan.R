@@ -244,6 +244,12 @@ stan_summary <- function(stan_data, stan_fit, ml_model){
   stan_sum$diff_ml[stan_sum$diff_ml == -Inf] <- -4
   stan_sum$diff_ml[stan_sum$diff_ml == Inf] <- 4
   stan_sum$diff_mean <- stan_sum$theta_ml-summary(stan_fit,'mu')[[1]][,1][stan_sum$gg]
+  
+  stan_sum <- stan_sum %>% mutate(group = as.factor(gg) %>% 
+                                      recode(`1` = "Intact control", 
+                                             `2` = "Altered control", 
+                                             `3` = "Intact competing", 
+                                             `4` = "Altered competing"))
   return(stan_sum)
 }
 
@@ -276,13 +282,13 @@ stan_shrinkage_plots <- function(stan_sum){
 # Check for bias in theta estimates
 # summary plots
 ggplot(stan_sum, aes(x = s1, y = theta_bayes)) + 
-  geom_point(size = .5, alpha = .5) + facet_wrap(~gg) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
   geom_smooth(method = "loess") + 
   geom_line(aes(y = 0), lty = 2) + 
   labs(x = "occupancy of rarer species in pattern")
 
 ggplot(stan_sum, aes(x = log_n, y = theta_bayes)) + 
-  geom_point(size = .5, alpha = .5) + facet_wrap(~gg) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
   geom_smooth(method = "loess") + 
   geom_line(aes(y = 0), lty = 2) + 
   labs(x = "log(number of pairs)")
@@ -290,7 +296,7 @@ ggplot(stan_sum, aes(x = log_n, y = theta_bayes)) +
 # Check distribution of estimates (normal distribution is good)
 ggplot(stan_sum, aes(x =theta_bayes)) + 
   geom_histogram(bins = 12) + 
-  facet_wrap(~gg) + labs(x = "theta")
+  facet_wrap(~group) + labs(x = "theta")
 
 ## SANITY CHECKS ####
 # Log-likelihood function for NHD
