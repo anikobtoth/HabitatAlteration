@@ -1,14 +1,13 @@
 ---
-title: Competitive interactions are disrupted by habitat alteration in the Neotropics
+title: Ecological interactions disrupted by habitat alteration in the Neotropics
 output:
   bookdown::word_document2: default
-bibliography: References_journ_abbr.bib
-csl: science.csl
+bibliography: References.bib
+csl: nature.csl
 
 ---
-__One sentence summary:__ Coexistence of competing species of Neotropical bats and birds is reduced in human-altered habitats.
 
-__Authors:__ Anikó B. Tóth^1^*, Andrew P. Allen^2^, S. Kathleen Lyons^3^, John Alroy^2^
+__Authors:__ Anikó B. Tóth^1^, Andrew P. Allen^2^, S. Kathleen Lyons^3^, John Alroy^2^
 
 __Affiliations:__
 
@@ -18,9 +17,16 @@ __Affiliations:__
 
 ^3^ School of Biological Sciences, University of Nebraska-Lincoln, Lincoln, Nebraska 68588, USA.
 
-*Correspondence to aniko.toth@unsw.edu.au
 
-__Abstract:__ Wholesale habitat destruction disrupts biotic interactions. Although this process may have far-reaching consequences, assemblage-wide studies of this phenomenon on landscape scales are uncommon and beset by logistical hurdles. Here, we use a novel approach to assess interactions in Neotropical bird and bat assemblages. We ask whether spatial patterns of co-occurrence among species pairs that compete for food resources differ between altered and intact habitats. We find that competing species pairs of both taxa are more spatially segregated on average in altered habitats than intact habitats. The shift is not driven by diversity losses but by changes in spatial relationships of recurring species pairs. Our results suggest that altered habitats fail to support the coexistence of diverse competitive interactions, reversing patterns observed in the wild.
+
+__Abstract:__ 
+Wholesale habitat destruction disrupts ecological interactions. 
+An important driver of community structure, interactions help determine how species assemble themselves across landscapes and are crucial to the provision of many ecosystem services such as pollination, seed dispersal, and pest control. Anthropogenic disturbance puts the natural course of these processes in jeopardy. 
+Though limited examples of interaction rewiring under human influence exist, studies of this process for speciose assemblages over landscape scales is uncommon and obstructed by logistical difficulties. 
+Here we show that human habitat alteration is associated with a wholesale decrease in the spatial aggregation of Neotropical bat pairs and bird pairs in the same dietary guilds.
+We found that all groups of species pairs tested have a positive coexistence parameter, but pairs within dietary guilds have stronger co-occurrence than pairs with disparate diets when habitats are relatively intact.
+Our results suggest that species with similar resource requirements overwhelmingly coexist in relatively intact natural settings. By contrast, exclusion becomes more common (though not dominant) when habitats are altered. Altered habitats thus fail to support the coexistence of diverse competitive interactions, reversing patterns observed in the wild.
+These findings bring new evidence to the hotly debated effect of overlap in resource requirements on bird community assembly. Rather than supporting randomness or competitive exclusion which form the major sides of the disagreement, they indicate that nonrandom coexistence via the partitioning of resources or niches is the norm. 
 
 
 ```{r setup, include=FALSE}
@@ -36,8 +42,6 @@ library(stringi)
 library(parallel)
 library(magick)
 library(lsa)
-library(flextable)
-library(bayestestR)
 
 knitr::opts_chunk$set(include = FALSE)
 
@@ -56,16 +60,17 @@ source('../Code/Data_Prep.R')
 
 ```
 
+
 __Main text:__
-Biological communities depend on a balance of interspecific interactions. Human disturbance may rewire interactions in unpredictable ways [@Bartley2019], and this can have detrimental consequences for ecosystems and people. However, empirical studies quantifying how biotic interactions change under degraded conditions are uncommon. Evidence that human disturbance can decouple predator-prey interactions [@Rodewald2011], increase competition for pollinators [@Holzschuh2011], and simplify or break apart interaction networks [@Haddad2000; @DeAssisBomfim2018] has been gathered mainly at local scales on systems with only a few species due to logistical hurdles. Broad patterns documenting changing interactions in entire assemblages have rarely been revealed, except for systems where interaction data has been laboriously compiled over decades, such as plant-pollinator networks [@Dore2021]. These are nonetheless beset by sampling inconsistencies [@Dore2021].
+Biological communities depend on a balance of interspecific interactions. Human disturbance may rewire interactions in unpredictable ways [@Bartley2019], and this can have detrimental consequences for ecosystems and people. However, empirical studies quantifying how biotic interactions change under degraded conditions are uncommon. Evidence that human disturbance can decouple predator-prey interactions [@Rodewald2011], increase competition for pollinators [@Holzschuh2011], and simplify or break apart interaction networks [@Haddad2000; @DeAssisBomfim2018] has been gathered mainly at local scales on systems with only a few species due to logistical challenges. Broad patterns documenting changing interactions in entire assemblages have rarely been revealed, except for systems where interaction data has been laboriously compiled over decades, such as plant-pollinator networks [@Dore2021]. These are nonetheless beset by sampling inconsistencies [@Dore2021].
 
-Biotic interactions are one of the four main drivers of species distributions [@McGill2010]. Thus, it is crucial to understand how assemblage-level interaction dynamics change in various ecological contexts [@Song2020], to facilitate conservation of species and ecosystems in an uncertain future. For instance, species pairs can exhibit stable or unstable population dynamics depending on the presence or absence of an apex predator [@Karakoc2020], or switch from facilitation to competition along a climate gradient [@Bimler2018]. Competitive interactions can result in coexistence or exclusion, depending on fitness, niche disparity, and priority effects of the species involved [@Grainger2019]. Human habitat alteration has strong potential to influence these processes by extirpating apex predators, changing the climate, or concentrating resources, thereby shifting the dynamics of biotic interactions, often without necessarily adding or removing species [@Tylianakis2017].
+Biotic interactions are one of the four main drivers of species distributions [@McGill2010]. Thus, it is crucial to understand how assemblage-level interaction dynamics change in various ecological contexts [@Song2020], to facilitate conservation of species and ecosystems in an uncertain future. For instance, species pairs can exhibit stable or unstable population dynamics depending on the presence or absence of an apex predator [@Karakoc2020], or switch from facilitation to competition along a climate gradient [@Bimler2018]. Competition for resources can result in coexistence or exclusion, depending on fitness, niche disparity, and priority effects of the species involved [@Grainger2019]. Human habitat alteration has strong potential to influence these processes by extirpating apex predators, changing the climate, or concentrating resources, thereby shifting the dynamics of biotic interactions, often without necessarily adding or removing species [@Tylianakis2017].
 
-Although this interpretation is still contentious [@McGill2010; @Araujo2013; @Ezard2016], it is increasingly recognized that biotic interactions can scale up to influence community assembly at much larger spatiotemporal scales than that of individual encounters [@Araujo2007; @Pollock2014; @Fraser2020]. For example, competition and facilitation can influence the modern distribution of taxa at landscape scales [@Gotelli2010], at continental scales over millennia [@Toth2019], and drive the diversification and extinction of entire clades over millions of years [@Sepkoski1984; @Alroy2010; @Fraser2020]. Human disruption of interactions can therefore have far-reaching consequences.
+Although this interpretation is still contentious [@McGill2010; @Araujo2013; @Ezard2016], it is increasingly recognized that biotic interactions across assemblages can scale up to influence community assembly at much larger spatiotemporal scales than that of individual encounters [@Araujo2007; @Pollock2014; @Fraser2020]. For example, competition and facilitation can influence the modern distribution of taxa at landscape scales [@Gotelli2010], at continental scales over millennia [@Toth2019], and drive the diversification and extinction of entire clades over millions of years [@Sepkoski1984; @Alroy2010; @Fraser2020]. Human disruption of interactions can therefore have far-reaching consequences.
 
-We demonstrate how human habitat alteration influences one type of interspecific interaction (food competition) through its effects on spatial associations of species pairs (meaning that species aggregate or co-occur more often than expected, vs. segregating, co-occurring less often than expected). We introduce a statistical model that elucidates how associations between individual pairs of species collectively result in assemblage-level spatial patterns. We apply the model to assemblages of Neotropical bats and birds downloaded from the Ecological Register [@Alroy2015b] consisting of `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. The sites in the Register are classified into two levels of degradation (altered vs. intact habitats; Fig. S1). Our analysis demonstrates that habitat degradation influences spatial patterns of co-occurrence among competitors at regional to continental scales by altering – or even reversing – the average outcome of food competition across regional assemblages. 
+We demonstrate how human habitat alteration influences one type of interspecific interaction (food competition) through its effects on spatial associations of species pairs (meaning that species aggregate or co-occur more often than expected, vs. segregating, co-occurring less often than expected). We introduce a statistical model that estimates the underlying association parameter responsible for the spatial patterns in groups of species pairs. We apply the model to assemblages of Neotropical understory birds and bats downloaded from the Ecological Register [@Alroy2015b] consisting of `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. The sites in the Register are classified into two levels of degradation (altered vs. intact habitats; Fig. S1). Our analysis demonstrates that habitat degradation influences spatial patterns of co-occurrence among competitors at regional to continental scales by altering – or even reversing – the average outcome of food competition across regional assemblages. 
 
-```{r biogeocorr1, echo = FALSE}
+```{r biogeocorr, echo = FALSE}
 #### Match Biogeography ####
 # separate altered and intact sites
 PAnu <- PAn %>% map(~return(.[,colnames(.) %in% unalt_sites])) # separate intact
@@ -91,212 +96,7 @@ coords2.keep <- purrr::map2(coords, PAna, function(x, y) x[x$p.sample %in% colna
 
 ```
 
-A suite of classical community analyses using several metrics produces inconsistent results on whether community patterns differ between altered and intact sites [@Supplement]. Specifically, birds have significant changes in community composition without changes in richness or beta diversity (Table S1). Bats have no significant disparity in beta diversity but possible changes in richness and composition, depending on the analysis and metric used (Table S1). We ran a multidimensional scaling analysis which demonstrates visually that compositional dissimilarities between altered and intact habitats are not striking (Fig. 1). In sum, classical analyses detect possible differences between habitat types, but they are not necessarily robust or informative about shifts in processes (as opposed to patterns) such as competitive exclusion and resource partitioning.
 
-```{r npairs, message=FALSE, warning=FALSE, include=FALSE}
-PAnb <- tobinary(PAn)
-tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
-  map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
-
-original <- map(tables, map, ~expand.grid(Sp1 = rownames(.x), Sp2 = rownames(.x))) %>% map(map, diet_cat, spp, related = TRUE) %>% map(bind_rows, .id = "status") %>% bind_rows(.id = "taxon") %>% na.omit() %>% filter(Sp1 != Sp2) %>% select(taxon, Sp1, Sp2, diet.match) %>% distinct() %>% group_by(taxon) %>% summarise(pairs = n(), related = length(which(diet.match == "Related")), pct_related = 100*related/n())
-
-```
-
-To characterize the effect of food competition on community assembly, we instead considered every possible pairwise combination of species within each taxon (`r original %>% filter(taxon =="bat") %>% pull(pairs)` bat and `r original %>% filter(taxon =="bird") %>% pull(pairs)` bird pairs). Each pair was classified as potentially competing (henceforth: competing) or not competing (henceforth: control) based on basic dietary guild data (Fig. 2) from the Ecological Register [@Supplement]. Competing pairs shared dietary guilds while control pairs shared no dietary sources. For simplicity, we excluded pairs with partially overlapping diets (`r original %>% filter(taxon =="bat") %>% pull(pct_related)`% of bat and `r original %>% filter(taxon =="bird") %>% pull(pct_related)`% of bird pairs). The intersection of diet and habitat type produced four experimental groups: competing pairs in intact sites, control pairs in intact sites, competing pairs in altered sites, and control pairs in altered sites. We fit a hierarchical Bayesian model [@Supplement] that yields group-level estimates ($g$) for the average ($\bar{\theta_{g}}$) and standard deviation ($\sigma_{g}$) of a spatial aggregation parameter ($\theta$) that indexes pairwise co-occurrence using Fisher’s noncentral hypergeometric distribution [@Fog2008]. A negative value of $\theta$ indicates spatial segregation of the species pair, whereas a value of approximately 0 indicates independent patterns of occupancy for the pair and a positive value indicates spatial aggregation. Models were run on all pairs (“full”), then repeated on those exceeding the median incidence rate in their taxon and habitat type (“common-only”) to reduce uncertainty due to low occurrences. Posterior distributions of competing pairs were compared to the control group in each habitat for each taxon using 95% high density intervals (HDIs) on 1,200 posterior samples (Figs 3-4, Table S2). Though sharing diet assignments clearly does not guarantee that a species pair competes for food, this design ensures that—barring errors in assignment—all pairs that do compete for food are analyzed in the same group. The inclusion of potentially many pairs that do not truly compete in this group reduces the power of the model but should produce conservative estimates of differences between groups. The pairwise approach results in non-independence of data within each habitat, so the significance of the results cannot be formally evaluated [@Supplement]. Based on these two considerations, it is difficult to say whether the underlying effect is large in absolute terms, which is a source of uncertainty in our results.
-
-Overall, birds tend to segregate ($\theta < 0$) while bats tend to aggregate ($\theta > 0$; Figs 3-4). This observation represents fundamental difference in the ecology of birds and bats. Bats exhibit limiting morphological similarity [@Kingston2000], share roosts [@Swift1983], display varied foraging behaviours [@Swift1983; @Denzinger2013], and micro-partition resources, habitats, and foraging times [@Aldridge1987]. Thus, they can co-exist locally. By contrast, Neotropical bird species are well known for interspecific aggression [@Freeman2016a], separating out along elevational gradients [@Freeman2016a], and competitive exclusion [@Remsen1995]. Even control bird pairs are far less likely to aggregate strongly than control bat pairs (compare x-axis in Figs. 3-4 $\theta$ panels), suggesting that natural beta diversity and abiotic niche specialization are much more pronounced in birds than bats. Nonetheless, competition for food affects the spatial community structure of both taxa regardless of habitat as demonstrated by offsets in the posterior distributions for $\bar{\theta{g}}$ and/or $\sigma_{g}$ of competing and control groups (Figs. 3-4, Table S2). Competing pairs consistently exhibit higher variance than control pairs, supporting the conclusion that spatial patterns are more variable among species that share food sources (Fig. S2).
-
-In intact habitats, we find no compelling evidence for assemblage-wide incidence of diet-based competitive exclusion in either taxon. Competing pairs coexist equally (full models) to or more readily (common-only models) than control pairs on average (i.e., $\overline{\theta{comp}} >= \overline{\theta{contr}}$) for both bats (Fig. 3A-B) and birds (Fig. 4A-B). Because bats tend to aggregate and birds tend to segregate, this translates into stronger attraction of competing bats than control bats and to weaker repulsion of competing birds than control birds. Competing variances are also higher than in the control group, suggesting that mutual food sources encourage resource sharing and partitioning in the wild. In both taxa, this pattern changed in altered habitats.
-
-For bats, the offset in $\bar{\theta{g}}$ between competing and control pairs disappears in altered habitats, and variances are higher for both competing and control groups. In the common-only model (Fig. 3B), there is some evidence that competing pairs are less likely to coexist than control pairs, though 95% HDIs are overlapping. While aggregation may still occur in some pairs, exclusion is much more common for competing pairs under altered than intact conditions. Full models (Fig. 3A) and common-only models (Fig. 3B) agree in this respect, but full models also exhibit lower $\bar{\theta{g}}$ for both altered groups. For bats, natural coexistence is therefore less common in altered habitats, particularly for rarer species, and irrespective of competitive status.
-
-For birds, the resource partitioning observed in intact habitats is reversed, with control pairs exhibiting dramatically higher posteriors ($\bar{\theta{g}} > 0$, uncharacteristically for birds) and lower variance, while competing pairs remain just above intact levels of $\bar{\theta{g}}$ (common-only models Fig. 4B) or well below them (full models Fig. 4A) in altered habitats. This suggests that altered habitats supply more opportunities for co-occurrence than intact habitats (for instance, through resource concentration or niche construction), but competing pairs are unable to capitalize on these opportunities. This causes them to instead exhibit exclusion compared to control pairs. The altered control group in the full model returned an unconverged posterior distribution, but the underlying $\bar{\theta{g}}$ of this group is consistent with our interpretations no matter where it falls in the wide possible range. 
-
-To discover whether compositional differences between habitats were responsible for our results, we re-run our models (both “full” and “common-only”) while excluding species that were not sampled in both altered and intact habitats ("no-turnover" models) [@Supplement]. In bats there is no qualitiative change (Fig. 3C-D), meaning that recurring pairs change their spatial behavior between habitats. In birds, the patterns within habitat types are conserved but the absolute differences between habitat types are reduced (Fig. 4C-D), suggesting that compositional turnover and changes in the spatial associations of recurring pairs both play a role [@Supplement]. 
-
-We find differences in the community structures of bats and birds in intact habitats, but for both taxa there was higher coexistence of competing pairs than expected, suggesting that resource partitioning occurs most frequently instead of competitive exclusion. Patterns changed in altered habitats. Altered habitats afford fewer opportunities for the coexistence of bats but more opportunities for the coexistence of birds, especially those sampled exclusively in altered habitats. Competing pairs, however, exhibited equal or lower coexistence than control pairs under altered conditions, suggesting that competitive exclusion is more common. Thus, altered habitats are unable to consistently support varied local communities of competing species through partitioning, as seen in intact habitats. The no-turnover analyses indicate that these effects are largely attributable to changes in spatial behavior, and not merely to differences in species composition.
-
-Overall, habitat alteration reduces or reverses the effect of competition on community structure in both bats and birds. Our results add to mounting evidence that human activity changes community structure and interactions without necessarily adding or removing species, and further corroborate that this can play out over landscape scales. Though diversity loss is known to influence ecosystem services [@Winfree2018], analogous studies examining the relationships between biotic interactions and functionality of ecosystems are rare (but see e.g. [@Cardinale2002]). Consequences of shifting competition outcomes are therefore poorly understood, but negative scenarios are easy to envision. For example, population control of a destructive pest by a competing species can not take place if the two species are unable to coexist. Our results shed light on the elusive relationship of biotic interactions on community assembly processes, and our approach helps pave the way for future research seeking to understand how interaction outcomes change across various contexts and at large spatial scales.
-
-
-__Acknowledgments:__ We thank the Macquarie University paleobiology lab for discussions that improved this paper. 
-
-__Funding:__ ABT was partially supported by an IMQRES scholarship at Macquarie University.
-
-__Author contributions:__ ABT and JA designed the study, JA curated the data and provided statistical expertise, ABT analyzed data, produced the figures, and wrote the paper. ABT and APA designed, coded, and tested the model. SKL helped design supporting analyses. All authors edited the manuscript.
-
-__Competing Interests:__ The authors declare no competing interests.
-
-__Data and materials availability:__ All R workflows and cleaned datasets used for this analysis are available at https://github.com/anikobtoth/HabitatAlteration.
-
-### Figures
-
-```{r echo=FALSE, fig.height=4, fig.width=9, message=FALSE, warning=FALSE, include=T}
-
-# Ordination
-dist <- map(PAnb, as.matrix) %>% map(cosine) %>% map(as.dist, upper = F) %>% map(~return(1-.))
-#dist <- map(PA, ~t(.)) %>% map(vegdist, method = "bray")
-ord <- map(dist, cmdscale, k = 2) %>% map(data.frame)
-ord <- map(ord, ~merge(., y = sitedat, all.x = T, all.y = F, by.x = 0, by.y = "p.sample"))
-
-bat <- image_read("bat_pic.png") %>% image_fill('none') %>% as.raster()
-bird <- image_read("bird_pic.png") %>% image_fill('none') %>% as.raster()
-
-#PCoA plot
-  p1 <- ggplot(ord[[1]], aes(x = X1, y = X2, col = status)) + geom_point(size = 2.6) + labs(x = "PCoA 1", y = "PCoA 2", col = "alteration") + theme(axis.text = element_text(size = 12), legend.text = element_text(size = 12), legend.title =  element_text(size = 12, face = "bold")) + labs(col = "status") + scale_colour_manual(values = c("#DF8768", "#006D77")) +
-    annotation_raster(bat, -0.45, -0.2, 0.27, 0.42)#+ geom_point(aes(x = mean(X1), y = mean(X2), col = status), pch = 3, size = 3)
-  
-  p2 <- ggplot(ord[[2]], aes(x = X1, y = X2, col = status)) + geom_point(size = 2.6) + labs(x = "PCoA 1", y = "PCoA 2", col = "alteration") + theme(axis.text = element_text(size = 12)) + labs(col = "status") + scale_colour_manual(values = c("#DF8768", "#006D77"), labels = c("Altered", "Intact")) +
-     annotation_raster(bird, -0.45, -0.25, 0.25, 0.44) #+ geom_point(aes(x = mean(X1), y = mean(X2), col = status), pch = 3, size = 3)
-  
-  p <- plot_grid(p1+theme(legend.position = "none"), 
-                 p2+theme(legend.position = "none", 
-                axis.title.y = element_blank()), ncol = 2, labels = c("A","B"), align = "lr")
-  plot_grid(p, get_legend(p1), rel_widths = c(1, .2))
-
-```
-
-__Figure 1.__ Multidimensional scaling analysis of altered and intact sites for bats (A) and birds (B) based on the Ochiai dissimilarity index [@Hubalek1982]. 
-
-
-__Figure 2.__ Conceptual figure demonstrating the experimental design. (A) All pairwise combinations of species are classified as potentially competing or not competing for food based on basic dietary information. (B) A distribution of $\theta$ is calculated for each pair, shown as an adjacency matrix. From these distributions, (C) the cumulative posterior distribution of group means $\bar{\theta{g}}$ is derived and compared. 
-
-```{r echo=FALSE, include = T, warnings = FALSE}
-colors <- c("#FFC2AD", "#DF8768", "#83C5BE", "#006D77")
-parameter.labels <- c(omega = "group θ", sigma = "variance (σ)")
-ann <- data.frame(value = -Inf, lab = LETTERS[1:4], 
-                  parameter = "omega", 
-                  model = factor(c("full", "common", "full noTurnover", "common noTurnover"), levels = c("full", "common", "full noTurnover", "common noTurnover")), 
-                  status_dietmatch = "Unaltered_Different")
-
-specs <- list(geom_density(lwd = 1, alpha = .4),
-              facet_grid(model~parameter, scales = "free_x", labeller = labeller(parameter = parameter.labels)), 
-              scale_color_manual(values = colors, labels = c("Altered control", "Altered competing", "Intact control", "Intact competing")), 
-              scale_fill_manual(values = colors, labels = c("Altered control", "Altered competing", "Intact control", "Intact competing")), 
-              labs(fill = "", col = "", x = "Value", y = "Density"), 
-              theme(text = element_text(size = 12)),
-              geom_text(data = ann, y = Inf, label = ann$lab, col = "black", fontface = 2, hjust = -1, vjust = 1))
-```
-
-```{r echo=FALSE, fig.height=7, fig.width=7, message=FALSE, warning=FALSE, include=T}
-load("../Results/Omega/interaction/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingFALSE.RData")
-bat_common <- out
-load("../Results/Omega/interaction/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingFALSE.RData")
-bat_full <- out
-load("../Results/Omega/interaction/shared/out_jagsfit_bat_medianTRUE_100reps_interaction_baggingFALSE.RData")
-bat_common_noTurnover <- out
-load("../Results/Omega/interaction/shared/out_jagsfit_bat_medianFALSE_100reps_interaction_baggingFALSE.RData")
-bat_full_noTurnover <- out
-
-out <- bind_rows(list(full = bat_full, 
-                      common = bat_common, 
-                      full_noTurnover = bat_full_noTurnover, 
-                      common_noTurnover = bat_common_noTurnover), .id = "model") %>% 
-  filter(!parameter == "deviance") %>%
-  mutate(model = recode(model, full_noTurnover = "full noTurnover", common_noTurnover = "common noTurnover"))
-
-out$model <- factor(out$model, levels = c("full", "common", "full noTurnover", "common noTurnover"))
-
-
-ggplot(out, aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + specs
-
-
-```
-
-__Figure 3.__ $\bar{\theta{g}}$ and $\sigma_{g}$ posteriors for bat models, specifically (A) all bats, (B) all bats having occurrences that exceed the median occurrence count in the respective habitat, (C) and all bats that occurred in both intact and altered habitats, and (D) all bats having occurrences that exceed the median occurrence in both intact and altered habitats. C and D represent the models in which altered and intact faunas are composed of the same suite of species (no-turnover models).
-
-```{r echo=FALSE, fig.height=7, fig.width=7, include = T, warning = FALSE, message = FALSE}
-
-load("../Results/Omega/interaction/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingFALSE.RData")
-bird_common <- out
-load("../Results/Omega/interaction/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingFALSE.RData")
-bird_full <- out
-load("../Results/Omega/interaction/shared/out_jagsfit_bird_medianTRUE_100reps_interaction_baggingFALSE.RData")
-bird_common_noTurnover <- out
-load("../Results/Omega/interaction/shared/out_jagsfit_bird_medianFALSE_100reps_interaction_baggingFALSE.RData")
-bird_full_noTurnover <- out
-
-
-out <- bind_rows(list(full = bird_full, 
-                      common = bird_common, 
-                      full_noTurnover = bird_full_noTurnover, 
-                      common_noTurnover = bird_common_noTurnover), .id = "model") %>% 
-  filter(!parameter == "deviance") %>%
-  mutate(model = recode(model, full_noTurnover = "full noTurnover", common_noTurnover = "common noTurnover"))
-
-out$model <- factor(out$model, levels = c("full", "common", "full noTurnover", "common noTurnover"))
-
-ggplot(out, aes(x = value, col = status_dietmatch, fill = status_dietmatch)) + specs
-
-
-```
-
-__Figure 4.__ $\bar{\theta{g}}$ and $\sigma_{g}$ posteriors distributions for bird models. Panels as in Fig. 2.
-
-
-
-## Supplementary Materials for
-
-Competitive interactions are disrupted by habitat alteration in the Neotropics
-
-Anikó B. Tóth, Andrew P. Allen, S. Kathleen Lyons, John Alroy
-
-*This PDF file includes:* 
-
-Materials and Methods
-
-Supplementary Text
-
-Figs. S1 to S3
-
-Tables S1 to S2
-
-References (33–52)
-
-
-```{r reset, include=FALSE}
-## Prep raw data
-source('../Code/Data_Prep.R')
-```
-
-### Materials and Methods
-
-_Data_ 
-
-Abundance data were downloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mistnetted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also downloaded Register metadata for the species and sites in the abundance tables, including coordinates and habitat alteration categories for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published papers. The Ecological Register provides methodologically consistent abundance data, not ad hoc occurrence data. Thus, sampling and reporting were standardized across the samples: all were mist-netted samples with consistent mesh size; harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the median number of individuals per sample being `r median(colSums(PAn[["bat"]]))` for bats and `r median(colSums(PAn[["bird"]]))` for birds.  Samples were combined if they were less than 1 km from one another, sourced from the same study, and represented the same habitat and alteration category. The combined data set consisted of `r sum(PAn[["bat"]])` bat and `r sum(PAn[['bird']])` bird individuals constituting `r length(which(PAn[["bat"]] > 0))` bat and `r length(which(PAn[["bird"]] > 0))` bird records from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
-
-_Biogeographic correction_ 
-```{r biogeocorr2, include = FALSE}
-#### Match Biogeography ####
-# separate altered and intact sites
-PAnu <- PAn %>% map(~return(.[,colnames(.) %in% unalt_sites])) 
-PAna <- PAn %>% map(~return(.[,!colnames(.) %in% unalt_sites])) 
-
-coords <- sitedat %>% select(taxon, p.sample, latitude, longitude) %>% distinct() %>% split(.$taxon)
-
-# Remove intact or altered sites that are not near a site of the other type. This is done to ensure the two sets have similar biogoegraphical distributions.
-coords1 <- purrr::map2(coords, PAnu, function(x, y) x[x$p.sample %in% colnames(y),])
-coords2 <- purrr::map2(coords, PAna, function(x, y) x[x$p.sample %in% colnames(y),])
-keep <- map2(coords1, coords2, matchbiogeo) %>% map(unlist)
-
-PAn <- map2(PAn, keep, function(x, y) return(x[,as.character(y)]))
-PAn <- map(PAn, clean.empty, minrow = 1) # remove any species that now have no occurrences
-
-# recalculate alt/unalt split from new PAn
-PAnu <- PAn %>% map(~return(.[,colnames(.) %in% unalt_sites]))
-PAna <- PAn %>% map(~return(.[,!colnames(.) %in% unalt_sites]))
-
-# coords of sites we kept, for plotting later.
-coords1.keep <- purrr::map2(coords, PAnu, function(x, y) x[x$p.sample %in% colnames(y),])
-coords2.keep <- purrr::map2(coords, PAna, function(x, y) x[x$p.sample %in% colnames(y),])
-
-```
-
-The geographic layout of sites can influence the results of any community ecology analysis, including co-occurrence analysis. For instance, if sites are clustered in two regions with no sites in between, there is a good chance that the co-occurrence structure of the assemblage will reflect this clustered layout by creating strong aggregations within the clusters and segregations between clusters. Ideally, we would like to have even sampling over our entire study area, but when this is not possible, we must at least make sure that any comparisons are not influenced by geographic sampling bias. One way to achieve this is to ensure that the sites used to calculate co-occurrences have roughly the same geographic coverage when comparing different types of sites.
-
-In this paper, the study extent covers Central and South America south of the Tropic of Cancer. This includes large swathes of the Brazilian Amazon, where there are no samples in altered habitats. As a result, the intact sites cover more area than the altered sites, and the geographic coverage of the latter is nested within that of the former. To correct for these biases before calculating co-occurrences, we removed the intact sites covering areas that were not covered by altered sites using the following algorithm: (1) we measured the distance to the closest altered site for all intact sites and vice versa; (2) we found the altered site farthest from its closest intact site; (3) we removed all intact sites whose closest altered neighbors were farther than the distance in step 2. Note that this approach only works because the geographic coverages are nested; site types that are offset in space would require a different approach. The resulting dataset had `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. Our original and final sites are plotted in Fig. S1.
-
-_Richness_ 
 ```{r richness, message=FALSE, warning=FALSE, include=FALSE}
 ###### Richness - run using raw abundance data ####
 # can only be run on raw data because it requires a singleton count of abundances.
@@ -311,15 +111,14 @@ rich <- list(cJ1 = map(PAn, map_dbl, cJ1rich) %>% map(~split(., names(.) %in% un
   mutate(status = recode(status, `FALSE` = "Altered", `TRUE` = "Intact"))
 
 # Summary
-rsumm <- rich %>% group_by(metric, taxon, status) %>% summarise(mean.rich = mean(richness, na.rm = T), median.rich = median(richness, na.rm = T))
+rsumm <- rich %>% group_by(metric, taxon, status) %>% summarise("mean richness" = mean(richness, na.rm = T), "median richness" = median(richness, na.rm = T))
 # Significance
 rsig <- rich %>% group_by(metric, taxon) %>% summarise(p=wilcox.test(richness~status, paired=FALSE)$p.value, 
                                                W=wilcox.test(richness~status, paired=FALSE)$statistic)
+
 ```
 
-We estimated richness for bats and birds in altered and intact sites using three diversity metrics: a corrected first-order jackknife (cJ1) [@Alroy2020], the canonical Chao1 [@Chao1984], and Fisher’s alpha, which is robust to sample size, widely used, and well-grounded in theory [@Schulte2005]. Each metric was applied to the raw abundance data for all sites. The status of each site was based on the ‘altered.habitat’ field in the site metadata, which is empty if the site is intact and filled with a land use category if the site is altered. Altered sites included cropland, disturbed forest, fragment, pasture, plantation, secondary forest, inhabited area, and combined categories [@Alroy2017], and none of them had sufficient sites to be evaluated individually. We compared richness estimates between altered and intact sites for both taxa using a Wilcoxon rank-sum test.
 
-_Beta diversity and composition_ 
 ```{r betacomp, message=FALSE, warning=FALSE, include=FALSE}
 
 #### Beta diversity and composition analyses #####
@@ -353,17 +152,764 @@ output <- rbind(output, data.frame(analysis = c("beta dispersion", "adonis", "cc
   }
     
 }
+
+
+
 ```
 
-We compared the beta diversity and composition of altered and intact sites using a suite of classical analyses. A common way to estimate beta diversity differences between two groups of samples is a multivariate dispersion test [@Anderson2006], which can be implemented using the *betadisper* function in the R package *vegan* [@Oksanen2008]. We also compared the composition of altered and intact sites for both taxa with permutational multivariate ANOVA using *adonis* [@Anderson2001] and canonical correspondence analysis using *cca* [@Legendre2012], also from the *vegan* package. Multivariate dispersion and permutational ANOVA require a distance metric, and the choice of distance metrics may influence the results. We therefore ran these analyses using the relatively ubiquitous Jaccard index [@Hubalek1982] and again with the Ochiai index [@Hubalek1982]. Beta diversity and composition can be compared on the basis of abundance data or occurrence data, noting that the Ochiai index is equivalent to cosine similarity when run on abundance data. We ran our analyses with both data types, but we focus on the results obtained with occurrence data, as these are much more common and easily obtained. However, we note those cases where results from abundance data differ quantitatively.
+A suite of classical community analyses using several metrics produces inconsistent results on whether community patterns differ between altered and intact sites. Specifically, birds have significant changes in community composition without changes in richness (Extended Data Table 1) or beta diversity (Extended Data Table 2). Bats have no significant disparity in beta diversity but possible changes in richness (Extended Data Table 1) and composition, depending on the analysis and metric used (Extended Data Table 2). We ran a multidimensional scaling analysis which demonstrates that compositional dissimilarities between altered and intact habitats are not visually striking (Fig. 1). In sum, classical analyses detect possible differences in patterns between habitat types, but they are not necessarily robust. While experimental evidence is lacking at such large scales, in this paper we take a step in the direction of establishing processes (as opposed to patterns) such as competitive exclusion and resource partitioning leading to coexistence.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+tables <- PAn %>% tobinary() %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
+  map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "intact"))
+
+original <- map(tables, map, ~expand.grid(Sp1 = rownames(.x), Sp2 = rownames(.x))) %>% map(map, diet_cat, spp, related = TRUE) %>% map(bind_rows, .id = "status") %>% bind_rows(.id = "taxon") %>% na.omit() %>% filter(Sp1 != Sp2) %>% select(taxon, Sp1, Sp2, diet.match) %>% distinct() %>% group_by(taxon) %>% summarise(related = length(which(diet.match == "Related")), pct_related = 100*related/n())
+
+#no-turnover
+ #shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(match_val))
+ #tables <- map2(tables, shared, function(x, y) map(x, function(z) return(z[y,])))
+
+ #noturnover <- map(tables, map, ~expand.grid(Sp1 = rownames(.x), Sp2 = rownames(.x))) %>% map(map, diet_cat, spp, related = TRUE) %>%  map(bind_rows, .id = "status") %>% bind_rows(.id = "taxon") %>% na.omit() %>% filter(Sp1 != Sp2) %>% select(taxon, Sp1, Sp2, diet.match)   %>% distinct() %>% group_by(taxon) %>% summarise(related = length(which(diet.match == "Related")), pct_related = related/n())
+
+```
+
+To characterize the effect of food competition on community assembly, we instead considered every pairwise combination of species within each taxon (`r original %>% filter(taxon =="bat") %>% pull(pairs)` bat and `r original %>% filter(taxon =="bird") %>% pull(pairs)` bird pairs). Dietary data are easily obtained for these two groups and widely used in large-scale studies. Each pair was classified as potentially competing (henceforth: competing) or not competing (henceforth: control) based on basic dietary guild data (Fig. 2). Competing pairs shared dietary guilds while control pairs shared no dietary sources. We excluded pairs with partially overlapping diets (`r original %>% filter(taxon =="bat") %>% pull(pct_related)`% of bat and `r original %>% filter(taxon =="bird") %>% pull(pct_related)`% of bird pairs) for simplicity; furthermore this produces the strongest possible test of our hypothesis that dietary relatedness should affect spatial association. The intersection of diet and habitat type produced four experimental groups: competing pairs in intact sites, control pairs in intact sites, competing pairs in altered sites, and control pairs in altered sites. We fit a hierarchical Bayesian model to yields group-level estimates ($g$) for a spatial aggregation parameter ($\bar{\theta_{g}}$) that indexes spatial association of sets of pairs grouped by occupancy pattern (see Methods). A negative value of $\theta$ indicates spatial segregation or repulsion of the species pair set, whereas a value of approximately 0 indicates independent patterns of occupancy for the pair set and a positive value indicates spatial aggregation or attraction. This approach of grouping pairs by occupancy pattern, which we term “occupancy analysis”, confers several advantages over classical “co-occurrence analysis” (see Methods). Model results for competing pairs were compared to control pairs in each habitat for each taxon using 95% high density intervals (HDIs) on 1,200 posterior samples (Figs 3-4, Extended Data Table 3). Though sharing diet guilds clearly does not guarantee that a species pair competes for food, this design ensures that—barring errors in guild assignment—all pairs that do compete for food are analyzed in the same group. The inclusion of potentially many pairs that do not truly compete in this group reduces the power of the model but should produce conservative estimates of differences between groups, in other words, any significant result at all indicates that there is a strong signal in the data. The pairwise approach results in non-independence of data within each habitat, so the significance of the results cannot be formally evaluated. Based on these two considerations, it is difficult to say whether the underlying effect is large in absolute terms. However, we report striking qualitative differences between independent habitat types that lend weight our analysis.
+
+*Results*
+Overall, both birds and bats tend to aggregate ($\theta > 0$; Figs 3-4). This observation contradicts well-studied differences in the ecology of birds and bats. Bats exhibit limiting morphological similarity [@Kingston2000], share roosts [@Swift1983], display varied foraging behaviours [@Swift1983; @Denzinger2013], and micro-partition resources, habitats, and foraging times [@Aldridge1987], thus coexisting locally. By contrast, Neotropical bird species are well known for interspecific aggression [@Freeman2016a], separating out along elevational gradients [@Freeman2016a], and competitive exclusion [@Remsen1995]. Despite these differences, the underlying assocation for both taxa are generally positive. Competition for food affects the spatial community structure of both taxa as demonstrated by offsets in the posterior distributions for $\bar{\theta{g}}$ of competing and control groups (Figs. 3-4, Table S2). 
+
+In intact habitats, we find no compelling evidence for assemblage-wide incidence of diet-based competitive exclusion in either taxon. Competing pairs coexist more readily than control pairs on average (i.e., $\overline{\theta{comp}} >= \overline{\theta{contr}}$) for both taxa but particularly among bats (Fig. 3A). The variance of competing pairs is also higher than control pairs (e.g. the distribution is wider and lower), suggesting that mutual food sources encourage resource sharing and partitioning in the wild. In both taxa, this pattern changes in altered habitats.
+
+For both taxa, the offset in $\bar{\theta{g}}$ between competing and control pairs disappears in altered habitats. For birds, there is some evidence that $\theta$ is actually lower for competing pairs than control pairs. While aggregation may still occur in many pairs, exclusion is much more common for competing pairs under altered than intact conditions in both taxa. There is also a wholesale decrease in $\theta$ in altered habitats for birds, so natural coexistence is less common in altered habitats, irrespective of overlap in resource requirements. 
+
+To discover whether compositional differences between habitats are responsible for our results, we re-run our models while excluding species that are not sampled in both altered and intact habitats ("no-turnover" models). There is no qualitiative change in the results for either bats (Fig. 3B) or birds (Fig. 4B). This indicates that recurring pairs change their spatial behavior between habitats and suggests that compositional differences between habitat types does not play a role in our results. 
+
+*Discussion*
+We find positive association of bats and birds in intact habitats, but for both taxa there was higher coexistence of competing pairs than expected, suggesting that resource partitioning occurs most frequently instead of competitive exclusion. This pattern changes in altered habitats. Altered habitats afford fewer opportunities for the coexistence of birds more generally. Competing pairs, however, exhibit equal or lower coexistence than control pairs under altered conditions, suggesting that competitive exclusion is more common. Thus, altered habitats are unable to consistently support varied local communities of competing species through niche and resource partitioning, to the same level that intact habitats do. The no-turnover analyses indicate that these effects are largely attributable to changes in spatial behavior, and not merely to differences in species composition.
+
+Our results bring new evidence to the hotly debated effect of resource overlap on bird co-occurrence. A long history of studies argue that competitive exclusion detectable by distrubtion patterns alone [@Diamond1975; @Gilpin1982; @Sanderson2009] is a common phenomenon in bird pairs that share dietary guilds [@Diamond1982] or are closely related [@Gilpin1982]. The opposing viewpoint holds that bird pairs have statistically weak spatial associations which cannot be used to infer the effects of competition [@Connor1979; @Gotelli2002; @Sfenthourakis2005] or at best, associations with mundane geographical explanations, rather than biological ones [@Connor2013]. 
+
+However, all of these studies used classic approaches to co-occurrence analysis that consider species pairs one-by-one, meaning that species with low occurrences were impossible to prove as significant and thus never seriously tapped as a source of biological information. Factors leading to positive co-occurrences are seldom discussed at any length, the focus being on the all-important "checkerboards", and are often chalked up to mere similarity of habitat preferences or matching georaphical origins of these pairs [@Connor2013]. However, Gilpin and Diamond [@Gilpin1982] mention that myriad similar bird species are seen to co-occur due to offsets in space utilization, specific diets, or foraging strategies. Our results supply evidence that this is more common in species with resource overlap, hinting that competition drove the evolution of these relationships as suggested by [@Gilpin1982; OTHERS?], an effect that has been notoriously difficult to prove in practice, especially for an entire assemblage. Moreover, our analysis shows that the effects of resource overlap can indeed be detected by using occurrence data alone (by using a proper control) and further suggest that similar mechanisms may operate for a functionally similar taxon (bats).
+
+Overall, habitat alteration reduces and may even reverse the effect of competition on community structure in both bats and birds. Our results add to mounting evidence that human activity changes community structure and interactions without necessarily adding or removing species, and further corroborate that this can play out over landscape scales. Though diversity loss is known to influence ecosystem services [@Winfree2018], analogous studies examining the relationships between ecological interactions and functionality of ecosystems are rare (but see e.g. [@Cardinale2002]). Consequences of shifting competition outcomes are therefore poorly understood, but negative scenarios are easy to envision. For example, population control of a destructive pest by a competing species cannot take place if the two species are unable to coexist. Our results shed light on the elusive relationship of ecological interactions and regional community assembly, and our approach helps pave the way for future research seeking to understand how interaction outcomes change across various contexts and at large spatial scales.
+
+__Main Text References:__
+
+##############
+*copy in from bottom*
+#############
+
+__Figures:__
+
+```{r echo=FALSE, fig.height=4, fig.width=9, message=FALSE, warning=FALSE, include=T}
+
+# Ordination
+dist <- PAn %>% tobinary() %>% map(as.matrix) %>% map(cosine) %>% map(as.dist, upper = F) %>% map(~return(1-.))
+#dist <- map(PA, ~t(.)) %>% map(vegdist, method = "bray")
+ord <- map(dist, cmdscale, k = 2) %>% map(data.frame)
+ord <- map(ord, ~merge(., y = sitedat, all.x = T, all.y = F, by.x = 0, by.y = "p.sample"))
+
+bat <- image_read("bat_pic.png") %>% image_fill('none') %>% as.raster()
+bird <- image_read("bird_pic.png") %>% image_fill('none') %>% as.raster()
+
+#PCoA plot
+  p1 <- ggplot(ord[[1]], aes(x = X1, y = X2, col = status)) + geom_point(size = 2.6) + labs(x = "PCoA 1", y = "PCoA 2", col = "alteration") + theme(axis.text = element_text(size = 12), legend.text = element_text(size = 12), legend.title =  element_text(size = 12, face = "bold")) + labs(col = "status") + scale_colour_manual(values = c("#DF8768", "#006D77")) +
+    annotation_raster(bat, -0.45, -0.2, 0.27, 0.42)#+ geom_point(aes(x = mean(X1), y = mean(X2), col = status), pch = 3, size = 3)
+  
+  p2 <- ggplot(ord[[2]], aes(x = X1, y = X2, col = status)) + geom_point(size = 2.6) + labs(x = "PCoA 1", y = "PCoA 2", col = "alteration") + theme(axis.text = element_text(size = 12)) + labs(col = "status") + scale_colour_manual(values = c("#DF8768", "#006D77"), labels = c("Altered", "Intact")) +
+     annotation_raster(bird, -0.45, -0.25, 0.25, 0.44) #+ geom_point(aes(x = mean(X1), y = mean(X2), col = status), pch = 3, size = 3)
+  
+  p <- plot_grid(p1+theme(legend.position = "none"), 
+                 p2+theme(legend.position = "none", 
+                axis.title.y = element_blank()), ncol = 2, labels = c("A","B"), align = "lr")
+  plot_grid(p, get_legend(p1), rel_widths = c(1, .2))
+
+```
+
+__Figure 1.__ Multidimensional scaling analysis of altered and intact sites for bats (A) and birds (B) based on the Ochiai dissimilarity index [@Hubalek1982]. 
+
+
+__Figure 2.__ Conceptual figure demonstrating the experimental design. (A) All pairwise combinations of species are classified as potentially competing or not competing for food based on basic dietary information. (B) A distribution of $\theta$ is calculated for each pair, shown as an adjacency matrix. From these distributions, (C) the cumulative posterior distribution of group means $\bar{\theta{g}}$ is derived and compared. 
+
+```{r echo=FALSE, fig.height=7, fig.width=5, message=FALSE, warning=FALSE, include=T}
+bat_full <- readRDS("../Results/stan/stan6_bats_all_full.rds")
+bat_noTurnover <- readRDS("../Results/stan/stan6_bats_all_shared.rds")
+
+
+out <- list(full = bat_full, 
+                      noTurnover = bat_noTurnover)
+
+p <- map(out, ~format_stanfit(.x) %>% plot_stanfit)
+
+plot_grid(p[[1]]+ theme(legend.position = "none"), p[[2]] + theme(legend.position = "none"),  get_legend(p[[1]]+theme(legend.position = "bottom", legend.title = element_blank())), ncol = 1, rel_heights = c(1,1,.2), labels = c("A", "B"))
+
+```
+
+__Figure 3.__ $\bar{\theta{g}}$ posteriors for bat models, specifically (A) all bats, and (B) bats that occurred in both intact and altered habitats (no turnover models).
+
+```{r echo=FALSE, fig.height=7, fig.width=5, include = T, warning = FALSE, message = FALSE}
+
+bird_full <- readRDS("../Results/stan/stan6_birds_all_full.rds")
+bird_noTurnover <- readRDS("../Results/stan/stan6_birds_all_shared.rds")
+
+out <- list(full = bird_full, 
+                      noTurnover = bird_noTurnover)
+
+p <- map(out, ~format_stanfit(.x) %>% plot_stanfit)
+
+plot_grid(p[[1]]+ theme(legend.position = "none"), p[[2]] + theme(legend.position = "none"),  get_legend(p[[1]]+theme(legend.position = "bottom", legend.title = element_blank())), ncol = 1, rel_heights = c(1,1,.2), labels = c("A", "B"))
+
+
+```
+
+__Figure 4.__ $\bar{\theta{g}}$ posteriors distributions for bird models, specifically (A) all birds, and (B) birds that occurred in both intact and altered habitats (no turnover models).
+
+
+__Methods:__
+
+_Data_ 
+
+Abundance data were downloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mist-netted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also downloaded Register metadata for the species and sites in the abundance data, including coordinates and habitat alteration categories for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published papers. The Ecological Register provides methodologically consistent abundance data, not ad hoc occurrence data. Thus, sampling and reporting were standardized across the samples: all were mist-netted samples with consistent mesh size; harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the median number of individuals per sample being `r median(colSums(PAn[["bat"]]))` for bats and `r median(colSums(PAn[["bird"]]))` for birds.  Samples were combined if they were less than 1 km from one another, sourced from the same study, and represented the same habitat and alteration category. The combined data set consisted of `r sum(PAn[["bat"]])` bat and `r sum(PAn[['bird']])` bird individuals constituting `r length(which(PAn[["bat"]] > 0))` bat and `r length(which(PAn[["bird"]] > 0))` bird records from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
+
+_Biogeographic correction_ 
+
+The geographic layout of sites can influence the results of any community ecology analysis, including co-occurrence analysis. For instance, if sites are clustered in two regions with no sites in between, there is a possibility that the co-occurrence structure of the assemblage will reflect this clustered layout by creating strong aggregations within the clusters and segregations between clusters. Ideally, we would like to have even sampling over our entire study area, but when this is not possible, we must at least make sure that any comparisons are not influenced by geographic sampling bias. One way to achieve this is to ensure that the sites used to calculate co-occurrences have roughly the same geographic coverage when comparing different types of sites.
+
+In this paper, the study extent covers Central and South America south of the Tropic of Cancer. This includes large swathes of the Brazilian Amazon, where there are no samples in altered habitats. As a result, the intact sites cover more area than the altered sites, and the geographic coverage of the latter is nested within that of the former. To correct for these biases before calculating co-occurrences, we removed the intact sites covering areas that were not covered by altered sites using the following algorithm: (1) we measured the distance to the closest altered site for all intact sites and vice versa; (2) we found the altered site farthest from its closest intact site; (3) we removed all intact sites whose closest altered neighbors were farther than the distance in step 2. Note that this approach only works because the geographic coverages are nested; site types that are offset in space would require a different approach. The resulting dataset had `r sum(PAn[["bat"]])` occurrences of bats and `r sum(PAn[["bird"]])` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. Our original and final sites are plotted in Extended Data Fig. 1.
+
+_Richness_ 
+
+We estimated richness for bats and birds in altered and intact sites using three diversity metrics: a corrected first-order jackknife (cJ1) [@Alroy2020], the canonical Chao1 [@Chao1984], and Fisher’s alpha, which is robust to sample size, widely used, and well-grounded in theory [@Schulte2005]. Each metric was applied to the raw abundance data for all sites. The status of each site was based on the ‘altered.habitat’ field in the site metadata, which is empty if the site is intact and filled with a land use category if the site is altered. Altered sites included cropland, disturbed forest, fragment, pasture, plantation, secondary forest, inhabited area, and combined categories [@Alroy2017], and none of them had sufficient sites to be evaluated individually. We compared richness estimates between altered and intact sites for both taxa using a Wilcoxon rank-sum test. 
+
+_Beta diversity and species composition_ 
+
+We compared the beta diversity and species composition of altered and intact sites using a suite of classical analyses. A common way to estimate beta diversity differences between two groups of samples is a multivariate dispersion test [@Anderson2006], which can be implemented using the *betadisper* function in the R package *vegan* [@Oksanen2008]. We also compared the composition of altered and intact sites for both taxa with permutational multivariate ANOVA using *adonis* [@Anderson2001] and canonical correspondence analysis using *cca* [@Legendre2012], also from the *vegan* package. Multivariate dispersion and permutational ANOVA require a distance metric, and the choice of distance metrics may influence the results. We therefore ran these analyses using the relatively ubiquitous Jaccard index [@Hubalek1982] and again with the Ochiai index [@Hubalek1982]. Beta diversity and composition can be compared based on abundance data or occurrence data, noting that the Ochiai index is equivalent to cosine similarity when run on abundance data. We ran our analyses with both data types, but we focus on the results obtained with occurrence data, as these are much more common and easily obtained. However, we note those cases where results from abundance data differ quantitatively.
 
 _Biotic interactions_ 
 
-We used dietary information for bats and birds from the Ecological Register to analyse the effects of food competition on patterns of co-occurrence. We selected all pairs with complete dietary information and classified them as competing or non-competing. Competing pairs shared primary and secondary sources of food, but we allowed the order of these to be reversed (e.g., a frugivore-nectarivore and a nectarivore-frugivore would be equated). Non-competing pairs had no mutual food sources. Pairs with mutual and nonmutual food sources (e.g., a frugivore and an insectivore-frugivore) may experience a complex mix of effects and were therefore removed from the analysis for simplicity (`r original %>% filter(taxon == "bat") %>% pull(related)` or `r original %>% filter(taxon == "bat") %>% pull(pct_related)`% of bat pairs and `r original %>% filter(taxon == "bird") %>% pull(related)` or `r original %>% filter(taxon == "bird") %>% pull(pct_related)`% of bird pairs fell into this category). Although species in the same dietary guilds do not necessarily compete, pairs with high dietary overlap have a nonzero probability of experiencing competition for food, while pairs in differing guilds have no chance of competing for food if the categorizations are accurate. Therefore, the co-occurrence patterns of competing and non-competing groups should be different if food competition plays a role in structuring a given assemblage.
+We used dietary information for bats and birds from the Ecological Register to analyse the effects of food competition on patterns of co-occurrence. We selected all pairs with complete dietary information and classified them as competing or non-competing. Competing pairs shared primary and secondary sources of food, but we allowed the order of these to be reversed (e.g., a frugivore-nectarivore and a nectarivore-frugivore would be equated). Non-competing pairs had no mutual food sources. Pairs with mutual and nonmutual food sources (e.g., a frugivore and an insectivore-frugivore) may experience a complex mix of effects (e.g. spatial or environmental variation in degree of resource overlap) and were therefore removed from the analysis for simplicity (`r original %>% filter(taxon == "bat") %>% pull(related)` or `r original %>% filter(taxon == "bat") %>% pull(pct_related)`% of bat pairs and `r original %>% filter(taxon == "bird") %>% pull(related)` or `r original %>% filter(taxon == "bird") %>% pull(pct_related)`% of bird pairs fell into this category). Although species in the same dietary guilds do not necessarily compete, pairs with high dietary overlap have a nonzero probability of experiencing competition for food, while pairs in differing guilds have no chance of competing for food if the categorizations are accurate. Therefore, the co-occurrence patterns of competing and non-competing groups should be different if food competition plays a role in structuring a given assemblage.
 
-This framework also allows the modeller to quantify the effect of various external factors and ecological contexts on the spatial outcomes of biotic interactions. In this paper, we compare assemblages from altered and intact habitats to evaluate the effect of habitat alteration on the outcome of food competition. However, the samples could be split up along other lines instead, such as along environmental gradients, temporally before and after disturbances, etc.
+This framework also allows the modeler to quantify the effect of various external factors and ecological contexts on the spatial outcomes of biotic interactions. In this paper, we compare assemblages from altered and intact habitats to evaluate the effect of habitat alteration on the outcome of food competition. However, the samples could be split up along other lines instead, such as along environmental gradients, temporally before and after disturbances, etc.
 
 Recent studies repeatedly point out that nonrandom co-occurrence should not be construed as evidence for interaction between species pairs [@Freilich2018;@Thurman2019; @Blanchet2020]. In our framework, we have independent evidence of potential interactions (diet) and examine the relationship between putative interactions and co-occurrence, using non-interacting pairs as a control. Controls are rarely used in co-occurrence research, with most studies preferring to discard pairs with associations that are not seen as significant (e.g. [@Araujo2011; @Lyons2016]). Research using such an approach is exactly what is needed to understand under what circumstances, and to what extent, interactions lead to nonrandom spatial associations, what factors affect the relationships, and how they change under shifting conditions.
+
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+
+_Fisher's noncentral hypergeometric distribution_
+We assume that the probability that the number of sites of co-occurrence,
+$N_{AB}$, for a given pair of taxa, A and B, adheres to Fisher's noncentral
+hypergeometric distribution (NHD) [@Fog2008],
+
+\[
+f(N_{AB}|\theta) = 
+\frac{{N_{A} \choose N_{AB}}{N_{(A)}\choose N_{B} - N_{AB}} exp(N_{AB}\theta) }
+{P_{0}(\theta)} 
+\]
+
+
+where $N_{A}$ and $N_{(A)}$ are the respective numbers of sites with taxon A
+present and absent, $N_{A} + N_{(A)}$ is the total number of sites, $N_{B}$ is
+the number of sites with taxon B present, and $\binom{n}{k} = n!/k!/(n-k)!$ is a
+binomial coefficient. The denominator of this probability mass function (pmf),
+$P_0(\theta)$, is the numerator summed over the range of possible values for the
+number of co-occurring sites [@McCullagh1952], 
+
+\[
+P_{k}(\theta) = {\sum^{min(N_{A}, N_{B})} _{n = max(0, N_{B}-N_{(A)})} {N_{A}\choose n} {N_{(A)}\choose N_{B} - n} exp(n\theta)n^k}
+\]
+
+
+This pmf has one fitted parameter,
+
+\[
+\theta = log(\psi) = 
+\log(\frac {\pi_{B\mid A}}{\pi_{B \mid (A)}}) = 
+\log(\frac {p_{B\mid A}(1-p_{B\mid (A)})}{(1-p_{B \mid A})p_{B\mid(A)}})
+\]
+
+which is the logarithm of the odds ratio $\psi = \pi_{B|A}/\pi_{B|(A)}$, where
+$\pi_{B|A}$ and $p_{B|A}$ are the respective odds and probability that taxon B
+occupies a site given that taxon A is present, and $\pi_{B|(A)}$ and $p_{B|(A)}$
+are the respective odds and probability that taxon B occupies a site given that
+taxon A is absent. The values of $\theta$ and the probability of $N_{AB}$
+co-occurrences, $f(N_{AB}|\theta)$, are independent of which member of the taxon
+pair is arbitrarily chosen as taxon A. The NHD is typically parameterized using
+$\psi$ rather than $\theta$, but $\psi$ has a lower bound of 0, making it less
+convenient for model fitting and biological interpretation.
+
+
+The NHD parameter $\theta$ directly quantifies spatial patterns of co-occurrence
+for a taxon pair. If $\theta < 0$, taxon B is less likely to occur at a site if
+taxon A is present, as we would expect if there was competitive exclusion or
+differences in habitat preferences between the two taxa. If $\theta>0$, taxon B
+is more likely to occur at a site if taxon A is present, as we would expect if
+the taxa shared habitat preferences and did not competitively exclude each
+other. Finally, if $\theta = 0$, the two taxon are independently distributed.
+When $\theta = 0$, the NHD reduces to the standard (i.e.\ centered)
+hypergeometric distribution, which has frequently been used to evaluate patterns
+of co-occurrence [@Arita2016].
+To our knowledge, our study is the first to use the noncentral form of the
+hypergeometric distribution for this purpose. 
+
+In light of the rich array of methodologies already available for quantifying species associations, the use of a novel method must be justified. First, while it is mathematically related to existing null-model-based co-occurrence metrics which have been shown to be relatively reliable (e.g. mid-P variant of Fisher's Exact Test, see [@Keil2021]), $\theta$ is a direct parametrization of the effect of one species on the occurrence of another (Equation S1.c). Rather than using the observed data to accept or reject the significance of a co-occurrence pattern as existing methods do, it attempts to estimate the underlying effect that produces the observed data (similar to the difference between a p-value and a correlation coefficient). For this reason, existing methods are not commensurate with our approach, and we do not attempt to draw any direct comparisons. 
+
+This parametric approach represents a significant conceptual advance for several reasons. First, it theoretically allows for the assocation of species pairs to vary even if their observed occurrences are the same, as we should expect in real life. This distinction becomes important when a Bayesian model is used to estimate the value of the parameter. Second, it is strongly biologically interpretable, quantifying specifically the effect of one species’ occupancy on another’s while being easily programmable in Stan. Third, $\theta$ is not sensitive to the number of sites in the study assemblage, making formal comparisons and meta-analyses possible down the track. With these improvements, our analysis is sufficiently different from existing co-occurrence approaches that a direct comparison between the two is not only not sensible but also not needed to justify the new analysis. Should the comparison between the two approaches yield different results, we should be more confident in the results of the present approach above the results from null model analyses. However, we perform some analyses to demonstrate the behaviour of the NHD parameter.
+
+To explore properties of the NHD, we calculate how the distribution of $N_{AB}$
+values varies with $\theta$ (ranging from -2 to 2) for occurrence values that
+span the majority of taxa in our datasets ($N_{A}$ and $N_{B}$ ranging from 2 to
+8; Extended Data Figure 2). The total number of sites for these calculations was set at 50, which is
+similar to the values for the bird and bat datasets we analyzed (47 and 53,
+respectively). Besides demonstrating that increases in $\theta$ correspond to higher probabilities of more frequent co-occurrences, as we would expect from a reliable metric, two noteworthy observations arise from these calculations. First,
+if occurrences of the two taxa are low relative to the total number of sites
+($N_{A}=N_{B}=2$), $N_{AB}=0$ is the most likely outcome even when $\theta=2$,
+which corresponds > 7-fold higher odds of taxon B occurring at a site if taxon A
+is present (solid red line in Extended Data Figure 2). Second, as the numbers of sites
+occupied by the two taxa increases, the distribution of $N_{AB}$ values exhibits
+a greater shift in mode with changes in $\theta$: when $N_{A}=N_{B}=2$, the mode
+for $N_{AB}$ remains at 0 for all three $\theta$ values (-2, 0, 2), whereas when
+$N_{A}=N_{B}=8$, the mode shifts from 0 (at $\theta=-2$) to 4 (at $\theta=2$).
+
+
+To understand the maximum likelihood of the NHD, we take logarithms of both sides of
+Eq.\ (S1.a), and differentiate with respect to $\theta$, yielding an expression
+for the \emph{score}, defined as the gradient of the log-likelihood in relation
+to the parameter of interest (in this case $\theta$):
+
+\[
+\frac {\partial \log f(N_{AB}\mid\theta)}{\partial\theta} = 
+N_{AB} - P_1(\theta)/P_0(\theta)
+\]
+
+The quantity $P_1(\theta)/P_0(\theta)$ is the expectation (i.e.\ average) for
+the NHD [@McCullagh1952]. Given that the maximum
+likelihood for $\theta$, $\hat{\theta}$, is achieved when 
+$\partial \log f(N_{AB} \mid \theta) / \partial \theta = 0$, Eq.\ (S2) implies that
+$\hat{\theta}$ corresponds to the NHD with a mean equal to the observed number
+of co-occurrences, $N_{AB}$. (While there is no exact analytical expression for
+this mean, accurate approximations have been derived [@Eisinga2011]. Consequently, the estimate of $\hat{\theta}$ inferred from a single observation is biologically uninformative whenever the observed number of co-occurring sites is equal to the minimum or maximum possible values, i.e.\ $\hat{\theta}=-\infty$ if
+$N_{AB}=\max(0,N_{B}-N_{(A)})$, and $\hat{\theta}=\infty$ if
+$N_{AB}=\min(N_{A},N_{B})$.
+
+
+Our capacity to infer $\theta$ from observations is fundamentally constrained by
+the Fisher Information, which is the variance of the score [@Ly2017]. We
+can characterize how the Fisher information varies with $\theta$,
+$I(\theta)$, by combining Eqs.\ (S1) and (S2):
+
+\begin{equation}
+\tag{S3}
+\begin{split}
+I(\theta) & = E \left[
+\left( \frac{\partial \log f(N_{AB} \mid \theta)}{\partial \theta} \right)^2 
+\mid \theta \right] = \\
+& = \sum_{n = \max(0,N_{B}-N_{(A)})}^{\min(N_{A},N_{B})} 
+f(n \mid \theta) \left( \frac{\partial 
+\log f(n \mid \theta)}{\partial \theta} \right)^2 =
+\frac{P_2(\theta)}{P_0(\theta)} - 
+\left( \frac{P_1(\theta)}{P_0(\theta)} \right)^2
+\end{split}
+\end{equation}
+
+\[
+I(\theta) = E[(\frac {\partial \log f(N_{AB}\mid\theta)}{\partial\theta})^2 \mid \theta] = 
+\sum^{min(N_{A}, N_{B})} _{n = max(0, N_{B}-N_{(A)})} {f(n \mid \theta)}(\frac {\partial \log f(N_{AB}\mid\theta)}{\partial\theta})^2 =
+
+\frac {P_2(\theta)}{P_0(\theta)} - (\frac {P_1(\theta)}{P_0(\theta)})^2
+\]
+
+
+Remarkably, Eq.\ (S3) demonstrates that, when the NHD is parameterized using
+$\theta$, the Fisher Information is
+$P_2(\theta)/P_0(\theta)-(P_1(\theta)/P_0(\theta))^2$, which is also the
+variance of the NHD [@McCullagh1952].
+Parameterizing the NHD using the odds ratio $\psi$ would yield a different
+expression for the Fisher Information.
+
+
+Calculations performed using Eq.\ (S3) demonstrate that the Fisher Information
+generally increases with the taxon occurrences $N_{A}$ and $N_{B}$ (Extended Data Figure 3).
+Loosely speaking, this result indicates that the distribution of co-occurrence
+values, $N_{AB}$, changes more rapidly which changes in $\theta$ for taxon
+pairs with greater numbers of occurrences, consistent with Extended Data Figure 2. Thus,
+$\theta$ can be estimated more efficiently from taxon pairs with more
+occurrences. Importantly, however, Fisher Information eventually declines as the
+numbers of occurrences for the two taxa approach the total number of sites (note
+the depressed yellow curve for $N_{A} = N_{B} = 40$ in Extended Data Figure 3). This decline
+occurs due to an increasing lower bound on the minimum number of co-occurrences
+($=\max(0,N_{B}-N_{(A))}$). Also noteworthy, the Fisher Information eventually
+approaches 0 for very low and very high values of $\theta$, regardless of
+$N_{A}$ and $N_{B}$, because the distributions of $N_{AB}$ values eventually
+become concentrated on this lower bound as $\theta$ declines, and on the upper
+bound $\min(N_{A},N_{B})$ as $\theta$ increases.
+
+
+_Specifying the model_
+The analysis above highlights three key issues that arise when fitting the NHD
+to occurrence data:
+
+(i)  A non-overlapping distribution (i.e.\ $N_{AB} = 0$) will be observed with
+higher probability for a taxon pair with lower occurrence values ($N_{A}$ and
+$N_{B}$), irrespective of $\theta$.
+
+(ii)  A \emph{single} observation of a non-overlapping distribution will not 
+\emph{by itself} be biologically informative about the value of $\theta$ (i.e.$\hat{\theta}=-\infty$).
+
+(iii) The information about $\theta$ contained in a \emph{single} observation is
+generally lower for a taxon pair with lower occurrence values.
+
+In other words, the parameter $\theta$ suffers from similar constraints as existing metrics of species association which attempt to leverage biological information from pairwise occurrence data. These constraints are seldom considered explicity by published co-occurrence analyses, except by throwing out pairs that do not yield biological information by themselves. To address these issues, we present a novel approach, which we term "occupancy analysis". Rather than separately estimate $\theta$ for each taxon pair, we instead \emph{combine} observations into occupancy groups,
+$\mathcal{S}_i$, defined as having identical values for $N_{A}$ and $N_{B}$,
+with $N_{A} \leq N_{B}$. We then calculate the likelihood for each occupancy
+group based on a single $\theta$ value, $\theta_i$. This likelihood is simply
+the product of the likelihoods for the co-occurrence observations in the
+occupancy group, $N_{AB}^j$, with $j \in \mathcal{S}_i$. The likelihood
+for a set of observations, $\vect{N_{AB}}$, is therefore
+
+\[
+p({N_{AB}} \mid \theta_i) = \prod_{j \in \mathcal{S}_i} p(N_{AB}^j|\theta_i)
+\]
+
+
+This approach partly addresses issues (*i*) and (*ii*) because $N_{AB} = 0$ is less
+likely to be observed for an entire set of observations than a single
+observation, and the maximum likelihood estimate for $\theta_i$ will be finite
+provided that at least 1 observation of $N_{AB}$ in the occupancy pattern is
+$>\max(0,N_{B}-N_{(A)})$ and $<\min(N_{A},N_{B})$. It also addresses issue
+(*iii*) because the Fisher Information is additive [@Ly2017],
+meaning that it increases linearly with the number of observations.
+
+
+To further address issues (*i*) and (*ii*), rather than separately calculating
+$\theta_i$ for each set, we instead adopt a hierarchical Bayesian modeling
+approach [@Gelman2014] to estimate averages for $\theta_i$ that have been subdivided into four groups,
+$g$, on the basis of habitat type (altered, unaltered) and diet (similar,
+distinct). At the lower (i.e.\ set) level, we assume that the $\theta_i$ values
+are all normally distributed with means and standard deviations that can vary
+among groups
+
+\[
+\theta_i \sim \mathcal{N}(\overline{\theta}_{g(i)}, \sigma_{g(i)})
+\]
+
+
+where $g(i)$ is a function that indexes the group assignment of each set. At the
+upper (i.e.\ community) level, we assign the group means, $\overline{\theta}_g$,
+a normal prior distribution with a mean of 0 and a standard deviation of 10,
+
+\[
+\overline{\theta}_g \sim \mathcal{N}(0, 10)
+\]
+
+
+and we assign the group standard deviations, $\sigma_{g}$, a half-normal prior
+distribution with location and scale parameters of 0 and 10, respectively, on
+the interval $[0,\infty]$,
+
+\[
+\sigma_{g} \sim \mathcal{H}(0, 10)
+\]
+
+These prior distributions were chosen to allow adequate exploration of the
+parameter space using the Markov chain Monte Carlo (MCMC) algorithm while
+ensuring that the algorithm never halted by getting stuck in regions of
+parameter space with negligible likelihood. These prior distributions should be
+viewed as very weakly informative in the parlance of Bayesian analysis [@Lemoine2019].
+
+
+The posterior distributions for the group-level averages, $\overline{\theta}_g$,
+are proportional to the product of two likelihood distributions (Eqs.\ S4 and
+S5) and two prior distributions (Eqs.\ S6 and S7). Consequently, the model pools
+data across sets of pairs to estimate the group means,
+$\overline{\theta_g}$, and standard deviations, $\sigma_g$, and then, for each
+set of occurrences, $i$, draws from a normal distribution of mean
+$\overline{\theta_{g(i)}}$ and standard deviation $\sigma_{g(i)}$ to obtain a
+$\theta_i$ estimate. Data pooling, in turn, results in shrinkage of estimates of
+$\theta_i$ toward the population-level means, $\overline{\theta_g}$. A
+hierarchical approach is desirable here because sets of pairs yielding weaker
+evidence (as indexed by smaller likelihoods) exhibit greater shrinkage, and sets
+yielding stronger evidence are assigned greater weight in calculating the
+group-level means and standard deviations.
+
+Occupancy analysis confers two major advantages over previous approaches. Firest, it uses more information than co-occurrence analysis for groups of pairs, making its estimates of $\theta$ much more robust than, e.g., taking the mean co-occurrence value of a set of species pairs. Second, the algorithm is formulated in such a way that adding species does not increase the computing time of the model, meaning hyper-diverse datasets for which co-occurrence analysis is not feasible can be analysed with this method. 
+
+_Fitting the model_
+We estimate the posterior distributions using the R package RStan, which
+provides an interface from R to the Stan probabilistic programming language [@Team2022]. To approximate the posterior distributions, we generate 4 MCMC chains of $2 \times 10^3$ steps, including a warm-up period of $10^3$ steps. We then inspect MCMC plots for the 4 chains and calculated Gelman Rubin statistics, $\hat{R}$, to ensure convergence [@Gelman2013].
+
+_Model robustness checks_
+We ran a series of checks to test that the model is robust and not subject to common biases. First, we estimated the shrinkage present in our model results by comparing the bayesian model output to the same model calculated using maximum likelihood. Shrinkage refers to the tendency of observations with less information to gravitate toward the group mean in hierachical models. We want to see relatively little shrinkage in most sets, but more in occupancy sets with fewer pairs. We also want to see increased shrinkage in sets that fall farther from the group mean. These properties were observed for both bats and birds (Extended Data Fig. 4). 
+
+We also examined our model output for near normal distribution and common biases. We plotted $\theta_g}$ estimates of each occupancy pair set against the number of pairs in the set and against the occupancy of the rarer species in the set. There were no consistent trends across the four experimental groups for either taxa, indicating that $\theta_g}$ does not suffer from bias due to these factors (Figs. S6-S11). 
+
+_Model interpretation_
+
+In this framework, a change in the posterior distributions of $\psi$ and therefore $\overline{\theta_g}$ can exhibit several patterns, which point to various biological processes (Fig. S12). Competing pairs can display lower $\overline{\theta_g}$ than non-competing pairs, which means that diffuse competition tends to lead to exclusion with respect to opportunity for co-occurrence (Fig. S12A). This is the case even if all $\overline{\theta_g}$ are positive, as exclusion does not necessarily present as a negative association. Because competing and non-competing pairs are comprised of the same species data in different pairwise arrangements, the $\overline{\theta_g}$ of non-competing pairs represents the opportunity for coexistence in the absence of food competition. A deviation toward lower $\overline{\theta_g}$ from this baseline is evidence that competing pairs are not coexisting as often as expected--a systematic pattern of exclusion at the group level. Conversely, a higher $\overline{\theta_g}$ in competing pairs confirms that similarity in resource use leads to co-occurrence without causing exclusion, suggesting that competing pairs tend to partition or share adequate resources (Fig. S12B). If the $\overline{\theta_g}$ of competing and non-competing pairs do not differ significantly, but the $\sigma_{g}$ (variance) of competing pairs is higher, this points to stronger spatial patterns (both coexistence and exclusion) in pairs that compete for food, and vice versa (Fig. S12D). If there is no difference in $\overline{\theta_g}$ or $\sigma_{g}$ between the two groups, then there is insufficient evidence to support the hypothesis that diffuse competition is influencing the structure of the assemblage at the landscape scale (Fig. S12C).
+
+The $\overline{\theta_g}$ and $\sigma_{g}$ of competing and non-competing pairs might also differ between altered and intact sites in our example. If the relationship between competing and non-competing pairs is different, this means that alteration has changed the outcome of biotic interactions, e.g., by promoting partitioning over exclusion or vice versa. More subtly, the extent of disparity between the two groups could differ without qualitatively changing the relationship, which indicates that naturally existing mechanisms have been enhanced or dampened. On the other hand, $\overline{\theta_g}$ or $\sigma_{g}$ could simply be higher or lower across the board, suggesting that alteration leads to changes in community structure that do not necessarily involve the rewiring of competitive interations. In all cases, posteriors represent assemblage-level patterns and do not imply that all pairs in the group exhibit the same pattern as does their group, merely that there is a group tendency toward one process over another.
+
+The experimental approach presented here represents two distinct innovations that allow us to deal with detection issues and context-dependence of interactions. First, we use a priori evidence for the possibility of interaction rather than direct interaction data. The resulting set of pairs includes both interacting and non-interacting pairs but encompasses all of the former. A priori evidence for many types of interactions could be derived from various functional traits. For example, fruit size and gape size of frugivorous birds can indicate which birds are physically able to disperse which fruits. Diet category and body size can similarly be used to estimate mammal predator-prey relationships [@Pires2015]. This setup frees us from the necessity of sampling all interactions and identifying the contexts under which they are realised while still yielding insights about the impact of interactions on community assembly.
+
+Second, we use non-interacting pairs of species in the assemblage to contextualise association patterns for interacting species pairs. The inclusion of an experimental control group is a central tenet of science, but non-interacting pairs or those having associations not significantly different from chance associations are routinely discarded or ignored in co-occurrence research and interaction research more generally, while raw pairwise co-occurrence scores are often interpreted at face value (e.g., any negative score equals exclusion). Our use of non-interacting pairs as a control can be applied to a broad variety of interactions. A plant-pollinator network could for instance be decomposed into groups of pairs that facilitate one another (plant-pollinator pairs), do not interact, and even compete (plant-plant pairs that compete for pollinators or pollinator-pollinator pairs that compete for nectar). In each case, the effect of the competing group(s) can be evaluated against all pairs that do not exhibit the interaction(s) in question.
+
+_The effect of turnover_
+
+Overall changes observed in association patterns could result from pairs changing their spatial behaviour or their competition intensity in altered vs. intact habitats. Conversely, a shift in species composition (e.g., the removal or introduction of interaction partners), and therefore the presence of a different suite of pairs, could also cause disparities between the two habitat types. To investigate these possibilities, we ran the models with all species and then repeated them with only species occurring at least once in both habitat types ("no-turnover" models). If the results of the two model sets are very similar, we can conclude that the results are driven by changes in the spatial behaviour of species occurring in both site types. If the two model sets are different but both show significant effects, likely both turnover and changes in preserved interactions are occurring. Furthermore, the differences between the two outputs can be used to determine which changes are due to which mechanism. Model effects are due to turnover alone if the model set using only shared species has no significant differences while the model set using all species has significant differences.
+
+_Analysis of alteration types_ 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# calculate number of species per guild (in the functional analysis)
+s <- spp %>% filter(rownames(.) %in% unlist(map(PAn, rownames))) %>% group_by(life.form, guild) %>% dplyr::summarise(count = length(guild))
+
+```
+
+To gain more insight into the aggregation of same-guild (competing) pairs in altered habitats, we calculated the percent of species in each guild that co-occur at individual sites (e.g., 5% of insectivorous bat species occur at site A, etc.). We plotted the sites by alteration type to examine the influence of alteration on species aggregation. Although we do not have enough sites of each alteration type to draw any definitive conclusions, this analysis can suggest reasons why certain guilds might co-occur more in altered sites and provide questions for future research.
+
+_Data and code availability_  All R workflows and cleaned datasets used for this analysis are available at https://github.com/anikobtoth/HabitatAlteration.
+
+
+__Method References:__
+
+
+#########
+*copy in from bottom*
+#########
+
+__Acknowledgments:__ We thank the Macquarie University paleobiology lab for discussions that improved this paper. ABT was partially supported by an IMQRES scholarship at Macquarie University.
+
+__Author contributions:__ ABT and JA designed the study, JA curated the data and provided statistical expertise, ABT analyzed data, produced the figures, and wrote the paper. ABT and APA designed, coded, and tested the model. SKL helped design supporting analyses. All authors edited the manuscript.
+
+__Competing Interests:__ The authors declare no competing interests.
+
+__Additional Information:__
+Supplementary Information is available for this paper.
+Correspondence and requests for materials should be addressed to Dr. Anikó B. Tóth at aniko.toth@unsw.edu.au.
+Reprints and permissions information is available at www.nature.com/reprints.
+
+__Extended Data:__
+```{r setup2, include=FALSE}
+
+## Load stan functions
+source('../Code/stan.R')
+
+library(flextable)
+library(bayestestR)
+library(lsa)
+library(plotrix)
+```
+
+```{r, echo = FALSE, include = TRUE, fig.height=5.5, fig.width = 7}
+#load("../Data/coords.Rdata")
+
+### FIGURE S1: Maps ####
+par(mfrow = c(2,2), mar = c(0,0,0,0), oma = c(1,1,1,1))
+
+maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
+points(latitude~longitude, coords1$bat, pch = 16, cex=.7, col = "#006D77")
+points(latitude~longitude, coords2$bat, pch = 16, cex=.7, col = "#DF8768")
+mtext("Bats-original sites", side = 3, line = 1)
+box()
+
+maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
+points(latitude~longitude, coords1$bird, pch = 16, cex=.7, col = "#006D77")
+points(latitude~longitude, coords2$bird, pch = 16, cex=.7, col = "#DF8768")
+mtext("Birds-original sites", side = 3, line = 1)
+box()
+
+maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
+points(latitude~longitude, coords1.keep$bat, pch = 16, cex=.7, col = "#006D77")
+points(latitude~longitude, coords2.keep$bat, pch = 16, cex=.7, col = "#DF8768")
+mtext("Bats-included sites", side = 3, line = 1)
+box()
+
+maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
+points(latitude~longitude, coords1.keep$bird, pch = 16, cex=.7, col = "#006D77")
+points(latitude~longitude, coords2.keep$bird, pch = 16, cex=.7, col = "#DF8768")
+mtext("Birds-included sites", side = 3, line = 1)
+box()
+
+
+```
+
+__Extended Data Fig. 1__ 
+Maps of Neotropical bat and bird sites before (top) and after (bottom) biogeographic matching procedure, with altered sites represented in red and intact sites represented in blue.
+
+```{r figs2, echo=FALSE, fig.cap="\\label{fig:Extended Data Fig. 2}Effects of taxon occurrence (indexed by $N_{A}$ and $N_{B}$) and spatial aggregation ($\\theta>0$) and segregation ($\\theta<0$) on the probability distribution of co-occurrences, message=FALSE, warning=FALSE, $f(N_{AB} \\mid \\theta)$. Probabilities were calculated using Eq.\\ (S1) based on a total of $N_{A} + N_{(A)}=50$, dpi=200}
+library(scales)
+
+log_sum_exp <- function(x) log(sum(exp(x - max(x)))) + max(x)
+fnchypergeo_lpmf <- function(sb, s1, s2, n_site, theta) {
+  sb_min <- max(c(0,s1 + s2 - n_site))
+  sb_max <- min(c(s1,s2))
+  u <- ll <- ans <- numeric()
+  for(i in sb_min:sb_max) {
+    u[i - sb_min + 1] = i;
+    ll[i - sb_min + 1] = lchoose(s1, i) + lchoose(n_site - s1, s2 - i)
+  }
+  if(length(sb) > 1) {
+    for(i in 1:length(sb)) {
+      ans[i] = ll[sb[i] - sb_min + 1] + sb[i]*theta - log_sum_exp(ll + u*theta)
+    }
+  } else {
+    for(i in 1:length(theta)) {
+      ans[i] = ll[sb - sb_min + 1] + sb*theta[i] - log_sum_exp(ll + u*theta[i])
+    }
+  }    
+  return(ans)
+}
+
+
+ll_plot <- function(s1, s2, n_site, theta,...) {
+  sb_min <- max(c(0,s1 + s2 - n_site))
+  sb_max <- min(c(s1,s2))
+  x <- sb_min:sb_max
+  y <- fnchypergeo_lpmf(sb_min:sb_max, s1, s2, n_site, theta)
+  lines(x,y,lwd=1.8,type='o',pch=16,cex=0.5,...)
+}
+
+my.cols <- c('red','blue')
+plot(0,0,xlim=c(0,9),ylim=c(-7,0),type='n',
+     xlab=expression("Number of co-occurrences,"~italic(N[AB])),
+     ylab = expression("Probability,"~italic(f)(italic(N[AB])~"|"~italic("\u03B8"))),
+     axes=FALSE)
+axis(1,at=0:9,labels=0:9)
+axis(2,at=log(10^seq(-3,0,1)),labels=parse(text=paste0('10^{',seq(-3,0,1),'}')),
+     las=1)
+box()
+ll_plot(2,2,50,-2,col=alpha(my.cols[1],0.5),lty=3) 
+ll_plot(2,2,50,0,col=alpha(my.cols[1],0.5),lty=2)
+ll_plot(2,2,50,2,col=alpha(my.cols[1],0.5),lty=1)
+ll_plot(8,8,50,-2,col=alpha(my.cols[2],0.5),lty=3) 
+ll_plot(8,8,50,0,col=alpha(my.cols[2],0.5),lty=2)
+ll_plot(8,8,50,2,col=alpha(my.cols[2],0.5),lty=1)
+legend('topright',bty='n',lwd=1.8,
+       legend=expression(italic("\u03B8")~"="~-2,
+                         italic("\u03B8")~"="~0,
+                         italic("\u03B8")~"="~2,'',
+                         italic(N[A])~"="~italic(N[B])~"="~2,
+                         italic(N[A])~"="~italic(N[B])~"="~8),
+       lty=c(3,2,1,0,1,1),
+       col=c(rep('black',4),my.cols))
+```
+
+
+```{r figs3, dpi=200, echo=FALSE, fig.cap="\\label{fig:Extended Data Fig. 3}Effects of occurrence ($N_{A}$ and $N_{B}$) and spatial aggregation ($\\theta$) on the probability distribution of co-occurrences. Probabilities were calculated using Eq.\ (S3), assuming a total of $N_{A} + N_{(A)}=50$ sites."}
+log_sum_exp <- function(x) log(sum(exp(x - max(x)))) + max(x)
+fnchypergeo_FI <- function(s1, s2, n_site, theta) {
+  sb_min <- max(c(0,s1 + s2 - n_site))
+  sb_max <- min(c(s1,s2))
+  ans<- numeric()
+  u <- ll <- ans <- numeric()
+  for(i in sb_min:sb_max) {
+    u[i - sb_min + 1] = i;
+    ll[i - sb_min + 1] = lchoose(s1, i) + lchoose(n_site - s1, s2 - i)
+  }
+  for(i in 1:length(theta)) {
+    ans[i] <-
+      exp(log_sum_exp(2*log(u) + ll + u*theta[i])-log_sum_exp(ll + u*theta[i])) - 
+      exp(log_sum_exp(log(u) + ll + u*theta[i])-log_sum_exp(ll + u*theta[i]))^2
+  }
+  return(ans)
+}
+
+o.sq <- seq(-10,10,.01)
+plot(o.sq,fnchypergeo_FI(2, 2, 50, o.sq),las=1,
+     xlab=expression("NHD Parameter, "~italic("\u03B8")),type='l',ylim=c(0,3),
+     ylab=expression("Fisher Information, "~italic(I)(italic("\u03B8"))),
+     col=hcl.colors(5)[1],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(2, 8, 50, o.sq),
+      lty=2,col=hcl.colors(5)[1],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(8, 8, 50, o.sq),
+      lty=3,col=hcl.colors(5)[2],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(8, 16, 50, o.sq),
+      lty=4,col=hcl.colors(5)[2],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(16, 16, 50, o.sq),
+      lty=5,col=hcl.colors(5)[3],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(32, 32, 50, o.sq),
+      lty=6,col=hcl.colors(5)[4],lwd=1.5)
+lines(o.sq,fnchypergeo_FI(40, 40, 50, o.sq),
+      lty=7,col=hcl.colors(5)[5],lwd=1.5)
+legend('topleft',legend=expression(italic(N[A])~"="~italic(N[B])~"="~2,
+                                   italic(N[A])~"="~2~", "~italic(N[B])~"="~8,
+                                   italic(N[A])~"="~italic(N[B])~"="~8,
+                                   italic(N[A])~"="~8~", "~italic(N[B])~"="~16,
+                                   italic(N[A])~"="~italic(N[B])~"="~16,
+                                   italic(N[A])~"="~italic(N[B])~"="~32,
+                                   italic(N[A])~"="~italic(N[B])~"="~40),
+       lty=1:7,bty='n',col=hcl.colors(5)[c(1,1,2,2,3,4,5)],lwd=1.5,cex=0.75)
+```
+
+```{r figs4, echo = FALSE, include = TRUE, fig.height=6, fig.width = 7, dpi = 200}
+par(mfrow = c(2,2))
+data_bat_full <- readRDS("../Results/stan/Model_data_bats_all_full.rds")
+bat_full <- readRDS("../Results/stan/stan6_bats_all_full.rds")
+ml_bat_full <- readRDS("../Results/stan/ML_bats_all_full.rds")
+sum_bat <- stan_summary(data_bat_full, bat_full, ml_bat_full)
+stan_shrinkage_plots(sum_bat)
+
+data_bird_full <- readRDS("../Results/stan/Model_data_birds_all_full.rds")
+bird_full <- readRDS("../Results/stan/stan6_birds_all_full.rds")
+ml_bird_full <- readRDS("../Results/stan/ML_birds_all_full.rds")
+sum_bird <- stan_summary(data_bird_full, bird_full, ml_bird_full)
+stan_shrinkage_plots(sum_bird, ann = c("C", "D"))
+
+```
+
+__Extended Data Fig. 4__ Results of shrinkage tests for bat (A-B) and bird (C-D) models with all species, depicting shrinkage with respect to deviation from the group mean and with respect to the number of pairs in each set.
+
+```{r figs6, echo = FALSE, include = TRUE, fig.height=4, fig.width = 8, dpi = 200}
+batdist <- ggplot(sum_bat, aes(x =theta_bayes)) + 
+  geom_histogram(bins = 12) + 
+  facet_wrap(~group) + labs(x = "theta")
+
+birddist <- ggplot(sum_bird, aes(x =theta_bayes)) + 
+  geom_histogram(bins = 12) + 
+  facet_wrap(~group) + labs(x = "theta")
+
+plot_grid(batdist, birddist, labels = c("A", "B"), ncol = 2)
+
+```
+
+__Extended Data Fig. 5__ Distribution of theta posteriors for each group in the bat model (A) and the bird model (B). 
+
+```{r figs7, echo = FALSE, include = TRUE, fig.height=4, fig.width = 8, dpi = 200}
+A <- ggplot(sum_bat, aes(x = s1, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
+  geom_smooth(formula = y ~ x, method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "occupancy of rarer species in pattern")
+
+B <- ggplot(sum_bat, aes(x = log_n, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
+  geom_smooth(formula = y ~ x, method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "log(number of pairs)")
+
+plot_grid(A, B, labels = c("A", "B"))
+
+```
+
+__Extended Data Fig. 6__ Theta estimates for bats plotted against the occupancy of the rarer species in the occupancy pattern (A) and number of pairs in the set (B). Each point represents a pair set with a particular occupancy pattern. Each group is plotted separately.
+
+
+```{r figs10, echo = FALSE, include = TRUE, fig.height=4, fig.width = 8, dpi = 200}
+A <- ggplot(sum_bird, aes(x = s1, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
+  geom_smooth(formula = y ~ x, method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "occupancy of rarer species in pattern")
+
+B <- ggplot(sum_bird, aes(x = log_n, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
+  geom_smooth(formula = y ~ x, method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "log(number of pairs)")
+
+plot_grid(A, B, labels = c("A", "B"))
+
+```
+
+__Extended Data Fig. 7__ Theta estimates for birds plotted against the occupancy of the rarer species in the occupancy pattern (A) and number of pairs in the set (B). Each point represents a pair set with a particular occupancy pattern. Each group is plotted separately.
+
+
+
+__Extended Data Fig. 8__ Interpretations of average $\overline{\theta_g}$ posterior density distributions. The dark curve indicates competing pairs and the lighter curve indicates control pairs. In (A) competing pairs co-occur less on average than control pairs, so higher spatial segregation than expected suggesting a pattern of competitive exclusion. In (B) competing pairs co-occur more than control pairs on average, suggesting that they micro-partition resources at the same sites more than expected. In (C) there is little or no separation of the posterior distributions, meaning that food competition does not aggregate or segregate pairs outside of expectations; however, other interaction types could still play an important role. (D) Both strong aggregation and segregation are observed in competing pairs, so variance is higher than expected.
+
+```{r, echo = FALSE}
+#load("../Results/d2_d5_summary_tables_nr_ns_100r_relatedexcl.RData")
+colors2 <- c("#34008C", "#E8AC00")
+specs <- list(geom_hline(yintercept = 1, col = "gray"),
+              geom_vline(xintercept = 1, col = "gray"),
+              stat_ellipse(geom= "polygon", alpha = 0.3, aes(col = diet.match, fill = diet.match)),
+              geom_point(aes(col = diet.match, fill = diet.match), size = 0.5), 
+              geom_rug(aes(col = diet.match), alpha = 0.5),
+              scale_colour_manual(values = colors2),
+              scale_fill_manual(values = colors2),
+              theme(legend.position = "none")
+)
+
+```
+
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, include = TRUE, fig.height = 8, fig.width = 11}
+load("../Results/pr_bats_birds_percent_spp_supported_by_sites.RData")
+
+pbat <- ggplot(pr.bat, aes(x = altered_habitat, y = value*100, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
+  facet_wrap(variable~., nrow = 4, ncol = 1, scales = "free_y") + geom_jitter(width = 0.15, size = 0.3) +
+  scale_fill_manual(values = c(gg_color_hue(8), "gray50")) +
+  theme(axis.text.x = element_blank()) + labs(y = "Percent of species co-occurring", x = "Habitat type")
+
+
+pbird <- ggplot(pr.bird, aes(x = altered_habitat, y = value*100, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
+  facet_wrap(variable~., nrow = 4, ncol = 2, scales = "free_y") + geom_jitter(width = 0.15, size = 0.3) +
+  theme(axis.text.x = element_blank()) + labs(y = "Percent of species co-occurring", x = "Habitat type", fill = "Type of alteration") + 
+  scale_fill_manual(values = c(gg_color_hue(8), "gray50"))
+
+plot_grid(pbird+ theme(legend.position = c(1, 0), legend.justification = c(1, 0), legend.text = element_text(size = 10)) + guides(fill=guide_legend(ncol=2)), 
+          pbat+theme(legend.position="none"), ncol = 2, rel_widths = c(2, 1), labels = c("A", "B"))
+
+```
+
+__Extended Data Fig. 9__ 
+Percent of species in (A) bird and (B) bat guilds, represented by panels, that co-occur at individual altered sites by type of alteration. Each point is a site. Key to panels: C = carnivore; F = frugivore; I = insectivore; N = nectarivore; and G = granivore. Multiple letters indicate mixed feeders.
+
+__Extended Data Table 1.__
+Results of richness analyses comparing estimated richness in altered and intact habitats using three metrics. Table includes median metric output across sites and results of Wilcoxon rank-sum tests comparing intact and altered richnesses. Key: chao= Chao 1, cJ1 = second-order jaccknife, fa = Fisher's Alpha, p = p value of Wilcoxon Rank Sum test, W = test statistic of Wilcoxon Rank Sum test. 
+
+```{r}
+rsumm %>% select(-`mean richness`) %>% pivot_wider(names_from = "status", values_from = `median richness`) %>% full_join(rsig, by = c("taxon", "metric")) %>% 
+  mutate(Altered = round(Altered, 1), Intact = round(Intact, 1), p = round(p, 3)) %>% 
+  flextable()
+```
+
+
+__Extended Data Table 2.__
+Results of beta diversity and composition analyses comparing community patterns in altered and intact habitats. F-statistic and _p_-values are displayed for bats and birds.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+output %>% arrange(analysis) %>% mutate(across(where(is.numeric), round, digits = 4)) %>% flextable()
+```
+
+
+__Extended Data Table 3.__ 
+Median values and 95% high density posterior intervals for $\overline{\theta_{g}}$ and $\sigma_{g}$ of all bat and bird models.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+l <- list.files('../Results/stan', full.names = TRUE, pattern = "stan6")
+
+res <- map(l, ~readRDS(.x) %>% format_stanfit("mu")) %>%
+  setNames(c(paste(ifelse(grepl("bat",l, fixed = TRUE), "bat", "bird"),
+                   ifelse(grepl("shared", l, fixed = TRUE), "noTurnover", "full")) %>% trimws() %>% str_replace_all(" ", "_"))) %>% 
+  bind_rows(.id = "model")
+
+res2 <- map(l, ~readRDS(.x) %>% format_stanfit("sigma")) %>%
+  setNames(c(paste(ifelse(grepl("bat",l, fixed = TRUE), "bat", "bird"),
+                   ifelse(grepl("shared", l, fixed = TRUE), "noTurnover", "full")) %>% trimws() %>% str_replace_all(" ", "_"))) %>% 
+  bind_rows(.id = "model")
+
+res$sigma <- res2$sigma
+
+hdpi95 <- res %>% group_by(model, group) %>% 
+  summarise(`Median θ` = median(mu), `Lower θ` = hdi(mu, 0.95)$CI_low, `Upper θ` = hdi(mu, 0.95)$CI_high, `Median σ` = median(sigma), `Lower σ` = hdi(sigma, 0.95)$CI_low, `Upper σ` = hdi(sigma, 0.95)$CI_high) %>% mutate(across(where(is.numeric), round, digits = 4)) %>%
+  separate(group, into = c("status", "Pair_type")) %>%
+  separate(model, into = c("taxon", "model"), extra = "merge") 
+  
+flextable(hdpi95)
+
+```
+
+
+
+__Supplement:__
+
+```{r reset, include=FALSE}
+## Prep raw data
+source('../Code/Data_Prep.R')
+```
+
+### Materials and Methods
+
 
 _The Model_
 
@@ -429,30 +975,9 @@ A hierarchical approach is desirable here because pairs yielding weaker evidence
 
 We use hierarchical Bayesian MCMC methods to analyse full datasets, $N_{AB}$, comprised of all $S (S - 1)/2$ pairwise counts of co-occurrence for each of the two habitat types, where $S$ is the number of species used to calculate the set of pairwise estimates. This approach has the advantage of making use of all available data. However, it also has the disadvantage of not allowing for formal statistical evaluation because a single occupancy distribution for each species is used to generate $S(S - 1)/2$ pairwise estimates of co-occurrence, resulting in non-independence.
 
-We ran models that included all species ("full") and another set that was limited to include only species with occupancies exceeding the median occupancy in its taxon and habitat type ("common-only"). We estimate the posterior distributions using the R package rjags, which provides an interface from R to the JAGS library for Bayesian data analysis [@Lunn2009; @Plummer2006]. To approximate the posterior distributions, we generated 3 MCMC chains of 50,000 steps each in JAGS, including a burn-in period of 10,000 steps, and a thinning interval of 100. We then inspected MCMC plots for the 3 chains and calculated Gelman Rubin statistics, $\hat{R}$, to ensure convergence [@Gelman2014]. 
+We estimate the posterior distributions using the R package rjags, which provides an interface from R to the JAGS library for Bayesian data analysis [@Lunn2009; @Plummer2006]. To approximate the posterior distributions, we generated 3 MCMC chains of 50,000 steps each in JAGS, including a burn-in period of 10,000 steps, and a thinning interval of 100. We then inspected MCMC plots for the 3 chains and calculated Gelman Rubin statistics, $\hat{R}$, to ensure convergence [@Gelman2014]. 
 
-The experimental approach presented here represents two distinct innovations that allow us to deal with detection issues and context-dependence of interactions. First, we use a priori evidence for the possibility of interaction rather than direct interaction data. The resulting set of pairs includes both interacting and non-interacting pairs but encompasses all of the former. A priori evidence for many types of interactions could be derived from various functional traits. For example, fruit size and gape size of frugivorous birds can indicate which birds are physically able to disperse which fruits. Diet category and body size can similarly be used to estimate mammal predator-prey relationships [@Pires2015]. This setup frees us from the necessity of sampling all interactions and identifying the contexts under which they are realised while still yielding insights about the impact of interactions on community assembly.
 
-Second, we use non-interacting pairs of species in the assemblage to contextualise association patterns for interacting species pairs. The inclusion of an experimental control group is a central tenet of science, but non-interacting pairs or those having associations not significantly different from chance associations are routinely discarded or ignored in co-occurrence research and interaction research more generally, while raw co-occurrence scores are often interpreted at face value (e.g., any negative score equals exclusion). The importance of a control is demonstrated clearly in the basic differences between bats and birds in this study, as bats associate far more positively than birds irrespective of any interaction. Our use of non-interacting pairs as a control can be applied to a broad variety of interactions. A plant-pollinator network could for instance be decomposed into groups of pairs that facilitate one another (plant-pollinator pairs), do not interact, and even compete (plant-plant pairs that compete for pollinators or pollinator-pollinator pairs that compete for nectar). In each case, the effect of the competing group(s) can be evaluated against all pairs that do not exhibit the interaction(s) in question.
-
-_Model interpretation_
-
-In this framework, a change in the posterior distributions of $\psi$ and therefore $\overline{\theta_g}$ can exhibit several patterns, which point to various biological processes (Fig. S2). Competing pairs can display lower $\overline{\theta_g}$ than non-competing pairs, which means that diffuse competition tends to lead to exclusion with respect to opportunity for co-occurrence (Fig. S2A). This is the case even if all $\overline{\theta_g}$ are positive, as exclusion does not necessarily present as a negative association. Because competing and non-competing pairs are comprised of the same species data in different pairwise arrangements, the $\overline{\theta_g}$ of non-competing pairs represents the opportunity for coexistence in the absence of food competition. A deviation toward lower $\overline{\theta_g}$ from this baseline is evidence that competing pairs are not coexisting as often as expected--a systematic pattern of exclusion at the group level. Conversely, a higher $\overline{\theta_g}$ in competing pairs confirms that similarity in resource use leads to co-occurrence without causing exclusion, suggesting that competing pairs tend to partition or share adequate resources (Fig. S2B). If the $\overline{\theta_g}$ of competing and non-competing pairs do not differ significantly, but the $\sigma_{g}$ (variance) of competing pairs is higher, this points to stronger spatial patterns (both coexistence and exclusion) in pairs that compete for food, and vice versa (Fig. S2D). If there is no difference in $\overline{\theta_g}$ or $\sigma_{g}$ between the two groups, then there is insufficient evidence to support the hypothesis that diffuse competition is influencing the structure of the assemblage at the landscape scale (Fig. S2C).
-
-The $\overline{\theta_g}$ and $\sigma_{g}$ of competing and non-competing pairs might also differ between altered and intact sites in our example. If the relationship between competing and non-competing pairs is different, this means that alteration has changed the outcome of biotic interactions, e.g., by promoting partitioning over exclusion or vice versa. More subtly, the extent of disparity between the two groups could differ without qualitatively changing the relationship, which indicates that naturally existing mechanisms have been enhanced or dampened. On the other hand, $\overline{\theta_g}$ or $\sigma_{g}$ could simply be higher or lower across the board, suggesting that alteration leads to changes in community structure that do not necessarily involve the rewiring of competitive interations. In all cases, posteriors represent assemblage-level patterns and do not imply that all pairs in the group exhibit the same pattern as does their group, merely that there is a group tendency toward one process over another.
-
-_The effect of turnover_
-
-Overall changes observed in association patterns could result from pairs changing their spatial behaviour or their competition intensity in altered vs. intact habitats. Conversely, a shift in species composition (e.g., the removal or introduction of interaction partners), and therefore the presence of a different suite of pairs, could also cause disparities between the two habitat types. To investigate these possibilities, we ran the models with all species and then repeated them with only species occurring at least once in both habitat types ("no-turnover" models). If the results of the two model sets are very similar, we can conclude that the results are driven by changes in the spatial behaviour of species occurring in both site types. If the two model sets are different but both show significant effects, likely both turnover and changes in preserved interactions are occurring. Furthermore, the differences between the two outputs can be used to determine which changes are due to which mechanism. Model effects are due to turnover alone if the model set using only shared species has no significant differences while the model set using all species has significant differences.
-
-_Analysis of alteration types_ 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-# calculate number of species per guild (in the functional analysis)
-s <- spp %>% filter(rownames(.) %in% unlist(map(PAn, rownames))) %>% group_by(life.form, guild) %>% dplyr::summarise(count = length(guild))
-
-```
-
-To gain more insight into the aggregation of same-guild (competing) pairs in altered habitats, we calculated the percent of species in each guild that co-occur at individual sites (e.g., 5% of insectivorous bat species occur at site A, etc.). We plotted the sites by alteration type to examine the influence of alteration on species aggregation. Although we do not have enough sites of each alteration type to draw any definitive conclusions, this analysis can suggest reasons why certain guilds might co-occur more in altered sites and provide questions for future research.
 
 ### Supplementary Text
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
@@ -518,125 +1043,6 @@ _Altered site types_
  Strong aggregations form when species occur together at several sites and are both absent from other sites. To help understand our results, we calculated the representation of dietary guilds at various different types of altered sites (Fig. S3). Carnivore-insectivore (9 species) and frugivore bats (69 species) co-occur disproportionately in plantations. Plantations and forest fragments support the highest proportion of insectivore bats (98 species) living in altered habitats, and nectarivores (24 species) co-occur disproportionately in plantations and croplands (Fig. S3).
  
 For birds, the single site in a zone of human habitation supports a disproportionate ratio of birds with simple diets (nectarivores, frugivores, invertivores, and granivores). Croplands are the main supporter of frugivore-granivore birds. Many of our alteration categories included only one or two sites, which is insufficient to draw definitive conclusions about how bat and bird guilds aggregate over the altered landscape. However, our results (Fig. S3) suggest that plantations are an important aggregation point for bats, particularly frugivores and nectarivores. The data for site types are even sparser for birds, but the primary habitat types are forest fragment, combined, disturbed forest, and plantation. These site types vary in their importance to individual bird guilds. Birds with fruit or nectar in their diets showed a variety of site preferences, while insectivores were most strongly aggregated in combined and inhabited sites.
-
-
-```{r, echo = FALSE, include = TRUE, fig.height=5.5, fig.width = 7}
-#load("../Data/coords.Rdata")
-
-### FIGURE S1: Maps ####
-par(mfrow = c(2,2), mar = c(0,0,0,0), oma = c(1,1,1,1))
-
-maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
-points(latitude~longitude, coords1$bat, pch = 16, cex=.7, col = "#006D77")
-points(latitude~longitude, coords2$bat, pch = 16, cex=.7, col = "#DF8768")
-mtext("Bats-original sites", side = 3, line = 1)
-box()
-
-maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
-points(latitude~longitude, coords1$bird, pch = 16, cex=.7, col = "#006D77")
-points(latitude~longitude, coords2$bird, pch = 16, cex=.7, col = "#DF8768")
-mtext("Birds-original sites", side = 3, line = 1)
-box()
-
-maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
-points(latitude~longitude, coords1.keep$bat, pch = 16, cex=.7, col = "#006D77")
-points(latitude~longitude, coords2.keep$bat, pch = 16, cex=.7, col = "#DF8768")
-mtext("Bats-included sites", side = 3, line = 1)
-box()
-
-maps::map("world", xlim = c(-125, -30), ylim = c(-40, 25))
-points(latitude~longitude, coords1.keep$bird, pch = 16, cex=.7, col = "#006D77")
-points(latitude~longitude, coords2.keep$bird, pch = 16, cex=.7, col = "#DF8768")
-mtext("Birds-included sites", side = 3, line = 1)
-box()
-
-```
-
-__Fig. S1.__ 
-Maps of Neotropical bat and bird sites before (top) and after (bottom) biogeographic matching procedure, with altered sites represented in red and intact sites represented in blue.
-
-
-
-__Fig. S2.__ Interpretations of average $\overline{\theta_g}$ posterior density distributions. The dark curve indicates competing pairs and the lighter curve indicates control pairs. In (A) competing pairs co-occur less on average than control pairs, so higher spatial segregation than expected suggesting a pattern of competitive exclusion. In (B) competing pairs co-occur more than control pairs on average, suggesting that they micro-partition resources at the same sites more than expected. In (C) there is little or no separation of the posterior distributions, meaning that food competition does not aggregate or segregate pairs outside of expectations; however, other interaction types could still play an important role. (D) Both strong aggregation and segregation are observed in competing pairs, so variance is higher than expected.
-
-```{r, echo = FALSE}
-#load("../Results/d2_d5_summary_tables_nr_ns_100r_relatedexcl.RData")
-colors2 <- c("#34008C", "#E8AC00")
-specs <- list(geom_hline(yintercept = 1, col = "gray"),
-              geom_vline(xintercept = 1, col = "gray"),
-              stat_ellipse(geom= "polygon", alpha = 0.3, aes(col = diet.match, fill = diet.match)),
-              geom_point(aes(col = diet.match, fill = diet.match), size = 0.5), 
-              geom_rug(aes(col = diet.match), alpha = 0.5),
-              scale_colour_manual(values = colors2),
-              scale_fill_manual(values = colors2),
-              theme(legend.position = "none")
-)
-
-```
-
-
-```{r, echo = FALSE, message=FALSE, warning=FALSE, include = TRUE, fig.height = 8, fig.width = 11}
-load("../Results/pr_bats_birds_percent_spp_supported_by_sites.RData")
-
-pbat <- ggplot(pr.bat, aes(x = altered_habitat, y = value*100, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
-  facet_wrap(variable~., nrow = 4, ncol = 1, scales = "free_y") + geom_jitter(width = 0.15, size = 0.3) +
-  scale_fill_manual(values = c(gg_color_hue(8), "gray50")) +
-  theme(axis.text.x = element_blank()) + labs(y = "Percent of species co-occurring", x = "Habitat type")
-
-
-pbird <- ggplot(pr.bird, aes(x = altered_habitat, y = value*100, fill= altered_habitat)) + geom_boxplot(outlier.size = 0.3) +
-  facet_wrap(variable~., nrow = 4, ncol = 2, scales = "free_y") + geom_jitter(width = 0.15, size = 0.3) +
-  theme(axis.text.x = element_blank()) + labs(y = "Percent of species co-occurring", x = "Habitat type", fill = "Type of alteration") + 
-  scale_fill_manual(values = c(gg_color_hue(8), "gray50"))
-
-plot_grid(pbird+ theme(legend.position = c(1, 0), legend.justification = c(1, 0), legend.text = element_text(size = 10)) + guides(fill=guide_legend(ncol=2)), 
-          pbat+theme(legend.position="none"), ncol = 2, rel_widths = c(2, 1), labels = c("A", "B"))
-
-```
-
-__Fig. S3.__ 
-Percent of species in (A) bird and (B) bat guilds, represented by panels, that co-occur at individual altered sites by type of alteration. Each point is a site. Key to panels: C = carnivore; F = frugivore; I = insectivore; N = nectarivore; and G = granivore. Multiple letters indicate mixed feeders.
-
-__Table S1.__
-Results of beta diversity and composition analyses comparing community patterns in altered and intact habitats. F-statistic and _p_-values are displayed for bats and birds. Key to analyses: adonis = permutational multivariate ANOVA; beta dispersion = multivariate dispersion test; cca = canonical correspondence analysis.
-
-```{r commanalyses, echo=FALSE, message=FALSE, warning=FALSE}
-output %>% arrange(analysis) %>% mutate(across(where(is.numeric), round, digits = 4)) %>% flextable()
-```
-
-
-__Table S2.__ 
-Median values and 95% high density posterior intervals for $\overline{\theta_{g}}$ and $\sigma_{g}$ of all bat and bird models.
-```{r hdpis, echo=FALSE, message=FALSE, warning=FALSE}
-
-l <- list.files('../Results/Omega/interaction', recursive = TRUE, full.names = TRUE)
-
-res <- map(l, function(x) {load(x)
-                           return(out)}) %>%
-  setNames(c(paste(ifelse(grepl("bat",l, fixed = TRUE), "bat", "bird"),
-                   ifelse(grepl("medianTRUE", l, fixed = TRUE), "common", "full"),
-                   ifelse(grepl("shared", l, fixed = TRUE), "noTurnover", "")) %>% trimws() %>% str_replace_all(" ", "_"))) %>%
-  bind_rows(.id = "model") %>% filter(!parameter == "deviance")
-
-hdpi95 <- res %>% group_by(model, parameter, status_dietmatch) %>% 
-  summarise(median = median(value), lower = hdi(value, 0.95)$CI_low, upper = hdi(value, 0.95)$CI_high) %>% mutate(across(where(is.numeric), round, digits = 4)) %>%
-  separate(status_dietmatch, into = c("status", "Pair_type")) %>%
-  separate(model, into = c("taxon", "model"), extra = "merge") %>%
-  mutate(parameter = recode(parameter, omega = "theta", sigma = "variance"), 
-         Pair_type = recode(Pair_type, Different = "Control", Same = "Competing"), 
-         status = recode(status, Unaltered = "Intact")) %>% 
- pivot_wider(names_from = parameter, values_from = c(median, lower, upper), names_sort = TRUE) %>%
-  select(taxon, model, status, Pair_type, ends_with("theta"), ends_with("variance"))
-  
-flextable(hdpi95) %>% 
- set_header_labels(median_theta = "Median θ", 
-                   lower_theta = "Lower θ", 
-                   upper_theta = "Upper θ", 
-                   median_variance = "Median σ",
-                   lower_variance = "Lower σ", 
-                   upper_variance = "Upper σ")
-
-```
 
 
 
