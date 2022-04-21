@@ -254,8 +254,8 @@ stan_summary <- function(stan_data, stan_fit, ml_model){
 }
 
 # visualise shrinkage by comparing bayesian and ml estimates
-stan_shrinkage_plots <- function(stan_sum){
-  par(mfrow = c(2,1), mar = c(3.5,4,1,1))
+stan_shrinkage_plots <- function(stan_sum, ann=c("A", "B")){
+  par(mar = c(3.5,4,1,1))
   
   # difference between maximum likelihood estimate and group mean
   plot(stan_sum$diff_mean,stan_sum$diff_ml,col=alpha('black',0.1),pch=16,
@@ -264,6 +264,7 @@ stan_shrinkage_plots <- function(stan_sum){
         side=1,line=2.5,cex=1.1)
   mtext(expression("shrinkage "~(theta[i] - hat(theta[i]))),side=2,
         line=2.5,cex=1.1)
+  fig_label(ann[1], cex = 2)
   # shrinkage plotted against number of pairs per occupancy group
   plot(stan_sum$log_n ,stan_sum$diff_ml,pch=16,col=alpha('black',0.1),axes=FALSE,
        xlab='',las=3,ylab='',cex=0.75, las = 1)
@@ -277,6 +278,7 @@ stan_shrinkage_plots <- function(stan_sum){
   # Add break lines along y-axis     
   axis.break(2, -3, style = "zigzag",brw=0.03)
   axis.break(2, 3, style = "zigzag",brw=0.03)
+  fig_label(ann[2], cex = 2)
 }
 
 # Check for bias in theta estimates
