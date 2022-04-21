@@ -1,9 +1,11 @@
 ---
 title: Competitive interactions are disrupted by habitat alteration in the Neotropics
 output:
+  pdf_document: 
+    dev: png
   bookdown::word_document2: default
-bibliography: References_journ_abbr.bib
-csl: science.csl
+bibliography: References.bib
+csl: nature.csl
 ---
 
 Anikó B. Tóth, Andrew P. Allen, S. Kathleen Lyons, John Alroy
@@ -33,6 +35,8 @@ knitr::knit_hooks$set(inline = inline_hook)
 
 ## Load helper functions
 source('../Code/HelperFunctions.R')
+## Load stan functions
+source('../Code/stan.R')
 ## Prep raw data
 source('../Code/Data_Prep.R')
 
@@ -43,13 +47,14 @@ library(vegan)
 library(flextable)
 library(bayestestR)
 library(lsa)
+library(plotrix)
 ```
 
 ### Materials and Methods
 
 _Data_ 
 
-Abundance data were downloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mist-netted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also downloaded Register metadata for the species and sites in the abundance tables, including coordinates and habitat alteration categories for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published papers. The Ecological Register provides methodologically consistent abundance data, not ad hoc occurrence data. Thus, sampling and reporting were standardized across the samples: all were mist-netted samples with consistent mesh size; harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the median number of individuals per sample being `r median(colSums(PAn[["bat"]]))` for bats and `r median(colSums(PAn[["bird"]]))` for birds.  Samples were combined if they were less than 1 km from one another, sourced from the same study, and represented the same habitat and alteration category. The combined data set consisted of `r sum(PAn[["bat"]])` bat and `r sum(PAn[['bird']]),0` bird individuals constituting `r length(which(PAn[["bat"]] > 0))` bat and `r length(which(PAn[["bird"]] > 0))` bird records from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
+Abundance data were downloaded from the Ecological Register (http://ecoregister.org) on 7th June 2020 for mist-netted bats and birds from the Neotropics, defined as all areas in the western hemisphere south of the Tropic of Cancer (23.44˚N). We also downloaded Register metadata for the species and sites in the abundance tables, including coordinates and habitat alteration categories for sites and dietary guild assignments for species. Guild assignments were based on a large set of recently published papers. The Ecological Register provides methodologically consistent abundance data, not ad hoc occurrence data. Thus, sampling and reporting were standardized across the samples: all were mist-netted samples with consistent mesh size; harp net samples were excluded, and almost all nets were placed at ground level. Every sample consisted of a minimum of 20 individuals and the vast majority of sites had more than 50, with the median number of individuals per sample being `r median(colSums(PAn[["bat"]]))` for bats and `r median(colSums(PAn[["bird"]]))` for birds.  Samples were combined if they were less than 1 km from one another, sourced from the same study, and represented the same habitat and alteration category. The combined data set consisted of `r sum(PAn[["bat"]])` bat and `r sum(PAn[['bird']])` bird individuals constituting `r length(which(PAn[["bat"]] > 0))` bat and `r length(which(PAn[["bird"]] > 0))` bird records from `r ncol(PAn[['bat']])` and `r ncol(PAn[['bird']])` sites, respectively. Maps of the sites are plotted in Figure S1.
 
 _Biogeographic correction_ 
 ```{r biogeocorr, include = FALSE}
@@ -169,8 +174,6 @@ We used dietary information for bats and birds from the Ecological Register to a
 This framework also allows the modeler to quantify the effect of various external factors and ecological contexts on the spatial outcomes of biotic interactions. In this paper, we compare assemblages from altered and intact habitats to evaluate the effect of habitat alteration on the outcome of food competition. However, the samples could be split up along other lines instead, such as along environmental gradients, temporally before and after disturbances, etc.
 
 Recent studies repeatedly point out that nonrandom co-occurrence should not be construed as evidence for interaction between species pairs [@Freilich2018;@Thurman2019; @Blanchet2020]. In our framework, we have independent evidence of potential interactions (diet) and examine the relationship between putative interactions and co-occurrence, using non-interacting pairs as a control. Controls are rarely used in co-occurrence research, with most studies preferring to discard pairs with associations that are not seen as significant (e.g. [@Araujo2011; @Lyons2016]). Research using such an approach is exactly what is needed to understand under what circumstances, and to what extent, interactions lead to nonrandom spatial associations, what factors affect the relationships, and how they change under shifting conditions.
-
-
 
 \newcommand{\vect}[1]{\boldsymbol{#1}}
 \renewcommand{\thefigure}{S\arabic{figure}}
@@ -692,7 +695,7 @@ ggplot(sum_bat, aes(x =theta_bayes)) +
 
 ```
 
-__Fig. S6.__ 
+__Fig. S6.__ Distribution of theta posteriors for each group in the bat model. 
 
 ```{r figs7, echo = FALSE, include = TRUE, fig.height=5, fig.width = 5, dpi = 200}
 ggplot(sum_bat, aes(x = s1, y = theta_bayes)) + 
@@ -703,7 +706,7 @@ ggplot(sum_bat, aes(x = s1, y = theta_bayes)) +
 
 ```
 
-__Fig. S7.__ 
+__Fig. S7.__ Theta estimates for bats plotted against the occupancy of the rarer species in the occupancy pattern. Each point represents a pair set with a particular occupancy pattern. Each group is plotted separately.
 
 ```{r figs8, echo = FALSE, include = TRUE, fig.height=5, fig.width = 5, dpi = 200}
 ggplot(sum_bat, aes(x = log_n, y = theta_bayes)) + 
@@ -714,7 +717,7 @@ ggplot(sum_bat, aes(x = log_n, y = theta_bayes)) +
 
 ```
 
-__Fig. S8.__
+__Fig. S8.__ Theta estimates for bats plotted against the number of pairs in the set, with each point representing one pair set with a particular occupancy pattern. 
 
 ```{r figs9, echo = FALSE, include = TRUE, fig.height=5, fig.width = 5, dpi = 200}
 ggplot(sum_bird, aes(x =theta_bayes)) + 
@@ -723,7 +726,7 @@ ggplot(sum_bird, aes(x =theta_bayes)) +
 
 ```
 
-__Fig. S9.__ 
+__Fig. S9.__ Distribution of theta posteriors for each group in the bird model. 
 
 ```{r figs10, echo = FALSE, include = TRUE, fig.height=5, fig.width = 5, dpi = 200}
 ggplot(sum_bird, aes(x = s1, y = theta_bayes)) + 
@@ -734,7 +737,7 @@ ggplot(sum_bird, aes(x = s1, y = theta_bayes)) +
 
 ```
 
-__Fig. S10.__ 
+__Fig. S10.__ Theta estimates for birds plotted against the occupancy of the rarer species in the occupancy pattern. Each point represents a pair set with a particular occupancy pattern. Each group is plotted separately.
 
 ```{r figs11, echo = FALSE, include = TRUE, fig.height=5, fig.width = 5, dpi = 200}
 ggplot(sum_bird, aes(x = log_n, y = theta_bayes)) + 
@@ -745,7 +748,7 @@ ggplot(sum_bird, aes(x = log_n, y = theta_bayes)) +
 
 ```
 
-__Fig. S11.__
+__Fig. S11.__ Theta estimates for birds plotted against the number of pairs in the set, with each point representing one pair set with a particular occupancy pattern. 
 
 __Fig. S12.__ Interpretations of average $\overline{\theta_g}$ posterior density distributions. The dark curve indicates competing pairs and the lighter curve indicates control pairs. In (A) competing pairs co-occur less on average than control pairs, so higher spatial segregation than expected suggesting a pattern of competitive exclusion. In (B) competing pairs co-occur more than control pairs on average, suggesting that they micro-partition resources at the same sites more than expected. In (C) there is little or no separation of the posterior distributions, meaning that food competition does not aggregate or segregate pairs outside of expectations; however, other interaction types could still play an important role. (D) Both strong aggregation and segregation are observed in competing pairs, so variance is higher than expected.
 
@@ -822,4 +825,5 @@ flextable(hdpi95)
 
 ```
 
+__References__
 
