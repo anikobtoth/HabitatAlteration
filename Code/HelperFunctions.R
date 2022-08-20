@@ -331,6 +331,7 @@ chao1 <- function(n) {
 # Plotting 
 library(rstan)
 library(ggridges)
+
 format_stanfit <- function(stanfit, name = "mu"){
   stanfit %>% rstan::extract() %>% `[[`(name) %>% data.frame() %>% 
     pivot_longer(names_to = "group", cols = 1:4, values_to = name) %>% 
