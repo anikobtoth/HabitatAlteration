@@ -258,21 +258,21 @@ stan_shrinkage_plots <- function(stan_sum, ann=c("A", "B")){
   par(mar = c(3.5,4,1,1))
   
   # difference between maximum likelihood estimate and group mean
-  plot(stan_sum$diff_mean,stan_sum$diff_ml,col=alpha('black',0.1),pch=16,
+  plot(stan_sum$diff_mean,stan_sum$diff_ml,col=alpha('black',0.25),pch=16,
        xlab='',ylab='',cex=0.75,ylim=c(-2.25,2.25), las = 1)
-  mtext(expression("deviation from group mean "~(hat(theta[i])-bar(theta[g(i)]))),
+  mtext(expression("Deviation from group mean "~(hat(theta[i])-bar(theta[g(i)]))),
         side=1,line=2.5,cex=1.1)
-  mtext(expression("shrinkage "~(theta[i] - hat(theta[i]))),side=2,
+  mtext(expression("Shrinkage "~(theta[i] - hat(theta[i]))),side=2,
         line=2.5,cex=1.1)
   fig_label(ann[1], cex = 2)
   # shrinkage plotted against number of pairs per occupancy group
-  plot(stan_sum$log_n ,stan_sum$diff_ml,pch=16,col=alpha('black',0.1),axes=FALSE,
+  plot(stan_sum$log_n ,stan_sum$diff_ml,pch=16,col=alpha('black',0.25),axes=FALSE,
        xlab='',las=3,ylab='',cex=0.75, las = 1)
   abline(h=0,lty=2)
-  mtext(expression(number~of~pairs),side=1,line=2.5,cex=1.1)
-  mtext(expression("shrinkage "~(theta[i] - hat(theta[i]))),side=2,
+  mtext(expression(Number~of~pairs),side=1,line=2.5,cex=1.1)
+  mtext(expression("Shrinkage "~(theta[i] - hat(theta[i]))),side=2,
         line=2.5,cex=1.1)
-  axis(1,at=log(10^(0:3)),labels=parse(text=paste0('10^{',0:3,'}')))
+  axis(1,at=log(10^(0:4)),labels=parse(text=paste0('10^{',0:4,'}')))
   axis(2,at=c(-4,-2,-1,0,1,2,4),expression(-infinity,-2,-1,0,1,2,infinity), las = 1)
   box()
   # Add break lines along y-axis     
