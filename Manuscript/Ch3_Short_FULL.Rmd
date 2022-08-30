@@ -7,7 +7,7 @@ csl: nature.csl
 
 ---
 
-__Authors:__ Anikó B. Tóth^1^, Andrew P. Allen^2^, S. Kathleen Lyons^3^, John Alroy^2^
+__Authors:__ Anikó B. Tóth^1^*, Andrew P. Allen^2^, S. Kathleen Lyons^3^, John Alroy^2^
 
 __Affiliations:__
 
@@ -20,7 +20,7 @@ __Affiliations:__
 
 
 __Abstract:__ 
-Ecological interactions help determine the distribution of species across landscapes and play crucial roles in ecosystem services such as pollination, seed dispersal, and pest control. Human disturbances such as habitat alteration have the potential to modify or erase ecological interactions and so jeopardise the processes they control. While examples of interactions becoming rewired under human influence have been recorded, studies of this process for speciose assemblages at regional to continental scales are uncommon and obstructed by logistical difficulties. The consequences for ecological communities and people are therefore poorly understood. Here we show that human habitat alteration is associated with a decrease in the spatial aggregation of Neotropical bat pairs and bird pairs that share similar dietary requirements. We find that groups of species pairs with similar vs. different diets have positive spatial associations on average, but pairs within dietary guilds have stronger associations than pairs with disparate diets when habitats are relatively intact. Our results suggest that species with similar resource requirements typically coexist in relatively intact natural settings. By contrast, exclusion becomes more common (though not dominant) when habitats are altered. Altered habitats thus fail to support the coexistence of diverse competitive interactions, reversing patterns observed in the wild.
+Ecological interactions help determine the distribution of species across landscapes and play crucial roles in ecosystem services such as pollination, seed dispersal, and pest control [@Cardinale2012]. Human disturbances, particularly habitat alteration, have the potential to modify or erase ecological interactions [@Dore2021; @DeAssisBomfim2018] and so jeopardise the processes they control. While examples of interactions becoming rewired under human influence have been recorded, studies of this process for speciose assemblages at regional to continental scales are uncommon [e.g., @Winfree2018] and obstructed by logistical difficulties [@Dore2021]. The consequences for ecological communities and people are therefore poorly understood. Here we show that human habitat alteration is associated with a decrease in the spatial aggregation of Neotropical bat pairs and bird pairs that share similar dietary requirements. We find that groups of species pairs with similar vs. different diets have positive spatial associations on average, but pairs within dietary guilds have stronger associations than pairs with disparate diets when habitats are relatively intact. Our results suggest that species with similar resource requirements typically coexist in relatively intact natural settings. By contrast, exclusion becomes more common (though not dominant) when habitats are altered. Altered habitats thus fail to support the coexistence of diverse competitive interactions, reversing patterns observed in the wild.
 
 
 ```{r setup, include=FALSE}
@@ -57,11 +57,11 @@ source('../Code/Data_Prep.R')
 
 __Main text:__
 
-Biological interactions are essential for maintaining biodiversity because they directly affect which species can coexist. Interactions are one of the four main drivers of species distributions [@McGill2010]. Although this interpretation is still contentious [@McGill2010; @Araujo2013; @Ezard2016], it is increasingly recognised that biotic interactions across assemblages can scale up to influence community assembly at much larger spatiotemporal scales than that of individual encounters [@Araujo2007; @Pollock2014; @Fraser2020]. For example, competition and facilitation can influence the modern distribution of species at regional scales [@Gotelli2010], and at continental scales over millennia [@Toth2019], and drive the diversification and extinction of entire clades over millions of years [@Sepkoski1984; @Alroy2010; @Fraser2020].
+Biological interactions are essential for maintaining biodiversity because they directly affect which species can coexist. Interactions are one of the four main drivers of species distributions [@McGill2010] and key moderators of ecosystem functioning [@Cardinale2012]. Although this interpretation is still contentious [@McGill2010; @Araujo2013; @Ezard2016], it is increasingly recognised that biotic interactions across assemblages can scale up to influence community assembly at much larger spatiotemporal scales than that of individual encounters [@Araujo2007; @Pollock2014; @Fraser2020]. For example, competition and facilitation can influence the modern distribution of species at regional scales [@Gotelli2010], and at continental scales over millennia [@Toth2019], and drive the diversification and extinction of entire clades over millions of years [@Sepkoski1984; @Alroy2010; @Fraser2020].
  
-Paradoxically, despite agreement that interactions affect species distributions on either small or very large spatiotemporal scales, the idea that the footprints of biological interactions are broadly discernible from modern occurrence data at regional or continental spatial scales [@Diamond1975; @Gilpin1982; @Sanderson2009; @Connor1979; @Gotelli2002; @Sfenthourakis2005; @Gotelli2010; @Connor2013] is famously contentious. The debate is largely driven by the difficulty of distinguishing the effect of interactions from those of other landscape variables such as biogeographic historical effects, dispersal limitations, and habitat preferences [@Gotelli2010]. Furthermore, the relatively low occupancies of many species mean that there is insufficient occupancy data to provide biological information on the vast majority of possible pairwise interactions, leaving scientists to focus mainly on a relatively small number of common species. 
+Paradoxically, despite agreement that interactions affect species distributions on either small or very large spatiotemporal scales, the idea that the footprints of biological interactions are broadly discernible from modern occurrence data at regional or continental spatial scales is famously contentious[@Diamond1975; @Gilpin1982; @Sanderson2009; @Connor1979; @Gotelli2002; @Sfenthourakis2005; @Gotelli2010; @Connor2013]. The debate is largely driven by the difficulty of distinguishing the effect of interactions from those of other landscape variables such as biogeographic historical effects, dispersal limitations, and habitat preferences [@Gotelli2010]. Furthermore, the relatively low occupancies of many species mean that there is insufficient occupancy data to provide biological information on the vast majority of possible pairwise interactions, leaving scientists to focus mainly on a relatively small number of common species. 
 
-These questions are also contentious partly because human activities may alter community assembly processes. For example, humans have been implicated in homogenising communities [@Fraser2022] even when species richness is stable [@Tóth2014; @Dornelas2014], and reducing species co-occurrences [@Lyons2016]. Complicating matters, human habitat destruction can rewire biological interactions [@Bartley2019] without necessarily adding or removing species [@Tylianakis2017]. Evidence that human disturbance can decouple predator-prey interactions [@Rodewald2011], increase competition for pollinators [@Holzschuh2011], and simplify or break apart interaction networks [@Haddad2000; @DeAssisBomfim2018] has been gathered mainly at local scales on systems with only a few species due to logistical challenges. Patterns documenting changing interactions in entire assemblages are also rare, except for laboriously compiled interaction data spanning decades, such as plant-pollinator networks [@Dore2021]. Nonetheless, these are beset by sampling inconsistencies [@Dore2021]. Thus, there is an urgent need to fill this gap in our understanding of how interactions scale up and how human disturbance might alter such community assembly processes.
+These questions are also contentious partly because human activities may alter community assembly processes. For example, humans have been implicated in homogenising communities [@Fraser2022] even when species richness is stable [@Tóth2014; @Dornelas2014], and reducing species co-occurrences [@Lyons2016]. Complicating matters, rapid change can rewire biological interactions [@Bartley2019] without necessarily adding or removing species [@Tylianakis2017]. Evidence that human disturbance can decouple predator-prey interactions [@Rodewald2011], increase competition for pollinators [@Holzschuh2011], and simplify or break apart interaction networks [@Haddad2000; @DeAssisBomfim2018] has been gathered mainly at local scales on systems with only a few species due to logistical challenges. Patterns documenting changing interactions in entire assemblages are also rare, except for laboriously compiled interaction data spanning decades, such as plant-pollinator networks [@Dore2021]. Nonetheless, these are beset by sampling inconsistencies [@Dore2021]. Thus, there is an urgent need to fill this gap in our understanding of how interactions scale up and how human disturbance might alter such community assembly processes.
 
 Here, we explore how one interaction type (food competition) measurably influences species co-occurrences in Neotropical birds and bats. We further demonstrate how human habitat alteration changes the effects of food competition on the spatial associations of species pairs, meaning the degree to which pairs co-occur at the same sites more or less often than expected based a non-competing set of pairs that serves as a control. We analyse assemblages of Neotropical bats and understory birds downloaded from the Ecological Register [@Alroy2015b]. The dataset comprises `r length(which(PAn[["bat"]] > 0))` occurrences of bats and `r length(which(PAn[["bird"]] > 0))` occurrences of birds at `r ncol(PAn[["bat"]])` and `r ncol(PAn[["bird"]])` sites, respectively. The sites in the Register are classified into two levels of degradation (altered and intact habitats: Fig. S1). We begin by running a suite of classical community analyses to illustrate the differences detectable in altered and intact faunas based on traditional approaches. Next, we introduce a statistical model that estimates an underlying association parameter which describes the spatial patterns in groups of species pairs. Our analysis demonstrates that habitat degradation influences spatial association patterns among competitors by altering – or even reversing – the average outcome of food competition at regional to continental scales.
 
@@ -269,7 +269,7 @@ ggplot(p, aes(x = mu, y = status, col = interaction, fill = interaction)) +
 
 ```
 
-__Figure 3.__ Posterior distributions of $\bar{\theta_{g}}$ for bat and bird models, including both those that contained all species (full models) and those containing only species that occurred in both altered and intact habitat types (no-turnover models).
+__Figure 3.__ Posterior distributions of $\bar{\theta_{g}}$ for bat and bird models. Models that contained all species (full) and those containing only species that occurred in both altered and intact habitat types (no-turnover) are depicted in adjacent panels.
 
 
 __Methods:__
@@ -548,7 +548,7 @@ legend('topright',bty='n',lwd=1.8,
 ```
 
 __Extended Data Fig. 3__ 
-Effects of species occurrence (indexed by $N_{A}$ and $N_{B}$) and spatial aggregation ($\theta > 0$) and segregation ($\theta < 0$) on the probability distribution of co-occurrences. Probabilities were calculated using Eq. 1 based on a total of $N_{A} + N_{(A)}=50$ sites.
+Performance of $\theta$. Effects of species occurrence (indexed by $N_{A}$ and $N_{B}$) and spatial aggregation ($\theta > 0$) and segregation ($\theta < 0$) on the probability distribution of co-occurrences. Probabilities were calculated using Eq. 1 based on a total of $N_{A} + N_{(A)}=50$ sites.
 
 
 ```{r edf3, dpi=200, include = TRUE, echo=FALSE}
@@ -598,7 +598,7 @@ legend('topleft',legend=expression(italic(N[A])~"="~italic(N[B])~"="~2,
 ```
 
 __Extended Data Fig. 4__
-Effects of occurrence ($N_{A}$ and $N_{B}$) and spatial aggregation ($\theta$) on the probability distribution of co-occurrences. Probabilities were calculated using Eq. S2, assuming a total of $N_{A} + N_{(A)}=50$ sites.
+Fisher information of varying occupancy pairs. Effects of occupancy ($N_{A}$ and $N_{B}$) and spatial aggregation ($\theta$) on the probability distribution of co-occurrences. Probabilities were calculated using Eq. S2, assuming a total of $N_{A} + N_{(A)}=50$ sites.
 
 ```{r edf4, echo = FALSE, include = TRUE, fig.height=6, fig.width = 7, dpi = 200}
 par(mfrow = c(2,2))
@@ -616,7 +616,7 @@ stan_shrinkage_plots(sum_bird, ann = c("C", "D"))
 
 ```
 
-__Extended Data Fig. 5__ Graphical depiction of shrinkage behavior of theta estimates for the full models for (A-B) bats and (C-D) birds. Y axes represent deviations of maximum likelihood estimates of spatial association, $\hat{\theta_i}$, which are calculated separately for each occupancy set (see Fig. 2), from Bayesian estimates, $\theta_i$, which involve data pooling (Eq. 3). Maximum likelihood estimates will be $\pm \infty$ whenever all of the co-occurrence observations in the set take the minimum values (i.e. $N_{AB}=\text{max}(0,N_B-N_{(A)})$, 
+__Extended Data Fig. 5__ Model shrinkage. Shrinkage behavior of theta estimates for the full models for (A-B) bats and (C-D) birds. Y axes represent deviations of maximum likelihood estimates of spatial association, $\hat{\theta_i}$, which are calculated separately for each occupancy set (see Fig. 2), from Bayesian estimates, $\theta_i$, which involve data pooling (Eq. 3). Maximum likelihood estimates will be $\pm \infty$ whenever all of the co-occurrence observations in the set take the minimum values (i.e. $N_{AB}=\text{max}(0,N_B-N_{(A)})$, 
 `r (100*length(which(sum_bat$diff_ml == -4))/nrow(sum_bat)) %>% round(2)`% and 
 `r (100*length(which(sum_bird$diff_ml == -4))/nrow(sum_bird)) %>% round(2)`% of occupancy sets for bats and birds, respectively) or maximum values (i.e. $N_{AB}=\text{min}(N_A,N_B)$, 
 `r (100*length(which(sum_bat$diff_ml == 4))/nrow(sum_bat)) %>% round(2)`% and 
@@ -635,7 +635,7 @@ plot_grid(batdist, birddist, labels = c("A", "B"), ncol = 2)
 
 ```
 
-__Extended Data Fig. 6__ Distribution of $\theta_i$ values (one for each occupancy set) for each experimental group in the bat model (A) and the bird model (B). 
+__Extended Data Fig. 6__ Distribution of $\theta_i$ values. There is one $\theta$ value for each occupancy set for each experimental group in the bat model (A) and the bird model (B). 
 
 
 ```{r edf6, echo = FALSE, include = TRUE, fig.height=4, fig.width = 8, dpi = 200}
