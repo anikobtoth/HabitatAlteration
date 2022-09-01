@@ -241,9 +241,9 @@ stan_summary <- function(stan_data, stan_fit, ml_model){
   
   # difference between Bayes estimate and maximum likelihood estimate
   stan_sum$diff_ml <- stan_sum$theta_bayes - stan_sum$theta_ml
-  stan_sum$diff_ml[stan_sum$diff_ml == -Inf] <- -4
-  stan_sum$diff_ml[stan_sum$diff_ml == Inf] <- 4
-  stan_sum$diff_mean <- stan_sum$theta_bayes-summary(stan_fit,'mu')[[1]][,1][stan_sum$gg]
+  #stan_sum$diff_ml[stan_sum$diff_ml == -Inf] <- -4
+  #stan_sum$diff_ml[stan_sum$diff_ml == Inf] <- 4
+  stan_sum$diff_mean <- stan_sum$theta_ml-summary(stan_fit,'mu')[[1]][,1][stan_sum$gg]
   #stan_sum$diff_mean[stan_sum$diff_mean == -Inf] <- -4
   #stan_sum$diff_mean[stan_sum$diff_mean == Inf] <- 4
   
@@ -260,32 +260,32 @@ stan_shrinkage_plots <- function(stan_sum, ann=c("A", "B")){
   par(mar = c(3.5,4,1,1))
   
   # difference between maximum likelihood estimate and group mean
-  plot(stan_sum$diff_mean, stan_sum$diff_ml, col=alpha('black',0.25), pch=16, axes = FALSE,
+  plot(stan_sum$diff_mean, stan_sum$diff_ml, col=alpha('black',0.25), pch=16, #axes = FALSE,
        xlab='',ylab='',cex=0.75, las = 1)
-  mtext(expression("Deviation from group mean "~(theta[i] - bar(theta[g(i)]))),
+  mtext(expression("Deviation from group mean "~(hat(theta[i]) - bar(theta[g(i)]))),
         side=1,line=2.5,cex=1.1)
   mtext(expression("Shrinkage "~(theta[i] - hat(theta[i]))),side=2,
         line=2.5,cex=1.1)
-  axis(1)
-  axis(2, at=c(-4,-2,-1,0,1,2,4),expression(-infinity,-2,-1,0,1,2,infinity), las = 1)
+  #axis(1)
+  #axis(2, at=c(-4,-2,-1,0,1,2,4),expression(-infinity,-2,-1,0,1,2,infinity), las = 1)
   box()
   # Add break lines along y-axis     
-  axis.break(2, -3, style = "zigzag",brw=0.03)
-  axis.break(2, 3, style = "zigzag",brw=0.03)
+  #axis.break(2, -3, style = "zigzag",brw=0.03)
+  #axis.break(2, 3, style = "zigzag",brw=0.03)
   fig_label(ann[1], cex = 2)
   # shrinkage plotted against number of pairs per occupancy group
-  plot(stan_sum$log_n, stan_sum$diff_ml, col=alpha('black',0.25), pch=16, axes=FALSE,
+  plot(stan_sum$log_n, stan_sum$diff_ml, col=alpha('black',0.25), pch=16, #axes=FALSE,
        xlab='', ylab='', cex=0.75, las = 1)
   abline(h=0,lty=2)
   mtext(expression(Number~of~pairs),side=1,line=2.5,cex=1.1)
   mtext(expression("Shrinkage "~(theta[i] - hat(theta[i]))),side=2,
         line=2.5,cex=1.1)
-  axis(1,at=log(10^(0:4)),labels=parse(text=paste0('10^{',0:4,'}')))
-  axis(2,at=c(-4,-2,-1,0,1,2,4),expression(-infinity,-2,-1,0,1,2,infinity), las = 1)
+  #axis(1,at=log(10^(0:4)),labels=parse(text=paste0('10^{',0:4,'}')))
+  #axis(2,at=c(-4,-2,-1,0,1,2,4),expression(-infinity,-2,-1,0,1,2,infinity), las = 1)
   box()
   # Add break lines along y-axis     
-  axis.break(2, -3, style = "zigzag",brw=0.03)
-  axis.break(2, 3, style = "zigzag",brw=0.03)
+  #axis.break(2, -3, style = "zigzag",brw=0.03)
+  #axis.break(2, 3, style = "zigzag",brw=0.03)
   fig_label(ann[2], cex = 2)
 }
 
