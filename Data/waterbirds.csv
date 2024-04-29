@@ -1,0 +1,26 @@
+species,life.form,individuals,samples,diet.1,diet.2,mass_g,unique_name
+Actitis macularius,bird,2,1,invertivore,aquaticinvertivore,40.4,Actitis macularia
+Aramu guarauna,bird,1,1,aquaticinvertivore,NA,NA,Aramus guarauna
+Butorides striata,bird,4,1,piscivore,aquaticinvertivore,203.9215535,Butorides striata
+Butorides virescens,bird,3,1,piscivore,aquaticinvertivore,199.1080109,Butorides virescens
+Charadrius semipalmatus,bird,1,1,aquaticinvertivore,invertivore,47.4,Charadrius semipalmatus
+Chloroceryle amazona,bird,8,3,piscivore,aquaticinvertivore,121,Chloroceryle amazona
+Chloroceryle americana,bird,18,7,piscivore,aquaticinvertivore,33.70830758,Chloroceryle americana
+Chloroceryle inda,bird,6,5,piscivore,aquaticinvertivore,52.1,Chloroceryle inda
+Cholorceryle amazona,bird,1,1,NA,NA,NA,Chloroceryle amazona
+Dendrocygna viduata,bird,1,1,granivore,aquaticinvertivore,690,Dendrocygna viduata
+Ixobrychus exilis,bird,1,1,piscivore,carnivore,86.3,Ixobrychus exilis
+Jacana jacana,bird,27,1,aquaticinvertivore,omnivore,87.5,Jacana jacana
+Laterallus ruber,bird,3,1,NA,NA,44.4,Laterallus ruber
+Megaceryle torquata,bird,2,2,piscivore,aquaticinvertivore,NA,Megaceryle torquata
+Phimosus infuscatus,bird,1,1,aquaticinvertivore,invertivore,559,Phimosus infuscatus
+Pilherodius pileatus,bird,1,1,piscivore,aquaticinvertivore,530,Pilherodius pileatus
+Porphyrio martinicus,bird,5,1,omnivore,NA,NA,Porphyrio martinica
+Porzana albicollis,bird,1,1,NA,NA,100,Porzana albicollis
+Psophia crepitans,bird,1,1,frugivore,invertivore,1026,Psophia crepitans
+Psophia viridis,bird,2,1,frugivore,invertivore,1071,Psophia viridis
+Tigrisoma lineatum,bird,1,1,piscivore,aquaticinvertivore,813,Tigrisoma lineatum
+Tringa solitaria,bird,6,1,invertivore,aquaticinvertivore,48.4,Tringa solitaria
+Vanellus chilensis,bird,4,2,aquaticinvertivore,piscivore,327,Vanellus chilensis
+Chloroceryle aenae,bird,3,1,piscivore,aquaticinvertivore,NA,Chloroceryle aenea
+Chloroceryle aenea,bird,43,16,piscivore,aquaticinvertivore,13.75608956,Chloroceryle aenea
