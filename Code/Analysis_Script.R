@@ -5,12 +5,12 @@
 # Submitted 1 November 2020 
 # Analysis script 
 
-library(tidyverse)
-library(vegan)
+library(tidyverse) # Y
+library(vegan) # Y
 library(reshape2)
-library(stringi)
+library(stringi) # Y
 library(parallel)
-library(lsa)
+library(lsa) # Y
 ## Load helper functions
 source('./Code/HelperFunctions.R')
 
@@ -62,7 +62,7 @@ rich %>% group_by(metric, taxon) %>% summarise(p=wilcox.test(richness~status, pa
 #### Beta diversity and composition analyses #####
 PAnb<- tobinary(PAn)
 
-PA <- PAnb  ## can run analyses with binary or abudance data
+PA <- PAnb  ## can run analyses with binary or abundance data
 
 # with bray-curtis index
 dist <- map(PA, ~t(.)) %>% map(vegdist, method = "jaccard")
@@ -77,7 +77,7 @@ data <- map(PA, ~t(.x) %>% data.frame() %>% rownames_to_column("p.sample") %>% m
 comp1 <- map2(dist, data, function(x, y) adonis(x~ID, data = y, permutations = 10000))
 
 # compositional change using canonical correspondence analysis
-dat <- map(data, select, contains("_"))
+dat <- map(data, ~select(.x, -p.sample, -ID))
 comp2 <- map2(dat, data, function(x, y) cca(x~ID, data = y) %>% anova.cca)
 
 ##### occupancy calculations (used later) ######
@@ -108,7 +108,8 @@ tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rowna
 
 # Contingency table
 contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>% 
-  bind_rows(.id = "taxon") %>% diet_cat(spp, related = TRUE) %>% na.omit()
+  bind_rows(.id = "taxon") %>% diet_cat(pull(spp, guild) %>% setNames(spp$unique_name), related = TRUE) %>%
+  left_join(bind_rows(tax_dist)) %>% na.omit()
 
 # Calculate theta 
 ## Bats full
