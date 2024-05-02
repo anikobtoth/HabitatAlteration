@@ -115,10 +115,12 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
 ## Bats full
 stan_data <- stan_data_fun(filter(contables, taxon == "bat"), medn = F)
 stan_fit <- stan_theta(stan_data)
+ml_model <- stan_theta_ML(stan_data, stan_fit)
 
 ## Birds full
 stan_data <- stan_data_fun(filter(contables, taxon == "bird"), medn = F)
 stan_fit <- stan_theta(stan_data)
+ml_model <- stan_theta_ML(stan_data, stan_fit)
 
 #Plot
 stan_fit %>% extract() %>% `[[`(1) %>% data.frame() %>% 
@@ -128,7 +130,6 @@ stan_fit %>% extract() %>% `[[`(1) %>% data.frame() %>%
                                              `X3` = "Intact competing", 
                                              `X4` = "Altered competing")) %>% 
   ggplot(aes(x = value, col = group)) + geom_density(lwd = 1.5) 
-
 
 ## No-turnover models ####
 shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(match_val))
@@ -148,40 +149,6 @@ stan_data <- stan_data_fun(filter(contables, taxon == "bird"), medn = F)
 stan_fit <- stan_theta(stan_data)
 
 
-#### Analysis of co-occurrence at altered habitats ####
-  # bats
-  gld <- c("N", "I", "F", "CI")  
-  tab <- tables[[1]][[1]]
-  tab <- merge(tables[[1]][[1]], tables[[1]][[2]], by = 0) %>% namerows
-  pr.bat <- percent.occupancy.by.guild(tab, gld, "bat", sitedat) 
-
-  # birds
-  gld <- c("N", "I", "F", "FG", "FI", "G", "IN") 
-  tab <- tables[[2]][[1]]
-  tab <- merge(tables[[2]][[1]], tables[[2]][[2]], by = 0) %>% namerows
-  pr.bird <- percent.occupancy.by.guild(tab, gld, "bird", sitedat) 
-
-#### Exploratory analysis of co-occurring competitors ####
-comp_nc_ratio <- function(x, spp){
-  spplists <- apply(x, 2, function(y) rownames(x)[which(y==1)])
-  coocc_counts <- lapply(spplists, combn, 2) %>% lapply(t) %>% lapply(data.frame) %>% bind_rows(.id = "site") %>% group_by(X1, X2) %>% summarise(n = length(X1))
-  coocc_counts$X1.diet <- spp[coocc_counts$X1,"guild"]
-  coocc_counts$X2.diet <- spp[coocc_counts$X2,"guild"]
-  coocc_counts$comp <- coocc_counts$X1.diet == coocc_counts$X2.diet
-  #return(table(coocc_counts$comp))
-  return(coocc_counts %>% split(.$comp) %>% sapply(function(x) sum(x$n)))
-  #dietlists <- lapply(spplists, function(y) spp[y,"guild"])
-  #dietcounts <- lapply(dietlists, table)
-  #competing_coocc <- lapply(dietcounts, function(y) y*(y-1)/2) %>% sapply(sum)
-  #occ <-colSums(x)
-  #total_coocc <- occ*(occ-1)/2
-  #nc_coocc <- total_coocc - competing_coocc
-  #return(competing_coocc / nc_coocc)
-}
-  ratios <- purrr::map(tables, purrr::map, comp_nc_ratio, spp)
-  purrr::map(ratios, purrr::map_dbl, function(x) x[2]/x[1])
-  
-  
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 #~~~~~~~~~~~~~~~~~~END OF SCRIPT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
