@@ -1,6 +1,44 @@
 library(sp)
 library(rlang)
 
+#### TAXONOMY ######
+
+# get a species taxonomy from the open tree of life
+
+get_otl_taxonomy <- function(spp, lifeform = c("bat", "bird"), contxt = c("Mammals", "Birds")){
+  library(rotl)
+  library(ape)
+  
+  spp$verbatimScientificName <- rownames(spp)
+  
+  tax_otl <- map2(lifeform, contxt, ~spp %>% filter(life.form == .x) %>% 
+                    pull(species) %>% tnrs_match_names(context = .y) %>%
+                    mutate(search_string = str_to_sentence(search_string)))
+  
+  return(tax_otl)
+  
+}
+
+# get pairwise phylogenentic distances from open tree of life for matched taxon names
+
+get_pairwise_dist <- function(tax, contxt){
+  intree <- replace_na(tax$ott_id, -9999) %>% is_in_tree()
+  
+  tree <- tax[intree,] %>% 
+    filter(!flags %in% c("hidden", "major_rank_conflict")) %>% pull(unique_name) %>% 
+    tnrs_match_names(context = contxt) %>% # need to re-match names after filtering since ids are apparently pulled from the larger object, not the table.
+    ott_id() %>% tol_induced_subtree(label = "name")
+  
+  dist <- tree %>% compute.brlen() %>% cophenetic() %>% 
+    data.frame(Sp2 = rownames(.)) %>% as_tibble() %>% 
+    pivot_longer(cols = contains("_"), names_to = "Sp1", values_to = "dist") %>% 
+    distinct() %>% select(Sp1, Sp2, dist) %>% filter(dist > 0) %>% 
+    mutate(Sp1 = str_replace(Sp1, "_", " "), 
+           Sp2 = str_replace(Sp2, "_", " "))
+  
+  return(dist)
+}
+
 ##### DATA MANIPULATION #####
 ### Change character vectors in df to factors
 tofac <- function(df){
@@ -9,12 +47,12 @@ tofac <- function(df){
 }
   
 
-### match character vectors returning values ####
+### match character vectors returning values 
 match_val <- function(chr1, chr2){
   chr1[which(chr1 %in% chr2)]
 }
 
-### Abundance to presence-absence 
+### Abundance to presence-absence USED
 # matrix list
 tobinary <- function(PA.LIST){
   binary <- lapply(PA.LIST, function(x) {
@@ -31,22 +69,22 @@ tobinary.single <- function(x) {
   x[is.na(x)] <- 0
   return(x)}
 
-# First column to rownames
+# First column to rownames USED
 namerows <- function(table){
-  rownames(table) <- table[,1]
+  rownames(table) <- pull(table, 1)
   table <- table[,2:ncol(table)]
   return(table)
 }
 
 # remove empty rows and columns in 1 matrix
-# or remove rows and columns with too few observations
+# or remove rows and columns with too few observations USED
 clean.empty <- function(x, mincol = 1, minrow = 1){
   x <- x[which(rowSums(x) > minrow-1),]
   x <- x[,which(colSums(x) > mincol-1)]
   return(x)
 }
 
-# triangular distance matrix to long format
+# triangular distance matrix to long format USED
 dist2edgelist <- function(z, sppDat){  #edge list with link types attached
   k3 = as.matrix(z)
   dimnames(k3) <- list(rownames(sppDat), rownames(sppDat)) 
@@ -60,7 +98,7 @@ dist2edgelist <- function(z, sppDat){  #edge list with link types attached
     return(k3)
 }
 
-# Biogeographic matching algorithm (see supplement)
+# Biogeographic matching algorithm (see supplement) USED
 matchbiogeo <- function(coords1, coords2) {
   if(min(nrow(coords1), nrow(coords2))==0) {return(0)
   }else{
@@ -116,7 +154,7 @@ obsDexp2 <- function(d, split.var, data.var, ...){
   return(obsexp)
 }
 
-
+# USED
 cont_table <- function(x){ #simpairs function, simpairs only out
   samples = ncol(x)  #S
   a = matrix(nrow=nrow(x),ncol=nrow(x),data=0)
@@ -151,16 +189,19 @@ cont_table <- function(x){ #simpairs function, simpairs only out
   return(t)
 }
 
-diet_cat <- function(x, spp, related = TRUE){
-  x$diet.Sp1 <- spp[x$Sp1,"guild"]
-  x$diet.Sp2 <- spp[x$Sp2,"guild"]
+# USED
+diet_cat <- function(x, g, related = TRUE){
+  x$diet.Sp1 <- g[x$Sp1]
+  x$diet.Sp2 <- g[x$Sp2]
+  x <- na.omit(x)
   
-  rltd <- c("C-CI", "CI-IG", "NF-NI", "I-NI", "CI-NI", "CI-I", "CI-FI", "CI-IN","F-FN", "FI-NF", "FI-NI", 
-               "FN-IN", "FI-I", "FI-FN", "FI-IN", "FN-N", "FG-FI", "FG-FN", "FG-IG", "FI-IG", "FG-G", "I-IN", "IN-N", 
-               "N-NI", "N-NF", "F-FI", "FG-NF", "F-FG", "G-IG", "I-IG","IG-IN") 
+  x$diet.pair <- map2_chr(x$diet.Sp1, x$diet.Sp2, function(x, y) c(x,y) %>% sort() %>% paste(collapse = "-"))
+  
+  rltd <- unique(x$diet.pair) %>% strsplit("") %>% map(duplicated) %>% map_int(sum) %>% `==`(1)
+  rltd <- unique(x$diet.pair)[which(nchar(unique(x$diet.pair)) > 3 & rltd)]
+  
   if(!related) x <- x[!which(paste(x$diet.Sp1, x$diet.Sp2, sep = "-") %in% rltd),]
   
-  x$diet.pair <- map2(x$diet.Sp1, x$diet.Sp2, function(x, y) c(x,y)) %>% map(sort) %>% map(paste, collapse = "-") %>% unlist()
   x$diet.match <- as.numeric(x$diet.Sp1 == x$diet.Sp2)
   x$diet.match[x$diet.match == 0] <- "Different"
   x$diet.match[x$diet.match == 1] <- "Same"
@@ -169,6 +210,8 @@ diet_cat <- function(x, spp, related = TRUE){
   return(x)
   
 }
+
+
 
 ##### ANALYSES ######
 # FETmP
@@ -217,7 +260,7 @@ FETmP <- function(Talt, Tunalt, altered, unaltered){
   
 }
 
-## FETmP along vectors
+## FETmP along vectors USED
 FETmP_ <- function(Talt, Tunalt, altered, unaltered){
   out <- numeric()
   for(i in seq_along(Talt)){
@@ -275,9 +318,9 @@ FETmP_ <- function(Talt, Tunalt, altered, unaltered){
     rarefy(m,q) / (1 - exp(lchoose(3 * s - 3,q) - lchoose(3 * s,q)))
   }
   
-## CJ1 From John Alroy (2020)####
+## CJ1 From John Alroy (2020)#
 
-# cj1 to replace squares
+# cj1 to replace squares USED
 
 cJ1rich<-function(n)	{
   n <- n[n>0]
@@ -291,33 +334,7 @@ cJ1rich<-function(n)	{
   return((S + s1) / (1 - exp(-l) + l * exp(-l)))
 }
 
-## Ochiai similarity ####
-# ochiai<-function(x,y)	{
-#   if (is.numeric(x) && is.numeric(y) && min(x) == 0 && min(y) == 0 && length(x) == length(y))	{
-#     a <- length(which((x * y) > 0))
-#     b <- length(which(x > 0)) - a
-#     c <- length(which(y > 0)) - a
-#   } else	{
-#     a <- length(na.omit(match(x,y)))
-#     b <- length(x) - a
-#     c <- length(y) - a
-#   }
-#   return(a / ((a + b) * (a + c))^0.5)
-# }
-# 
-# ochiaiMatrix<-function(x)	{
-#   x[is.na(x)] <- 0
-#   m <- matrix(nrow=ncol(x),ncol=ncol(x))
-#   for (i in 1:ncol(x))
-#     for (j in 1:ncol(x))
-#       m[i,j] <- ochiai(x[,i],x[,j])
-#   rownames(m) <- colnames(x)
-#   colnames(m) <- colnames(x)
-#   return(m)
-# }
-
-
-### Chao1 richness estimator
+### Chao1 richness estimator USED
 chao1 <- function(n) {
   n <- n[n>0]
   S <- length(n)
@@ -364,7 +381,7 @@ matfill <- function(m){
   return(sum(m)/(nrow(m)*ncol(m)))
 }
 
-### return percent and mean aggregations and segregations, for easier use in dplyr pipes.####
+### return percent and mean aggregations and segregations, for easier use in dplyr pipes.
 percpos <- function(x)
   length(which(x>0))/length(x)
 
