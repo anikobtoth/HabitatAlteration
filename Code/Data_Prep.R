@@ -8,7 +8,7 @@ if(grepl(pattern = "Manuscript", getwd())){
   rt <- ".."
   }else{rt <- "."}
 
-file.path(rt, 'Code/HelperFunctions.R') %>% source()
+#file.path(rt, 'Code/HelperFunctions.R') %>% source()
 l <- file.path(rt, "Raw_Data") %>% list.files(".txt", full.names = T)
 dat <- lapply(l, read.delim) %>% setNames(file.path(rt, "Raw_Data") %>% list.files(".txt"))
 
@@ -94,10 +94,6 @@ sitedat$siteid <- paste0("X", sitedat$sample.no)
 sitedat <- sitedat %>% unite("p.sample", taxon, reference.no, latitude, longitude, habitat, altered.habitat, sep = "_", remove = F) %>% 
   mutate(p.sample = as.factor(p.sample) %>% as.numeric())
 
-### Get taxonomy and pairwise distances from OTL ####
-
-tax_otl <- get_otl_taxonomy(spp, lifeform = c("bat", "bird"), contxt = c("Mammals", "Birds"))
-tax_dist <- map2(tax_otl, c("Mammals", "Birds"), get_pairwise_dist)
 
 #### Species metadata ####
 spp <- dat[grep("species", names(dat))] %>% bind_rows() %>% 
@@ -106,14 +102,19 @@ spp <- dat[grep("species", names(dat))] %>% bind_rows() %>%
 rownames(spp) <-  gsub(" ", "_", spp$species)
 spp <- spp %>% mutate_if(is.character, list(~na_if(.,""))) 
 
+### Get taxonomy and pairwise distances from OTL ####
+
+tax_otl <- get_otl_taxonomy(spp, lifeform = c("bat", "bird"), contxt = c("Mammals", "Birds"))
+tax_dist <- map2(tax_otl, c("Mammals", "Birds"), get_pairwise_dist)
+
 spp <- left_join(spp, bind_rows(tax_otl) %>% select(1:2), by = c("species" = "search_string"))
 
 # Manually resolve diet conflicts in merged species -- info from Birds of the World
     
-    guild_conflicts <- spp %>% group_by(unique_name, life.form) %>%
-     summarise(n = n(), diet.1 = str_unique(diet.1) %>% str_flatten_comma(na.rm = T),
-               diet.2 = str_unique(diet.2) %>% str_flatten_comma(na.rm = T)) %>% filter(grepl(",", diet.1) | grepl(",", diet.2)) %>%
-     na.omit()
+    # guild_conflicts <- spp %>% group_by(unique_name, life.form) %>%
+    #  summarise(n = n(), diet.1 = str_unique(diet.1) %>% str_flatten_comma(na.rm = T),
+    #            diet.2 = str_unique(diet.2) %>% str_flatten_comma(na.rm = T)) %>% filter(grepl(",", diet.1) | grepl(",", diet.2)) %>%
+    #  na.omit()
 
 guild_conflicts <- read_csv("./Data/guild_conflicts.csv")
 spp <- spp %>% filter(!unique_name %in% guild_conflicts$unique_name) %>% rbind(guild_conflicts)  # replace conflict rows with reconciled data
@@ -187,5 +188,5 @@ cosmo$group_abbr <- substr(cosmo$group, start = 1, stop = 5)
 rownames(cosmo) <- cosmo$name
 
 #clear unneeded objects
-rm(a, u, dat, l, nsamp, rt)
+rm(a, u, dat, l, nsamp, rt, guild_conflicts, hummingbirds, hummgen, waterbirds, missing)
 
