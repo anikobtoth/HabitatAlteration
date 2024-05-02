@@ -45,7 +45,7 @@ tofac <- function(df){
   df[,map_lgl(df, is.character)] <- map(df[,map_lgl(df, is.character)], factor)
   return(df)
 }
-  
+
 
 ### match character vectors returning values 
 match_val <- function(chr1, chr2){
@@ -95,7 +95,7 @@ dist2edgelist <- function(z, sppDat){  #edge list with link types attached
   k3 <- data.frame(k3, id = paste(k3$X1, k3$X2, sep = "-"), stringsAsFactors = F)
   colnames(k3) <- c("Sp1", "Sp2", "Z.Score", "id")
   
-    return(k3)
+  return(k3)
 }
 
 # Biogeographic matching algorithm (see supplement) USED
@@ -109,7 +109,7 @@ matchbiogeo <- function(coords1, coords2) {
     keep2 <- coords2[which(apply(dists, 1, min)<=mindist), "p.sample"]
     
     return(list(keep1, keep2)) }
-  }
+}
 
 # Prepare for plotting - calculate observed to expected ratios
 obsDexp <- function(d, split.var, data.var, ...){
@@ -122,7 +122,7 @@ obsDexp <- function(d, split.var, data.var, ...){
   
   d <- d %>% filter(!is.na(diet.match)) %>% split(.[split.var])
   m <- full_join(d[[1]], d[[2]], by = quos_text(group.vars))
- 
+  
   obsexp <- m %>% select(!!!group.vars, subsample = subsample.x, expected = !!xvar, observed = !!yvar) %>% 
     mutate(obsDexp = observed/expected) %>% 
     separate(Taxon_status, c("taxon", "status"), sep = "_") %>%
@@ -167,7 +167,7 @@ cont_table <- function(x){ #simpairs function, simpairs only out
       a[i,j] = length(which(x[i,] > 0 & x[j,] > 0)) # B
     }
   }
-
+  
   a <- as.dist(a, diag = F, upper = F)
   
   l <- dist2edgelist(a, x)
@@ -217,9 +217,9 @@ diet_cat <- function(x, g, related = TRUE){
 # FETmP
 simpairs <- function(x){ #simpairs function, simpairs only out
   samples = ncol(x)  #S
-   z = matrix(nrow=nrow(x),ncol=nrow(x),x=0)
+  z = matrix(nrow=nrow(x),ncol=nrow(x),x=0)
   occs = array()
- 
+  
   #convert to P/A. Occs = rowsums of PA matrix.
   x <- x/x
   x[is.na(x)] <- 0
@@ -300,24 +300,24 @@ FETmP_ <- function(Talt, Tunalt, altered, unaltered){
 # }
 
 # Squares richness estimator, Alroy 2018 ####
-  squares<-function(n) {
-    n <- n[n>0] # removes any non-sampled species from calculation
-    S <- length(n)
-    N <- sum(n)
-    s1 <- length(which(n == 1))
-    if (s1 == S)
-      return(NA)
-    return(S + s1^2 * sum(n^2) / (N^2 - S * s1))
-  }
-  
-  rscale<-function(n,scale=2) {
-    s <- ceiling(cJ1(n))
-    q <- ceiling(s / scale)
-    m <- n
-    m[m > 2] <- 3
-    rarefy(m,q) / (1 - exp(lchoose(3 * s - 3,q) - lchoose(3 * s,q)))
-  }
-  
+squares<-function(n) {
+  n <- n[n>0] # removes any non-sampled species from calculation
+  S <- length(n)
+  N <- sum(n)
+  s1 <- length(which(n == 1))
+  if (s1 == S)
+    return(NA)
+  return(S + s1^2 * sum(n^2) / (N^2 - S * s1))
+}
+
+rscale<-function(n,scale=2) {
+  s <- ceiling(cJ1(n))
+  q <- ceiling(s / scale)
+  m <- n
+  m[m > 2] <- 3
+  rarefy(m,q) / (1 - exp(lchoose(3 * s - 3,q) - lchoose(3 * s,q)))
+}
+
 ## CJ1 From John Alroy (2020)#
 
 # cj1 to replace squares USED
@@ -359,16 +359,16 @@ format_stanfit <- function(stanfit, name = "mu"){
     separate(group, into = c("status", "interaction"), remove = FALSE)
 }  
 plot_stanfit <- function(formattedstanfit){
-     formattedstanfit %>%
-      ggplot(aes(x = mu, y = status, fill = interaction, col = interaction)) + 
-      geom_density_ridges(lwd = 1, alpha = 0.4) +
-      scale_y_discrete(expand = c(0, 0)) +
-      scale_color_manual(values = c("#045FB4", "#2E2E2E")) +
-      scale_fill_manual(values = c("#045FB4", "#2E2E2E")) + 
-      coord_cartesian(clip = "off") +
-      labs(x = "group θ", y = element_blank()) + theme_ridges()
+  formattedstanfit %>%
+    ggplot(aes(x = mu, y = status, fill = interaction, col = interaction)) + 
+    geom_density_ridges(lwd = 1, alpha = 0.4) +
+    scale_y_discrete(expand = c(0, 0)) +
+    scale_color_manual(values = c("#045FB4", "#2E2E2E")) +
+    scale_fill_manual(values = c("#045FB4", "#2E2E2E")) + 
+    coord_cartesian(clip = "off") +
+    labs(x = "group θ", y = element_blank()) + theme_ridges()
 }
-  
+
 # Easy panel labels in base R plot
 # from https://logfc.wordpress.com/2017/03/15/adding-figure-labels-a-b-c-in-the-top-left-corner-of-the-plotting-region/
 fig_label <- function(text, region="figure", pos="topleft", cex=NULL, ...) {
@@ -481,7 +481,7 @@ percent.occupancy.by.guild <- function(t, gld, taxon, sitedat){
   
   colnames(pr) <- gld
   pr <- merge(pr, sitedat[,c("sample.no", "altered.habitat")], by.x = 0, by.y = "sample.no") %>% namerows
-
+  
   prm <- melt(pr, id.vars = "altered.habitat")
   prm$altered_habitat <- factor(prm$altered.habitat, levels = c("combined", "cropland", "disturbed forest", 
                                                                 "fragment", "inhabited area", "pasture", 
@@ -489,6 +489,6 @@ percent.occupancy.by.guild <- function(t, gld, taxon, sitedat){
                                                                 "unaltered")) %>%
     replace_na("unaltered")
   
-    return(prm)
+  return(prm)
 }
 

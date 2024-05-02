@@ -241,72 +241,56 @@ stan_summary <- function(stan_data, stan_fit, ml_model){
   
   # difference between Bayes estimate and maximum likelihood estimate
   stan_sum$diff_ml <- stan_sum$theta_bayes - stan_sum$theta_ml
-  #stan_sum$diff_ml[stan_sum$diff_ml == -Inf] <- -4
-  #stan_sum$diff_ml[stan_sum$diff_ml == Inf] <- 4
+  stan_sum$diff_ml[stan_sum$diff_ml == -Inf] <- -4
+  stan_sum$diff_ml[stan_sum$diff_ml == Inf] <- 4
   stan_sum$diff_mean <- stan_sum$theta_ml-summary(stan_fit,'mu')[[1]][,1][stan_sum$gg]
-  #stan_sum$diff_mean[stan_sum$diff_mean == -Inf] <- -4
-  #stan_sum$diff_mean[stan_sum$diff_mean == Inf] <- 4
-  
-  stan_sum <- stan_sum %>% mutate(group = as.factor(gg) %>% 
-                                      recode(`1` = "Intact control", 
-                                             `2` = "Altered control", 
-                                             `3` = "Intact competing", 
-                                             `4` = "Altered competing"))
   return(stan_sum)
 }
 
 # visualise shrinkage by comparing bayesian and ml estimates
-stan_shrinkage_plots <- function(stan_sum, ann=c("A", "B")){
-  par(mar = c(3.5,4,1,1))
+stan_shrinkage_plots <- function(stan_sum){
+  par(mfrow = c(2,1), mar = c(3.5,4,1,1))
   
   # difference between maximum likelihood estimate and group mean
-  plot(stan_sum$diff_mean, stan_sum$diff_ml, col=alpha('black',0.25), pch=16, #axes = FALSE,
-       xlab='',ylab='',cex=0.75, las = 1)
-  mtext(expression("Deviation from group mean "~(hat(theta[i]) - bar(theta[g(i)]))),
+  plot(stan_sum$diff_mean,stan_sum$diff_ml,col=alpha('black',0.1),pch=16,
+       xlab='',ylab='',cex=0.75,ylim=c(-2.25,2.25), las = 1)
+  mtext(expression("deviation from group mean "~(hat(theta[i])-bar(theta[g(i)]))),
         side=1,line=2.5,cex=1.1)
-  mtext(expression("Shrinkage "~(theta[i] - hat(theta[i]))),side=2,
+  mtext(expression("shrinkage "~(theta[i] - hat(theta[i]))),side=2,
         line=2.5,cex=1.1)
-  #axis(1)
-  #axis(2, at=c(-4,-2,-1,0,1,2,4),expression(-infinity,-2,-1,0,1,2,infinity), las = 1)
-  box()
-  # Add break lines along y-axis     
-  #axis.break(2, -3, style = "zigzag",brw=0.03)
-  #axis.break(2, 3, style = "zigzag",brw=0.03)
-  fig_label(ann[1], cex = 2)
   # shrinkage plotted against number of pairs per occupancy group
-  plot(stan_sum$log_n, stan_sum$diff_ml, col=alpha('black',0.25), pch=16, #axes=FALSE,
-       xlab='', ylab='', cex=0.75, las = 1)
+  plot(stan_sum$log_n ,stan_sum$diff_ml,pch=16,col=alpha('black',0.1),axes=FALSE,
+       xlab='',las=3,ylab='',cex=0.75, las = 1)
   abline(h=0,lty=2)
-  mtext(expression(Number~of~pairs),side=1,line=2.5,cex=1.1)
-  mtext(expression("Shrinkage "~(theta[i] - hat(theta[i]))),side=2,
+  mtext(expression(number~of~pairs),side=1,line=2.5,cex=1.1)
+  mtext(expression("shrinkage "~(theta[i] - hat(theta[i]))),side=2,
         line=2.5,cex=1.1)
-  #axis(1,at=log(10^(0:4)),labels=parse(text=paste0('10^{',0:4,'}')))
-  #axis(2,at=c(-4,-2,-1,0,1,2,4),expression(-infinity,-2,-1,0,1,2,infinity), las = 1)
+  axis(1,at=log(10^(0:3)),labels=parse(text=paste0('10^{',0:3,'}')))
+  axis(2,at=c(-4,-2,-1,0,1,2,4),expression(-infinity,-2,-1,0,1,2,infinity), las = 1)
   box()
   # Add break lines along y-axis     
-  #axis.break(2, -3, style = "zigzag",brw=0.03)
-  #axis.break(2, 3, style = "zigzag",brw=0.03)
-  fig_label(ann[2], cex = 2)
+  axis.break(2, -3, style = "zigzag",brw=0.03)
+  axis.break(2, 3, style = "zigzag",brw=0.03)
 }
 
 # Check for bias in theta estimates
 # summary plots
-# ggplot(stan_sum, aes(x = s1, y = theta_bayes)) + 
-#   geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
-#   geom_smooth(method = "loess") + 
-#   geom_line(aes(y = 0), lty = 2) + 
-#   labs(x = "occupancy of rarer species in pattern")
-# 
-# ggplot(stan_sum, aes(x = log_n, y = theta_bayes)) + 
-#   geom_point(size = .5, alpha = .5) + facet_wrap(~group) + 
-#   geom_smooth(method = "loess") + 
-#   geom_line(aes(y = 0), lty = 2) + 
-#   labs(x = "log(number of pairs)")
-# 
-# # Check distribution of estimates (normal distribution is good)
-# ggplot(stan_sum, aes(x =theta_bayes)) + 
-#   geom_histogram(bins = 12) + 
-#   facet_wrap(~group) + labs(x = "theta")
+ggplot(stan_sum, aes(x = s1, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~gg) + 
+  geom_smooth(method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "occupancy of rarer species in pattern")
+
+ggplot(stan_sum, aes(x = log_n, y = theta_bayes)) + 
+  geom_point(size = .5, alpha = .5) + facet_wrap(~gg) + 
+  geom_smooth(method = "loess") + 
+  geom_line(aes(y = 0), lty = 2) + 
+  labs(x = "log(number of pairs)")
+
+# Check distribution of estimates (normal distribution is good)
+ggplot(stan_sum, aes(x =theta_bayes)) + 
+  geom_histogram(bins = 12) + 
+  facet_wrap(~gg) + labs(x = "theta")
 
 ## SANITY CHECKS ####
 # Log-likelihood function for NHD
