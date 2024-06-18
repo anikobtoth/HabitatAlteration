@@ -30,6 +30,14 @@ Rplots.pdf
 ## Knit documents
 *.docx
 *.html
+*.pdf
+*.csl
 Manuscript/Coauthors
-Manuscript/1.ProceedingsB
+Manuscript/1.Science
+Manuscript/Old_versions
+Manuscript/Ch3*
+
+Data/otl_tree*
 Data/Archive
+Code/Archive
+Manuscript/HabitatAlteration2.Rmd
