@@ -6,87 +6,13 @@ library(tidyverse)
 ## Adjust relative paths to compile environment.
 if(grepl(pattern = "Manuscript", getwd())){
   rt <- ".."
-  }else{rt <- "."}
-
-#file.path(rt, 'Code/HelperFunctions.R') %>% source()
-l <- file.path(rt, "Raw_Data") %>% list.files(".txt", full.names = T)
-dat <- lapply(l, read.delim) %>% setNames(file.path(rt, "Raw_Data") %>% list.files(".txt"))
-
-### correct typos and major rank disagreements, update genera that can't be resolved ####
-# Genus misspelled
-dat[[6]]$genus <- dat[[6]]$genus %>% str_replace_all("Cychlaris", replacement = "Cyclarhis")
-dat[[8]] <- dat[[8]] %>% filter(species != "Cychlaris gujanensis")
-
-dat[[6]]$genus <- dat[[6]]$genus %>% str_replace_all("Phylidor", replacement = "Philydor")
-dat[[8]] <- dat[[8]] %>% filter(!species %in% c("Phylidor pyrrhodes", "Phylidor erythrocercus", "Phylidor ruficaudatus"))
-
-# Genus reclassified
-dat[[6]]$genus <- dat[[6]]$genus %>% str_replace_all("Pipromorpha", replacement = "Mionectes")
-dat[[6]]$species <- dat[[6]]$species %>% str_replace_all("oleaginea", replacement = "oleagineus")
-dat[[8]] <- dat[[8]] %>% filter(species != "Pipromorpha oleaginea")
-
-dat[[6]]$genus <- dat[[6]]$genus %>% str_replace_all("Teleonema", replacement = "Pipra")
-dat[[8]] <- dat[[8]] %>% filter(species != "Teleonema filicauda")
-
-dat[[6]]$genus <- dat[[6]]$genus %>% str_replace_all("Platypsaris", replacement = "Pachyramphus")
-dat[[8]] <- dat[[8]] %>% mutate(species = ifelse(species == "Platypsaris minor", "Pachyramphus minor", species))
-
-dat[[6]]$genus[which(dat[[6]]$genus == "Saltator" & dat[[6]]$species == "grossus")] <- "Pitylus"
-dat[[8]] <- dat[[8]] %>% mutate(species = ifelse(species == "Orzyoborus angolensis", "Oryzoborus angolensis", species))
-
-dat[[6]]$genus[which(dat[[6]]$genus == "Idioptilon")] <- "Hemitriccus"
-dat[[6]]$species[which(dat[[6]]$genus == "Idioptilon")] <- "margaritaceiventer" 
-dat[[8]] <- dat[[8]] %>% filter(!species %in% c("Idioptilon margaritaceiventer", "Idioptilon margaritaceiventris"))
-
-dat[[6]]$genus[which(dat[[6]]$genus == "Acrochordopus")] <- "Phyllomyias"
-dat[[8]] <- dat[[8]] %>% mutate(species = ifelse(species == "Acrochordopus burmeisteri", "Phyllomyias burmeisteri", species))
-
-dat[[6]]$genus[which(dat[[6]]$genus == "Tanagra")] <- "Euphonia"
-dat[[8]] <- dat[[8]] %>% filter(species != "Tanagra gouldi")
-
-dat[[6]]$genus[which(dat[[6]]$genus == "Lanio" & dat[[6]]$species == "penicillata")] <- "Eucometis"
-dat[[8]] <- dat[[8]] %>% filter(species != "Lanio penicillata")
-
-dat[[6]]$genus[which(dat[[6]]$genus == "Hydropsalis" & dat[[6]]$species == "albicollis")] <- "Nyctidromus"
-dat[[8]] <- dat[[8]] %>% filter(species != "Hydropsalis albicollis")
-
-dat[[6]]$genus[which(dat[[6]]$genus == "Sciaphylax" & dat[[6]]$species == "hemimelaena")] <- "Myrmeciza"
-dat[[8]] <- dat[[8]] %>% filter(species != "Sciaphylax hemimelaena")
-
-dat[[6]]$genus[which(dat[[6]]$genus == "Pogonotriccus")] <- "Phylloscartes"
-dat[[8]] <- dat[[8]] %>% mutate(species = ifelse(species == "Pogonotriccus ophthalmicus", "Phylloscartes ophthalmicus", species))
-
-dat[[6]]$genus[which(dat[[6]]$genus == "Myrmelastes" & dat[[6]]$species == "hyperythrus")] <- "Myrmeciza"
-dat[[8]] <- dat[[8]] %>% mutate(species = ifelse(species == "Myrmelastes hyperythrus", "Myrmeciza hyperythrus", species))
-
-dat[[6]]$genus <- dat[[6]]$genus %>% str_replace_all("Ceratopipra", replacement = "Pipra")
-dat[[8]] <- dat[[8]] %>% filter(!species %in% c("Ceratopipra erythrocephala", "Ceratopipra rubrocapilla"))
-
-## species name updated
-dat[[6]]$species[which(dat[[6]]$genus == "Xiphorhynchus" & dat[[6]]$species == "atlanticus")] <- "fuscus"
-dat[[8]] <- dat[[8]] %>% filter(species != "Xiphorhynchus atlanticus")
-
-dat[[6]]$species[which(dat[[6]]$genus == "Saltator" & dat[[6]]$species == "azarae")] <- "coerulescens"
-dat[[8]] <- dat[[8]] %>% filter(species != "Saltator azarae")
-
-#Diclidurus virgo ==> Diclidurus albus
-dat[[2]]$species[grep("virgo", dat[[2]]$species)] <- "albus"
-dat[[4]] <- dat[[4]] %>% filter(species != "Diclidurus virgo")
-## Code to prepare raw data in ./Raw_Data folder 
-## Outputs will be placed in ./Data folder and used in Analysis_Script.R
-#library(reshape2)
-library(tidyverse)
-
-## Adjust relative paths to compile environment.
-if(grepl(pattern = "Manuscript", getwd())){
-  rt <- ".."
 }else{rt <- "."}
 
-#file.path(rt, 'Code/HelperFunctions.R') %>% source()
+#file.path(rt, 'Code/HelperFunctions.R') %>% source()  # also sourced from Analysis_script.R
 l <- file.path(rt, "Raw_Data") %>% list.files(".txt", full.names = T)
 dat <- lapply(l, read.delim) %>% setNames(file.path(rt, "Raw_Data") %>% list.files(".txt"))
 
-### correct typos and major rank disagreements, update genera that can't be resolved ####
+### update species/genera that can't be resolved ####
 # Genus misspelled
 dat[[6]]$genus <- dat[[6]]$genus %>% str_replace_all("Cychlaris", replacement = "Cyclarhis")
 dat[[8]] <- dat[[8]] %>% filter(species != "Cychlaris gujanensis")
@@ -185,10 +111,10 @@ spp <- left_join(spp, bind_rows(tax_otl) %>% select(1:2), by = c("species" = "se
 
 # Manually resolve diet conflicts in merged species -- info from Birds of the World
 
-# guild_conflicts <- spp %>% group_by(unique_name, life.form) %>%
-#  summarise(n = n(), diet.1 = str_unique(diet.1) %>% str_flatten_comma(na.rm = T),
-#            diet.2 = str_unique(diet.2) %>% str_flatten_comma(na.rm = T)) %>% filter(grepl(",", diet.1) | grepl(",", diet.2)) %>%
-#  na.omit()
+    # guild_conflicts <- spp %>% group_by(unique_name, life.form) %>%
+    #  summarise(n = n(), diet.1 = str_unique(diet.1) %>% str_flatten_comma(na.rm = T),
+    #            diet.2 = str_unique(diet.2) %>% str_flatten_comma(na.rm = T)) %>% filter(grepl(",", diet.1) | grepl(",", diet.2)) %>%
+    #  na.omit()
 
 guild_conflicts <- read_csv("./Data/guild_conflicts.csv")
 spp <- spp %>% filter(!unique_name %in% guild_conflicts$unique_name) %>% rbind(guild_conflicts)  # replace conflict rows with reconciled data
