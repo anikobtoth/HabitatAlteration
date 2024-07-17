@@ -1,22 +1,19 @@
-##    Habitat alteration reduces food competition and local    ###
-##      functional diversity in Neotropical bats and birds.    ### 
-##                     Anikó B. Tóth                           ##
+##   Effects of habitat alteration and phylogenetic distance on    ###
+## spatial patterns of co-occurrence in Neotropical bats and birds.### 
 
-# Submitted 1 November 2020 
+# Submitted 15 July 2024 
 # Analysis script 
 
-library(tidyverse) # Y
-library(vegan) # Y
-library(reshape2)
-library(stringi) # Y
+library(tidyverse) 
+library(vegan) 
+library(stringi) 
 library(parallel)
-library(lsa) # Y
+library(lsa) 
 ## Load helper functions
 source('./Code/HelperFunctions.R')
 
 ## Prep raw data
 source('./Code/Data_Prep.R')
-
 
 #### Match Biogeography ####
 PAnu <- PAn %>% map(~return(.[,colnames(.) %in% unalt_sites])) # separate unaltered
@@ -54,10 +51,11 @@ rich <- list(cJ1 = map(PAn, map_dbl, cJ1rich) %>% map(~split(., names(.) %in% un
   mutate(status = recode(status, `FALSE` = "Altered", `TRUE` = "Intact"))
 
 # Summary
-rich %>% group_by(metric, taxon, status) %>% summarise(mean.rich = mean(richness, na.rm = T), median.rich = median(richness, na.rm = T))
+rich %>% group_by(metric, taxon, status) %>% summarise(mean.rich = mean(richness, na.rm = T), 
+                                                       median.rich = median(richness, na.rm = T))
 # Significance
-rich %>% group_by(metric, taxon) %>% summarise(p=wilcox.test(richness~status, paired=FALSE)$p.value, 
-                                               W=wilcox.test(richness~status, paired=FALSE)$statistic)
+rich %>% group_by(metric, taxon) %>% summarise(p=wilcox.test(richness~status)$p.value, 
+                                               W=wilcox.test(richness~status)$statistic)
 
 #### Beta diversity and composition analyses #####
 PAnb<- tobinary(PAn)
@@ -80,7 +78,7 @@ comp1 <- map2(dist, data, function(x, y) adonis(x~ID, data = y, permutations = 1
 dat <- map(data, ~select(.x, -p.sample, -ID))
 comp2 <- map2(dat, data, function(x, y) cca(x~ID, data = y) %>% anova.cca)
 
-##### occupancy calculations (used later) ######
+##### occupancy calculations ######
 occ.count <- map(PAn, t) %>% map(data.frame) %>% map(~split(., rownames(.) %in% unalt_sites)) %>% 
   map(map, ~colSums(.)) %>% map(map, data.frame) %>% map(~merge(.[[1]], .[[2]], by = 0)) %>% map(setNames, c("name", "altered", "unaltered")) %>% bind_rows(.id = "taxon")
 occ.count$name <- stri_replace_all_regex(occ.count$name, "[.]", " ")
@@ -100,7 +98,7 @@ occ %>% group_by(taxon) %>% summarise(
   total = length(altered))
 
 #### Interaction Co-occurrence analysis #####
-#source('./Code/stan.R')
+source('./Code/brms_fxns.R')
 
 # Format data (full)
 tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
@@ -111,25 +109,18 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
   bind_rows(.id = "taxon") %>% diet_cat(pull(spp, guild) %>% setNames(spp$unique_name), related = TRUE) %>%
   left_join(bind_rows(tax_dist)) %>% na.omit()
 
-# Calculate theta 
-## Bats full
-stan_data <- stan_data_fun(filter(contables, taxon == "bat"), medn = F)
-stan_fit <- stan_theta(stan_data)
-ml_model <- stan_theta_ML(stan_data, stan_fit)
+### Model fitting code #####
+# fit bat data
+# run all model structures and select best fit
+taxon <- "bat"
+bat_data <- stan_data_fun(filter(contables, taxon == taxon), medn = FALSE)[[1]]
+bat_winner <- find_best_model(tax=taxon, bat_data) # runs all models, saves them and saves the loo object in current wd
+summary(bat_winner)
 
-## Birds full
-stan_data <- stan_data_fun(filter(contables, taxon == "bird"), medn = F)
-stan_fit <- stan_theta(stan_data)
-ml_model <- stan_theta_ML(stan_data, stan_fit)
-
-#Plot
-stan_fit %>% extract() %>% `[[`(1) %>% data.frame() %>% 
-  pivot_longer(names_to = "group", cols = 1:4) %>% 
-  mutate(group = as.factor(group) %>% recode(`X1` = "Intact control", 
-                                             `X2` = "Altered control", 
-                                             `X3` = "Intact competing", 
-                                             `X4` = "Altered competing")) %>% 
-  ggplot(aes(x = value, col = group)) + geom_density(lwd = 1.5) 
+taxon <- "bird"
+bird_data <- stan_data_fun(filter(contables, taxon == taxon), medn = FALSE)[[1]]
+bird_winner <- find_best_model(tax= taxon, bird_data)
+summary(bird_winner)
 
 ## No-turnover models ####
 shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(match_val))
@@ -137,17 +128,22 @@ tables <- map2(tables, shared, function(x, y) map(x, function(z) return(z[y,])))
 
 # Contingency table
 contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>% 
-  bind_rows(.id = "taxon") %>% diet_cat(spp, related = TRUE) %>% na.omit()
+  bind_rows(.id = "taxon") %>% diet_cat(pull(spp, guild) %>% setNames(spp$unique_name), related = TRUE) %>%
+  left_join(bind_rows(tax_dist)) %>% na.omit()
 
-# Calculate theta 
-## Bats no turnover
-stan_data <- stan_data_fun(filter(contables, taxon == "bat"), medn = F)
-stan_fit <- stan_theta(stan_data)
+# same code as above with new data shared tables.
+tax <- "bat"
+bat_data <- stan_data_fun(filter(contables, taxon == tax), medn = FALSE)[[1]]
+bat_nt_winner <- find_best_model(tax, bat_data)
+summary(bat_winner)
 
-## Birds no turnover
-stan_data <- stan_data_fun(filter(contables, taxon == "bird"), medn = F)
-stan_fit <- stan_theta(stan_data)
+tax <- "bird"
+bird_data <- stan_data_fun(filter(contables, taxon == tax), medn = FALSE)[[1]]
+bird_nt_winner <- find_best_model(tax, bird_data). # runs all models, saves them and saves the loo object in current wd.
+summary(bird_winner)
 
+#posterior predictive checks
+source("./Code/nch_ppc.R")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 #~~~~~~~~~~~~~~~~~~END OF SCRIPT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
