@@ -46,8 +46,7 @@ tofac <- function(df){
   return(df)
 }
 
-
-### match character vectors returning values 
+### match character vectors returning values  USED
 match_val <- function(chr1, chr2){
   chr1[which(chr1 %in% chr2)]
 }
@@ -206,59 +205,13 @@ diet_cat <- function(x, g, related = TRUE){
   x$diet.match[x$diet.match == 0] <- "Different"
   x$diet.match[x$diet.match == 1] <- "Same"
   x$diet.match[x$diet.pair %in% rltd] <- "Related"
+  x$diet.match[x$diet.Sp1 == "O" | x$diet.Sp2 == "O"] <- "Related"  #all pairs including an omnivore are "related"
   
   return(x)
   
 }
 
-
-
 ##### ANALYSES ######
-# FETmP
-simpairs <- function(x){ #simpairs function, simpairs only out
-  samples = ncol(x)  #S
-  z = matrix(nrow=nrow(x),ncol=nrow(x),x=0)
-  occs = array()
-  
-  #convert to P/A. Occs = rowsums of PA matrix.
-  x <- x/x
-  x[is.na(x)] <- 0
-  occs <- rowSums(x)
-  
-  #SimPairs Algorithm
-  for (i in 2:nrow(x))  {
-    for (j in 1:(i-1))
-    {
-      a = length(which(x[i,] > 0 & x[j,] > 0)) # B
-      
-      #simpairs
-      for (k in 0:a)
-        z[i,j] = z[i,j] + choose(occs[j] , k) * choose(samples - occs[j] , occs[i] - k) / choose(samples , occs[i])
-      z[i,j] = z[i,j] - choose(occs[j] , a) * choose(samples - occs[j] , occs[i] - a) / choose(samples , occs[i]) / 2
-      z[i,j] = qnorm(z[i,j])
-      z[j,i] = z[i,j]
-    }
-  }
-  print("check")
-  return(as.dist(z, diag = F, upper = F))
-}
-
-resamp <- function(PA, sites = 50, reps = 100){
-  samp <- list()
-  for(j in 1:reps){
-    samp[[j]] <- PA[, sample(1:ncol(PA), sites, replace = F)]
-    samp[[j]] <- samp[[j]][which(rowSums(samp[[j]]) > 0),]
-  }
-  return(samp)
-}
-
-## Single run of FETmP
-FETmP <- function(Talt, Tunalt, altered, unaltered){
-  occurrences <- altered + unaltered
-  p <- choose(Talt, 0:altered) * choose(Tunalt, occurrences:unaltered) / choose(Talt+Tunalt, occurrences)
-  return(sum(p)-0.5*last(p))
-  
-}
 
 ## FETmP along vectors USED
 FETmP_ <- function(Talt, Tunalt, altered, unaltered){
@@ -270,57 +223,8 @@ FETmP_ <- function(Talt, Tunalt, altered, unaltered){
 }
 
 #### similarity ####
-# formats beta diversity results and organises them by altered and unaltered site pairings. 
-# beta.types <- function(PAn, unalt_sites){
-#   beta <- map(PAn, ochiaiMatrix) %>% map(as.dist, upper = F) %>% map2(.y = map(PAn, ~t(.)), dist2edgelist)
-#   beta <- bind_rows(beta, .id = 'taxon')
-#   beta$unalt1 <- beta$Sp1 %in% unalt_sites
-#   beta$unalt2 <- beta$Sp2 %in% unalt_sites
-#   beta$unalt.pair <- paste(beta$unalt1, beta$unalt2, sep = "-")
-#   beta$unalt.pair[beta$unalt.pair == "TRUE-TRUE"] <- "Unaltered-Unaltered"
-#   beta$unalt.pair[beta$unalt.pair == "FALSE-FALSE"] <- "Altered-Altered"
-#   beta$unalt.pair[beta$unalt.pair == "FALSE-TRUE"] <- "Unaltered-Altered"
-#   beta$unalt.pair[beta$unalt.pair == "TRUE-FALSE"] <- "Unaltered-Altered"
-#   #ggplot(beta[beta$taxon == "bat",], aes(x = Z.Score, col = alt.pair)) + geom_density(size = 1)
-#   return(beta)
-# }
-# 
-# beta.types2 <- function(PAn, unalt_sites){
-#   beta <- map(PAn, ~t(.)) %>% map(vegdist, method = "jaccard") %>% map2(.y = map(PAn, ~t(.)), dist2edgelist)
-#   beta <- bind_rows(beta, .id = 'taxon') %>% mutate(Z.Score = 1-Z.Score)
-#   beta$unalt1 <- beta$Sp1 %in% unalt_sites
-#   beta$unalt2 <- beta$Sp2 %in% unalt_sites
-#   beta$unalt.pair <- paste(beta$unalt1, beta$unalt2, sep = "-")
-#   beta$unalt.pair[beta$unalt.pair == "TRUE-TRUE"] <- "Unaltered-Unaltered"
-#   beta$unalt.pair[beta$unalt.pair == "FALSE-FALSE"] <- "Altered-Altered"
-#   beta$unalt.pair[beta$unalt.pair == "FALSE-TRUE"] <- "Unaltered-Altered"
-#   beta$unalt.pair[beta$unalt.pair == "TRUE-FALSE"] <- "Unaltered-Altered"
-#   #ggplot(beta[beta$taxon == "bat",], aes(x = Z.Score, col = alt.pair)) + geom_density(size = 1)
-#   return(beta)
-# }
 
-# Squares richness estimator, Alroy 2018 ####
-squares<-function(n) {
-  n <- n[n>0] # removes any non-sampled species from calculation
-  S <- length(n)
-  N <- sum(n)
-  s1 <- length(which(n == 1))
-  if (s1 == S)
-    return(NA)
-  return(S + s1^2 * sum(n^2) / (N^2 - S * s1))
-}
-
-rscale<-function(n,scale=2) {
-  s <- ceiling(cJ1(n))
-  q <- ceiling(s / scale)
-  m <- n
-  m[m > 2] <- 3
-  rarefy(m,q) / (1 - exp(lchoose(3 * s - 3,q) - lchoose(3 * s,q)))
-}
-
-## CJ1 From John Alroy (2020)#
-
-# cj1 to replace squares USED
+## CJ1 From John Alroy (2020) USED
 
 cJ1rich<-function(n)	{
   n <- n[n>0]
@@ -354,8 +258,8 @@ format_stanfit <- function(stanfit, name = "mu"){
     pivot_longer(names_to = "group", cols = 1:4, values_to = name) %>% 
     mutate(group = as.factor(group) %>% recode(`X1` = "Intact control", 
                                                `X2` = "Altered control", 
-                                               `X3` = "Intact competing", 
-                                               `X4` = "Altered competing")) %>%
+                                               `X3` = "Intact intraguild", 
+                                               `X4` = "Altered intraguild")) %>%
     separate(group, into = c("status", "interaction"), remove = FALSE)
 }  
 plot_stanfit <- function(formattedstanfit){
@@ -446,28 +350,6 @@ matfill <- function(m){
   m <- m/m
   m[is.na(m)] <- 0
   return(sum(m)/(nrow(m)*ncol(m)))
-}
-
-### return percent and mean aggregations and segregations, for easier use in dplyr pipes.
-percpos <- function(x)
-  length(which(x>0))/length(x)
-
-percneg <- function(x)
-  length(which(x<0))/length(x)
-
-meanpos <- function(x)
-  mean(x[which(x>0)])
-
-meanneg <- function(x)
-  mean(x[which(x<0)])
-
-# identify pairs as aggregations or segregations ####
-posnegzero <- function(x){
-  out <- x > 0
-  out[which(x>0)] <- "Aggregation"
-  out[which(x<0)] <- "Segregation"
-  out[which(x==0)] <- "ZERO"
-  out
 }
 
 # Percent occupancy by guild
