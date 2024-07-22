@@ -33,10 +33,10 @@ ppc_plot <- function(stan_ppc, stan_fit) {
   return(ppc_rootogram(y_obs, y_rep))
 }
 
-files <- c('./bat_winner.rds',
-           './bat_winner_NoTrn.rds',
-           './bird_winner.rds',
-           './bird_winner_NoTrn.rds')
+files <- c('./Results/Winner_Models/bat_winner.rds',
+           './Results/Winner_Models/bat_winner_NoTrn.rds',
+           './Results/Winner_Models/bird_winner.rds',
+           './Results/Winner_Models/bird_winner_NoTrn.rds')
 os_quantiles <- list()
 ppc_plots <- list()
 for(i in 1:4) {
