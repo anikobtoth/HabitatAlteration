@@ -3,6 +3,7 @@
 .Rapp.history
 # Session Data files
 .RData
+.DS_Store
 # Example code in package build process
 *-Ex.R
 # Output files from R CMD build
@@ -36,9 +37,11 @@ Manuscript/Coauthors
 Manuscript/1.Science
 Manuscript/Old_versions
 Manuscript/Ch3*
+Manuscript/HabitatAlteration2.Rmd
+Manuscript/Old_versions
 
+## Generated Data and archived codes
 Data/otl_tree*
 Data/Archive
 Code/Archive
-Manuscript/HabitatAlteration2.Rmd
-Manuscript/Old_versions
+
