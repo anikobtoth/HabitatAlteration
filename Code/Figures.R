@@ -120,7 +120,7 @@ bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(status, die
 ######
 
 ## SD plot FIG 4 ----
-sd <- list(bat_winner, bat_winner_NT, bird_winner, bird_winner_NT) %>% 
+sd <- list(bat_winner, bat_nt_winner, bird_winner, bird_nt_winner) %>% 
   map(~data.frame(summary(.x)$random) %>% select(1:4) %>% 
         setNames(c("Estimate", "SE", "l-95CI", "u-95CI")) %>% rownames_to_column()) %>% 
   setNames(c("bat_full", "bat_NT", "bird_full", "bird_NT")) %>% 

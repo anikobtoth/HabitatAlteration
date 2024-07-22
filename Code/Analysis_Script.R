@@ -116,11 +116,13 @@ taxon <- "bat"
 bat_data <- stan_data_fun(filter(contables, taxon == taxon), medn = FALSE)[[1]]
 bat_winner <- find_best_model(tax=taxon, bat_data) # runs all models, saves them and saves the loo object in current wd
 summary(bat_winner)
+saveRDS(bat_winner, "./Results/bat_winner.rds") # save a copy of best model to results
 
 taxon <- "bird"
 bird_data <- stan_data_fun(filter(contables, taxon == taxon), medn = FALSE)[[1]]
 bird_winner <- find_best_model(tax= taxon, bird_data)
 summary(bird_winner)
+saveRDS(bird_winner, "./Results/bird_winner.rds")
 
 ## No-turnover models ####
 shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(match_val))
@@ -135,12 +137,14 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
 tax <- "bat"
 bat_data <- stan_data_fun(filter(contables, taxon == tax), medn = FALSE)[[1]]
 bat_nt_winner <- find_best_model(tax, bat_data)
-summary(bat_winner)
+summary(bat_nt_winner)
+saveRDS(bat_nt_winner, "./Results/bat_winner_NoTrn.rds")
 
 tax <- "bird"
 bird_data <- stan_data_fun(filter(contables, taxon == tax), medn = FALSE)[[1]]
 bird_nt_winner <- find_best_model(tax, bird_data). # runs all models, saves them and saves the loo object in current wd.
-summary(bird_winner)
+summary(bird_nt_winner)
+saveRDS(bird_nt_winner, "./Results/bird_winner_NoTrn.rds")
 
 #posterior predictive checks
 source("./Code/nch_ppc.R")
