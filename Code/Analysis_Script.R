@@ -112,15 +112,15 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
 ### Model fitting code #####
 # fit bat data
 # run all model structures and select best fit
-taxon <- "bat"
-bat_data <- stan_data_fun(filter(contables, taxon == taxon), medn = FALSE)[[1]]
-bat_winner <- find_best_model(tax=taxon, bat_data) # runs all models, saves them and saves the loo object in current wd
+tax <- "bat"
+bat_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
+bat_winner <- find_best_model(tax=tax, bat_data) # runs all models, saves them and saves the loo object in current wd
 summary(bat_winner)
 saveRDS(bat_winner, "./Results/bat_winner.rds") # save a copy of best model to results
 
-taxon <- "bird"
-bird_data <- stan_data_fun(filter(contables, taxon == taxon), medn = FALSE)[[1]]
-bird_winner <- find_best_model(tax= taxon, bird_data)
+tax <- "bird"
+bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
+bird_winner <- find_best_model(tax= tax, bird_data)
 summary(bird_winner)
 saveRDS(bird_winner, "./Results/bird_winner.rds")
 
@@ -135,13 +135,13 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
 
 # same code as above with new data shared tables.
 tax <- "bat"
-bat_data <- stan_data_fun(filter(contables, taxon == tax), medn = FALSE)[[1]]
+bat_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
 bat_nt_winner <- find_best_model(tax, bat_data)
 summary(bat_nt_winner)
 saveRDS(bat_nt_winner, "./Results/bat_winner_NoTrn.rds")
 
 tax <- "bird"
-bird_data <- stan_data_fun(filter(contables, taxon == tax), medn = FALSE)[[1]]
+bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
 bird_nt_winner <- find_best_model(tax, bird_data). # runs all models, saves them and saves the loo object in current wd.
 summary(bird_nt_winner)
 saveRDS(bird_nt_winner, "./Results/bird_winner_NoTrn.rds")
