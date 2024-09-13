@@ -67,13 +67,13 @@ colors <- c("#ADADAD", "#525252", "#2F99DC", "#00487C")
 
 ## BAT PLOT FIG 2 ####
 tax = "bat"
-data_plot <- stan_data_fun(filter(contables, taxon == tax), medn = FALSE)[[2]]
+data_plot <- stan_data_fun(filter(contables, taxon == tax))[[2]]
 bat_data_plot <- as.data.frame(bat_winner) %>% colMeans() %>% 
   data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
   filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = 8) %>% 
   pivot_wider() %>% cbind(bat_data) %>% full_join(data_plot) %>% 
-  mutate(diet.match = recode(diet.match, "different" = "control", "same" = "intraguild"), 
-         status = recode(status, "unaltered" = "intact"))
+  mutate(DietGroup = recode(DietGroup, "different" = "control", "same" = "intraguild"), 
+         Habitat = recode(Habitat, "unaltered" = "intact"))
 
 # bat plot
 bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(status, diet.match))) + 
