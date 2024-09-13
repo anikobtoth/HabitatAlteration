@@ -1,4 +1,6 @@
-
+library(brms)
+library(loo)
+library(rstan)
 ## functions ####
 
 # define custom family for Fisher's Noncentral Hypergeometric distribution
