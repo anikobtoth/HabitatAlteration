@@ -1,6 +1,7 @@
 library(brms)
 library(loo)
 library(rstan)
+
 ## functions ####
 
 # define custom family for Fisher's Noncentral Hypergeometric distribution
@@ -157,17 +158,25 @@ nch_stanvars <- function(brm_form) {
   if(intercept_only == 1) { 
     nch_stanvar <- nch_stanvar + 
       stanvar(block ="genquant", scode =
-                "vector[N] theta = rep_vector(Intercept, N);")
+                "vector[N] theta_mu = rep_vector(Intercept, N);
+	         vector[N] theta_vl = theta_mu;")
   } else {
     nch_stanvar <- nch_stanvar + 
       stanvar(block="genquant", scode =
-                "vector[N] theta = Intercept + Xc * b;")
+                "vector[N] theta_mu = Intercept + Xc * b;
+	         vector[N] theta_vl = theta_mu;")
   }
   
-  if(N_re > 0) {
-    nch_stanvar <- nch_stanvar + 
-      stanvar(block="genquant", scode =
-                "vector[N] theta_mu = theta;")
+  if(N_re >= 1) {
+    nch_stanvar <- nch_stanvar +
+      stanvar(block = "genquant", scode =
+                "vector[N] theta_sd1;")
+  }
+  
+  if(N_re == 2) {
+    nch_stanvar <- nch_stanvar +
+      stanvar(block = "genquant", scode =
+                "vector[N] theta_sd2;")
   }
   
   nch_stanvar <- nch_stanvar + 
@@ -177,20 +186,22 @@ nch_stanvars <- function(brm_form) {
   if(N_re >= 1) {
     nch_stanvar <- nch_stanvar +
       stanvar(block = "genquant", scode =
-                "theta[n] += r_1_1[J_1[n]] * Z_1_1[n];")
+                "theta_vl[n] += r_1_1[J_1[n]] * Z_1_1[n];
+	         theta_sd1[n] = sd_1[1, Jby_1[J_1[n]]];")
   }
   
   if(N_re == 2) {
     nch_stanvar <- nch_stanvar +
       stanvar(block = "genquant", scode =
-                "theta[n] += r_2_1[J_2[n]] * Z_2_1[n];")
+                "theta_vl[n] += r_2_1[J_2[n]] * Z_2_1[n];
+	         theta_sd2[n] = sd_2[1, Jby_2[J_2[n]]];")
   }
   
   if(N_re == 0) {
     nch_stanvar <- nch_stanvar +
       stanvar(block = "genquant", scode =
                 "log_lik[n] =
-      nch_lpmf(Y[n] | theta[n], ii[ii_lu[occ_id[n], 1]:ii_lu[occ_id[n], 2]],
+      nch_lpmf(Y[n] | theta_vl[n], ii[ii_lu[occ_id[n], 1]:ii_lu[occ_id[n], 2]],
       lp[ii_lu[occ_id[n], 1]:ii_lu[occ_id[n], 2]]);\n}")
   } else if(N_re == 1) {
     nch_stanvar <- nch_stanvar +
@@ -262,12 +273,13 @@ find_best_model <- function(tax, standata){
     print(paste0('model ', i, ' of ', length(re_steps), ':'))
     print(brm_form)
     stan_fit <- brm(brm_form, family = nch, init = 0, data = standata,
-                    iter = 3e3, warmup = 1e3, thin = 2, cores = 4, 
+                    iter = 3e3, warmup = 1e3, thin = 2, cores = 1, 
                     stanvars = nch_stanvars(brm_form))
     saveRDS(stan_fit, paste0('./stan/', tax ,'_fx01_re', f00(i), '.rds'))
     re_warnings[[paste0(tax, '_fx01_re', f00(i))]] <- warnings()
     re_loo[[paste0(tax, '_fx01_re', f00(i))]] <- build_loo(stan_fit)
   }
+  rm(stan_fit)
   #return(list(standata, re_warnings, re_loo))
   #
   #loo_re <- map2(re_formulas, names(re_formulas), ## saves models and returns elpd evaluations
@@ -289,14 +301,14 @@ find_best_model <- function(tax, standata){
     print(paste0('model ', i, ' of ', length(fx_steps), ':'))
     print(brm_form)
     stan_fit <- brm(brm_form, family = nch, init = 0, data = standata, 
-                    iter = 3e3, warmup = 1e3, thin = 2, cores = 4,
+                    iter = 3e3, warmup = 1e3, thin = 2, cores = 1,
                     stanvars = nch_stanvars(brm_form))
     saveRDS(stan_fit, paste0('./stan/', tax, '_fx', f00(i), '_', best_randeff,'.rds'))
     fx_warnings[[paste0(tax, '_fx01_re', f00(i))]] <- warnings()
     fx_loo[[paste0(tax, '_fx', f00(i), "_", best_randeff)]] <- build_loo(stan_fit)
   }
   
-    # 
+  # 
   # # fixed effects formulas
   # fx_formulas <- paste0('sb | vint(occ1, occ2, N_sb, N_site) ~ ', re_steps[[best_randeff]]) 
   # fx_formulas <-  map(fx_steps, ~paste(c(fx_formulas, .x), collapse = "+")) %>% 
@@ -309,7 +321,7 @@ find_best_model <- function(tax, standata){
   best_model <- (loo_compare(fx_loo) %>% data.frame() %>% rownames())[1] # get best random effects structure
   message("Best fixed effects structure is ", best_model, ": ", 
           paste(paste0('sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ ',
-                    fx_steps[word(best_model,2,2,sep = "_")]), re_steps[best_randeff], sep= ' + '))
+                       fx_steps[word(best_model,2,2,sep = "_")]), re_steps[best_randeff], sep= ' + '))
   
   saveRDS(fx_loo, paste0("./stan/", tax, "_loo_fixdeff.rds"))
   #load best model into environment and examine summary

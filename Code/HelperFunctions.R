@@ -213,12 +213,6 @@ diet_cat <- function(x, g, related = TRUE){
 
 ##### ANALYSES ######
 
-## Single run of FETmP
-FETmP <- function(Talt, Tunalt, altered, unaltered){
-  occurrences <- altered + unaltered
-  p <- choose(Talt, 0:altered) * choose(Tunalt, occurrences:unaltered) / choose(Talt+Tunalt, occurrences)
-  return(sum(p)-0.5*last(p))
-}
 ## FETmP along vectors USED
 FETmP_ <- function(Talt, Tunalt, altered, unaltered){
   out <- numeric()
