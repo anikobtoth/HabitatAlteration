@@ -46,11 +46,11 @@ tofac <- function(df){
   return(df)
 }
 
-### match character vectors returning values  USED
-match_val <- function(chr1, chr2){
-  chr1[which(chr1 %in% chr2)]
+# return non-overlapping values of two vectors USED
+outersect <- function(x, y) {
+  sort(c(setdiff(x, y),
+         setdiff(y, x)))
 }
-
 ### Abundance to presence-absence USED
 # matrix list
 tobinary <- function(PA.LIST){
@@ -213,6 +213,12 @@ diet_cat <- function(x, g, related = TRUE){
 
 ##### ANALYSES ######
 
+## Single run of FETmP USED
+FETmP <- function(Talt, Tunalt, altered, unaltered){
+  occurrences <- altered + unaltered
+  p <- choose(Talt, 0:altered) * choose(Tunalt, occurrences:unaltered) / choose(Talt+Tunalt, occurrences)
+  return(sum(p)-0.5*last(p))
+}
 ## FETmP along vectors USED
 FETmP_ <- function(Talt, Tunalt, altered, unaltered){
   out <- numeric()
