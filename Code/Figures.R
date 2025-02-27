@@ -25,7 +25,7 @@ calc_parameters <- function(post){
   params <- list()
   c <- 0
   coeffs <- grep(names(post), pattern = "^b_", value = TRUE)
-  for(i in c("control", "intersecting", "same")){
+  for(i in c("low", "medium", "high")){
     for(j in c("altered", "unaltered")){
       c <- c+1
       slope <- data.frame(post$`b_PhyloD`,
@@ -71,13 +71,13 @@ bat_data_plot <- bat_post %>% colMeans() %>%
   data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
   filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = "\\[") %>% 
   pivot_wider() %>% cbind(bat_data) %>% full_join(data_plot) %>% 
-  mutate(DietGroup = recode(DietGroup, "different" = "control", "intraguild" = "within-guild", "intersecting" = "intermediate"),
+  mutate(DietGroup =  fct_relevel(DietGroup, "low", "medium", "high"),
          Habitat = recode(Habitat, "unaltered" = "intact"))
 
 CI_df_bat <- bat_post %>% calc_parameters() %>% CIcalc(data_plot) %>% 
-  mutate(DietGroup = recode(DietGroup, "different" = "control", "intraguild" = "within-guild", "intersecting" = "intermediate"))
+  mutate(DietGroup = recode(DietGroup, "low" = "control", "medium" = "intersecting", "high" = "intraguild") %>% fct_relevel("low", "medium", "high"))
 
-linefit <- expand.grid(DietGroup = c("within-guild", "intermediate", "control")) %>% 
+linefit <- expand.grid(DietGroup = c("high", "medium", "low")) %>% 
   mutate(intercept = c(mean(bat_post$b_Intercept+bat_post$b_DietGroupsame), 
                        mean(bat_post$b_Intercept+bat_post$b_DietGroupintersecting),
                        mean(bat_post$b_Intercept)), 
@@ -108,7 +108,7 @@ bat_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) +
   theme_light() 
 
 # hexbin, no habitat dimension
-F2A <- bat_data_plot %>% mutate(DietGroup = recode(DietGroup, "different" = "control", "intraguild" = "within-guild", "intersecting" = "intermediate")) %>% 
+F2A <- bat_data_plot %>% mutate(DietGroup = recode(DietGroup, "different" = "low", "intersecting" = "medium", "intraguild" = "high")) %>% 
   ggplot(aes(x = D, y = theta_vl)) + 
   geom_hex() + facet_grid(.~DietGroup) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bat, !D95q, Dbin < 0), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.4) +
@@ -128,23 +128,23 @@ bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
 data_plot <- stan_data_fun(filter(contables, taxon == tax))[[2]]
 bird_post <- as.data.frame(bird_winner)
 CI_df_bird <- bird_post %>% calc_parameters() %>% CIcalc(data_plot) %>%
-  mutate(DietGroup = recode(DietGroup, "different" = "control", "intraguild" = "within-guild", "intersecting" = "intermediate"))
+  mutate(DietGroup = recode(DietGroup, "low" = "control", "medium" = "intersecting", "high" = "intraguild") %>% fct_relevel("low", "medium", "high"))
 
 bird_data_plot <- bird_post %>% colMeans() %>% 
   data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
   filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = "\\[") %>% 
   pivot_wider() %>% cbind(bird_data) %>% full_join(data_plot) %>% 
-  mutate(DietGroup = recode(DietGroup, "different" = "control", "intraguild" = "within-guild", "intersecting" = "intermediate"), 
+  mutate(DietGroup = recode(DietGroup, "low" = "control", "medium" = "intersecting", "high" = "intraguild") %>% fct_relevel("low", "medium", "high"), 
          Habitat = recode(Habitat, "unaltered" = "intact"))
 
 ## Bird plots FIG 3 ####
 
-linefit_full <- expand.grid(DietGroup = c("within-guild","intermediate", "control")) %>%
+linefit_full <- expand.grid(DietGroup = c("high","medium", "low")) %>%
   mutate(intercept = mean(bird_post$b_Intercept),
          slope  = mean(bird_post$b_PhyloD))
 
 #NT models linefit
- linefit_nt <- expand.grid(Habitat = c("intact", "altered"), DietGroup = c("intraguild","intersecting", "control")) %>%
+ linefit_nt <- expand.grid(Habitat = c("intact", "altered"), DietGroup = c("high","medium", "low")) %>%
    mutate(intercept = c(0.37, 0.31, 0.37, 0.31, 0.37, 0.31),
           slope  = c(-0.09, -0.1, -0.09, -0.1, -0.09, -0.1))
 
@@ -223,11 +223,11 @@ bat_data_plot <- as.data.frame(bat_nt_winner) %>% colMeans() %>%
   data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
   filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = "\\[") %>% 
   pivot_wider() %>% cbind(bat_data) %>% full_join(data_plot) %>% 
-  mutate(DietGroup = recode(DietGroup, "different" = "control", "same" = "intraguild"),
+  mutate(DietGroup = recode(DietGroup, "different" = "low", "same" = "high"),
          Habitat = recode(Habitat, "unaltered" = "intact"))
 
 # bat plot
-linefit <- expand.grid(Habitat = c("intact", "altered"), DietGroup = c("intraguild", "intersecting", "control")) %>% 
+linefit <- expand.grid(Habitat = c("intact", "altered"), DietGroup = c("high", "medium", "low")) %>% 
   mutate(intercept = c(0.41, 0.36, 0.77, 0.72, 0.42, 0.37), 
          slope = c(-0.11, -0.11, -0.11, -0.11, -0.11, -0.11))  
 

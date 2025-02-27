@@ -110,8 +110,9 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
   left_join(bind_rows(tax_dist)) %>% na.omit()
 
 ### Model fitting code #####
+### Computing requirements: ~32GB of RAM and 4 cores.
+
 # fit bat data
-# run all model structures and select best fit
 tax <- "bat"
 bat_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
 bat_winner <- find_best_model(tax=tax, bat_data) # runs all models, saves them and saves the loo object in current wd
@@ -125,7 +126,7 @@ summary(bird_winner)
 saveRDS(bird_winner, "./Results/bird_winner.rds")
 
 ## No-turnover models ####
-shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(match_val))
+shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(intersect))
 tables <- map2(tables, shared, function(x, y) map(x, function(z) return(z[y,])))
 
 # Contingency table
@@ -138,16 +139,13 @@ tax <- "bat"
 bat_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
 bat_nt_winner <- find_best_model(tax, bat_data)
 summary(bat_nt_winner)
-saveRDS(bat_nt_winner, "./Results/bat_winner_NoTrn.rds")
+saveRDS(bat_nt_winner, "./Results/bat_nt_winner.rds")
 
 tax <- "bird"
 bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
 bird_nt_winner <- find_best_model(tax, bird_data). # runs all models, saves them and saves the loo object in current wd.
 summary(bird_nt_winner)
-saveRDS(bird_nt_winner, "./Results/bird_winner_NoTrn.rds")
-
-#posterior predictive checks
-source("./Code/nch_ppc.R")
+saveRDS(bird_nt_winner, "./Results/bird_nt_winner.rds")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 #~~~~~~~~~~~~~~~~~~END OF SCRIPT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#

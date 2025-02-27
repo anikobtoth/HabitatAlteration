@@ -11,7 +11,10 @@ nch <- custom_family(name  = "nch", dpars = "mu", links = "identity", type  = "i
 
 # produce model data
 stan_data_fun <- function(df, nD_cut = 5) {
-  df$diet.match[df$diet.match=='Related'] <- 'Intersecting' # related diets excluded
+  df$diet.match[df$diet.match=='Related'] <- 'medium' 
+  df$diet.match[df$diet.match=='Different'] <- 'low' 
+  df$diet.match[df$diet.match=='Same'] <- 'high' 
+  df$status[df$status == 'unaltered'] <- 'intact'
   #df <- df[df$diet.match != "Similar",]
   df$DietGroup <- factor(tolower(df$diet.match))
   df$Habitat <- factor(df$status)
@@ -20,7 +23,7 @@ stan_data_fun <- function(df, nD_cut = 5) {
   df$occ1 <- apply(df[c('presSp1', 'presSp2')], 1, min)
   df$occ2 <- apply(df[c('presSp1', 'presSp2')], 1, max)
   df$N_site <- df$presSp1[1] + df$absSp1[1]
-  df$OccSet <- factor(paste(gsub(' ', '0', format(df$occ1)),
+  df$OccPair <- factor(paste(gsub(' ', '0', format(df$occ1)),
                             gsub(' ', '0', format(df$occ2)),
                             gsub(' ', '0', format(df$N_site)), sep = '-'))
   df$sb <- df$presBoth
@@ -29,7 +32,7 @@ stan_data_fun <- function(df, nD_cut = 5) {
   df$PhyloD <- tapply(df$D, df$PhyloD, mean)[df$PhyloD]
   df <- df[order(df$occ1, df$occ2, df$N_site),]
   
-  df2 <- df %>% group_by(occ1, occ2, N_site, OccSet, DietGroup, Habitat, 
+  df2 <- df %>% group_by(occ1, occ2, N_site, OccPair, DietGroup, Habitat, 
                          DietPair, PhyloD, sb, Constant) %>% 
     summarise(N_sb = n())
   return(list(df2, df))
@@ -225,15 +228,17 @@ nch_stanvars <- function(brm_form) {
 find_best_model <- function(tax, standata){
   
   ## fixed and random effects structures ----
+  
+  # Random effects with fixed variance
   re_steps <- character()
   for(i in c("(1|gr(Habitat:DietPair, by = Constant))",
              "(1|gr(DietPair, by = Constant))",
              "")) {
-    for(j in c("(1|gr(DietPair:PhyloD:Habitat:OccSet, by = Constant))",
-               "(1|gr(DietGroup:PhyloD:Habitat:OccSet, by = Constant))",
-               "(1|gr(DietPair:Habitat:OccSet, by = Constant))",
-               "(1|gr(DietGroup:Habitat:OccSet, by = Constant))",
-               "(1|gr(Habitat:OccSet, by = Constant))","")) {
+    for(j in c("(1|gr(DietPair:PhyloD:Habitat:OccPair, by = Constant))",
+               "(1|gr(DietGroup:PhyloD:Habitat:OccPair, by = Constant))",
+               "(1|gr(DietPair:Habitat:OccPair, by = Constant))",
+               "(1|gr(DietGroup:Habitat:OccPair, by = Constant))",
+               "(1|gr(Habitat:OccPair, by = Constant))","")) {
       re_steps <- c(re_steps, paste0(c(i, j),collapse='+')) %>% str_replace("\\+$", "") %>% 
         str_replace("^\\+", "")
     }
@@ -242,6 +247,21 @@ find_best_model <- function(tax, standata){
   f00 <- function(x) {sub(' ','0', format(c(99,x)))[-1]}
   names(re_steps) <- paste0('re', f00(seq_along(re_steps)))
   
+  # random effects with variable variance
+  
+  for(i in c("(1|gr(DietPair:PhyloD:Habitat:OccPair",
+             "(1|gr(DietGroup:PhyloD:Habitat:OccPair",
+             "(1|gr(DietPair:Habitat:OccPair",
+             "(1|gr(DietGroup:Habitat:OccPair",
+             "(1|gr(Habitat:OccPair")){
+    for(j in c("Habitat", "DietGroup", "Habitat:DietGroup")){
+      re_steps <- c(re_steps, paste0(i, ", by = ", j, "))"))
+    }
+  }
+  re_steps <- re_steps %>% setNames(paste0('re', f00(seq_along(re_steps))))
+  re_steps <- re_steps[1:31] #last two combinations cannot be calculated
+  
+  #Fixed steps
   fx_steps <- c("PhyloD + DietGroup + Habitat + PhyloD:DietGroup + PhyloD:Habitat + DietGroup:Habitat + PhyloD:DietGroup:Habitat",
                 "PhyloD + DietGroup + Habitat + PhyloD:DietGroup + PhyloD:Habitat + DietGroup:Habitat",
                 "PhyloD + DietGroup + Habitat + PhyloD:Habitat + DietGroup:Habitat",
@@ -273,7 +293,7 @@ find_best_model <- function(tax, standata){
     print(paste0('model ', i, ' of ', length(re_steps), ':'))
     print(brm_form)
     stan_fit <- brm(brm_form, family = nch, init = 0, data = standata,
-                    iter = 3e3, warmup = 1e3, thin = 2, cores = 1, 
+                    iter = 3e3, warmup = 1e3, thin = 2, cores = 4, 
                     stanvars = nch_stanvars(brm_form))
     saveRDS(stan_fit, paste0('./stan/', tax ,'_fx01_re', f00(i), '.rds'))
     re_warnings[[paste0(tax, '_fx01_re', f00(i))]] <- warnings()
@@ -301,7 +321,7 @@ find_best_model <- function(tax, standata){
     print(paste0('model ', i, ' of ', length(fx_steps), ':'))
     print(brm_form)
     stan_fit <- brm(brm_form, family = nch, init = 0, data = standata, 
-                    iter = 3e3, warmup = 1e3, thin = 2, cores = 1,
+                    iter = 3e3, warmup = 1e3, thin = 2, cores = 4,
                     stanvars = nch_stanvars(brm_form))
     saveRDS(stan_fit, paste0('./stan/', tax, '_fx', f00(i), '_', best_randeff,'.rds'))
     fx_warnings[[paste0(tax, '_fx01_re', f00(i))]] <- warnings()
