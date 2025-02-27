@@ -106,6 +106,8 @@ spp <- spp %>% mutate_if(is.character, list(~na_if(.,"")))
 
 tax_otl <- get_otl_taxonomy(spp, lifeform = c("bat", "bird"), contxt = c("Mammals", "Birds"))
 tax_dist <- map2(tax_otl, c("Mammals", "Birds"), get_pairwise_dist)
+# drop subspp.
+tax_otl <- map(tax_otl, ~.x %>% mutate(species_name = word(unique_name, 1,2, sep = " ")))
 
 spp <- left_join(spp, bind_rows(tax_otl) %>% select(1:2), by = c("species" = "search_string"))
 
@@ -153,8 +155,8 @@ PAn <- dat[grep("register", names(dat))] %>%
                 mutate(name = paste(genus, species, sep = " ")) %>% 
                 left_join(sitedat, by = c("sample.no", "sample.name", "country", "ecozone")) %>%
                 left_join(.y, by = c("name"="search_string")) %>%
-                filter(!is.na(unique_name)) %>%
-                pivot_wider(id_cols = "unique_name", names_from = "p.sample", 
+                filter(!is.na(species_name)) %>%
+                pivot_wider(id_cols = "species_name", names_from = "p.sample", 
                             values_from = "count", values_fill = 0, values_fn = sum) %>% 
                 data.frame(check.names = FALSE) %>% namerows()
   ) %>%
