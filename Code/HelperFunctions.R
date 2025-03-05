@@ -211,6 +211,14 @@ diet_cat <- function(x, g, related = TRUE){
   
 }
 
+# fixed-fixed randomisation function (uses vegan package) USED 
+rand_mat <- function(x, method = "curveball", i = 1){
+  y <- nullmodel(x, method = method) |> simulate(nsim = 1, burnin = 1e8, seed = i)
+  y <- y[,,1]
+  attributes(y) <- attributes(x)
+  return(y)
+}
+
 ##### ANALYSES ######
 
 ## Single run of FETmP USED
