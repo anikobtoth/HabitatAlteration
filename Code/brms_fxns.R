@@ -96,12 +96,12 @@ nch_stanvars <- function(brm_form) {
   nch_tdata <- stanvar(block = "tdata", scode = "
   // the code assumes (and therefore tests) that occ1 and occ2 are in ascending
   // order with occ1 <= occ2; the code yields:
-  //    int N_occ: number of occupancy sets (# of occ1/occ2/N_site combinations)
+  //    int N_occ: number of occupancy sets (number of occ1/occ2/N_site combinations)
   //    int N_ii: number of elements in ii/lp across all occupancy sets
   //    array[N] int occ_id: occupancy-set assignment for each observation
   //    array[N_occ, 2] int ii_lu: look-up table in ii for each occupancy set
   //    array[N_ii] int ii: allowed co-occurrence values for each occupancy set
-  //    array[N_ii] real lp: log(# of permutations) for each element in ii
+  //    array[N_ii] real lp: log(number of permutations) for each element in ii
   //
   int N_occ, N_ii;
   array[N] int occ_id;
@@ -328,16 +328,6 @@ find_best_model <- function(tax, standata){
     fx_loo[[paste0(tax, '_fx', f00(i), "_", best_randeff)]] <- build_loo(stan_fit)
   }
   
-  # 
-  # # fixed effects formulas
-  # fx_formulas <- paste0('sb | vint(occ1, occ2, N_sb, N_site) ~ ', re_steps[[best_randeff]]) 
-  # fx_formulas <-  map(fx_steps, ~paste(c(fx_formulas, .x), collapse = "+")) %>% 
-  #   str_replace("\\+$", "")
-  # names(fx_formulas) <- paste0('fixd',gsub(' ','0', format(seq_along(fx_steps)-1)), "_", best_randeff)
-  # if(best_randeff %in% c("rand0", "rand00")){fx_formulas <- fx_formulas[-1]}
-  # 
-  # loo_fx <- map2(fx_formulas, names(fx_formulas), ## saves models and returns elpd evaluations
-  #                ~fit_brms_model(formula = as.formula(.x), data = standata, modelname = .y, tax = tax))
   best_model <- (loo_compare(fx_loo) %>% data.frame() %>% rownames())[1] # get best random effects structure
   message("Best fixed effects structure is ", best_model, ": ", 
           paste(paste0('sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ ',
@@ -350,7 +340,16 @@ find_best_model <- function(tax, standata){
   return(winner)
 }
 
-
-
+# Single run of model from a fixed formula
+singlerun <- function(standata, frm, path = NULL){
+  brm_form <- formula(frm)
+  print(brm_form)
+  stan_fit <- brm(brm_form, family = nch, init = 0, data = standata, 
+                  iter = 3e3, warmup = 1e3, thin = 2, cores = 4,
+                  stanvars = nch_stanvars(brm_form))
+  if(!is.null(path)) {saveRDS(stan_fit, path)}
+  #fx_warnings <- warnings()
+  return(stan_fit)
+}
 
 
