@@ -119,11 +119,15 @@ bat_winner <- find_best_model(tax=tax, bat_data) # runs all models, saves them a
 summary(bat_winner)
 saveRDS(bat_winner, "./Results/bat_winner.rds") # save a copy of best model to results
 
+#bat_winner <- singlerun(bat_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietGroup + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietGroup))')
+
 tax <- "bird"
 bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
 bird_winner <- find_best_model(tax= tax, bird_data)
 summary(bird_winner)
 saveRDS(bird_winner, "./Results/bird_winner.rds")
+
+#bird_winner <- singlerun(bird_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = Habitat))')
 
 ## No-turnover models ####
 shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(intersect))
@@ -141,12 +145,47 @@ bat_nt_winner <- find_best_model(tax, bat_data)
 summary(bat_nt_winner)
 saveRDS(bat_nt_winner, "./Results/bat_nt_winner.rds")
 
+#bat_nt_winner <- singlerun(bat_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietGroup + Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietGroup)) ')
+
+
 tax <- "bird"
 bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
 bird_nt_winner <- find_best_model(tax, bird_data). # runs all models, saves them and saves the loo object in current wd.
 summary(bird_nt_winner)
 saveRDS(bird_nt_winner, "./Results/bird_nt_winner.rds")
 
+#bird_nt_winner <- singlerun(bird_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + Habitat + PhyloD:Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietGroup)) ')
+
+
+## Randomisations ####
+library(furrr)
+library(future)
+
+tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
+  map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
+
+plan(multicore) ## Mac/Linux
+#plan(multisession) ## Windows
+
+tables_rand <- future_map(1:100, function(y) map(tables, ~map(.x, rand_mat, i = y)) %>% flatten() %>% setNames(c("bat$altered", "bat$unaltered", "bird$altered", "bird$unaltered")))
+
+# list of 100 randomised contingency tables
+contables_rand <- future_map(tables_rand, map, cont_table) %>% map(bind_rows, .id = "taxon_status") %>% 
+  map(~.x %>% separate(taxon_status, into = c("taxon", "status"), sep = "$") %>% 
+              diet_cat(pull(spp, guild) %>% setNames(spp$unique_name), related = TRUE) %>%
+  left_join(bind_rows(tax_dist)) %>% na.omit())
+
+
+formulas <- c(bat = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietGroup + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietGroup))',
+              bird ='sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = Habitat))')
+
+summary <- list()
+for(i in seq_along(contables)){
+  summary[[i]] <- contables[[i]] %>% split(.$taxon) %>% map(~stan_data_fun(.x)[[1]]) %>%
+    map2(formulas, ~singlerun(.x, .y) %>% summary() %>% `$`(fixed))
+}
+
+#####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 #~~~~~~~~~~~~~~~~~~END OF SCRIPT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
