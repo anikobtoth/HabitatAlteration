@@ -109,6 +109,14 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
   bind_rows(.id = "taxon") %>% diet_cat(pull(spp, guild) %>% setNames(spp$unique_name), related = TRUE) %>%
   left_join(bind_rows(tax_dist)) %>% na.omit()
 
+# Data dimensions
+# species counts
+contables %>% split(.$taxon) %>% 
+  map(~.x %>% select(Sp1, Sp2) %>% unlist() %>% unique() %>% length())
+# site and pair counts
+contables %>% group_by(taxon, status) %>% 
+  summarise(nsite = first(samples), npairs = n())
+
 ### Model fitting code #####
 ### Computing requirements: ~32GB of RAM and 4 cores.
 
@@ -167,21 +175,24 @@ tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rowna
 plan(multicore) ## Mac/Linux
 #plan(multisession) ## Windows
 
-tables_rand <- future_map(1:100, function(y) map(tables, ~map(.x, rand_mat, i = y)) %>% flatten() %>% setNames(c("bat$altered", "bat$unaltered", "bird$altered", "bird$unaltered")))
+tables_rand <- future_map(1:100, function(y) map(tables, ~map(.x, rand_mat, i = y)) %>% 
+                                               flatten() %>% setNames(c("bat$altered", "bat$unaltered", "bird$altered", "bird$unaltered")))
 
 # list of 100 randomised contingency tables
-contables_rand <- future_map(tables_rand, map, cont_table) %>% map(bind_rows, .id = "taxon_status") %>% 
-  map(~.x %>% separate(taxon_status, into = c("taxon", "status"), sep = "$") %>% 
-              diet_cat(pull(spp, guild) %>% setNames(spp$unique_name), related = TRUE) %>%
-  left_join(bind_rows(tax_dist)) %>% na.omit())
+contables_rand <- future_map(tables_rand, map, cont_table) %>% 
+                      map(bind_rows, .id = "taxon_status") %>% 
+                      map(~.x %>% separate(taxon_status, into = c("taxon", "status"), sep = "$") %>% 
+                      diet_cat(pull(spp, guild) %>% setNames(spp$unique_name), related = TRUE) %>%
+                      left_join(bind_rows(tax_dist)) %>% na.omit())
 
 
 formulas <- c(bat = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietGroup + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietGroup))',
               bird ='sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = Habitat))')
 
 summary <- list()
-for(i in seq_along(contables)){
-  summary[[i]] <- contables[[i]] %>% split(.$taxon) %>% map(~stan_data_fun(.x)[[1]]) %>%
+for(i in seq_along(contables_rand)){
+  summary[[i]] <- contables_rand[[i]] %>% split(.$taxon) %>% 
+    map(~stan_data_fun(.x)[[1]]) %>%
     map2(formulas, ~singlerun(.x, .y) %>% summary() %>% `$`(fixed))
 }
 
