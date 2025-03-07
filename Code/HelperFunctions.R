@@ -236,6 +236,36 @@ FETmP_ <- function(Talt, Tunalt, altered, unaltered){
   return(out)
 }
 
+# Fishers noncentral hypergeometric probability mass function
+log_sum_exp <- function(x) log(sum(exp(x - max(x)))) + max(x)
+fnchypergeo_lpmf_ <- function(sb, s1, s2, n_site, theta) {
+  sb_min <- max(c(0,s1 + s2 - n_site))
+  sb_max <- min(c(s1,s2))
+  u <- ll <- ans <- numeric()
+  for(i in sb_min:sb_max) {
+    u[i - sb_min + 1] = i;
+    ll[i - sb_min + 1] = lchoose(s1, i) + lchoose(n_site - s1, s2 - i)
+  }
+  if(length(sb) > 1) {
+    for(i in 1:length(sb)) {
+      ans[i] = ll[sb[i] - sb_min + 1] + sb[i]*theta - log_sum_exp(ll + u*theta)
+    }
+  } else {
+    for(i in 1:length(theta)) {
+      ans[i] = ll[sb - sb_min + 1] + sb*theta[i] - log_sum_exp(ll + u*theta[i])
+    }
+  }    
+  return(ans)
+}
+fnchypergeo_lpmf <- function(sb, s1, s2, n_site, theta){
+  d <- data.frame(sb, s1, s2, n_site, theta)
+  Nab_theta <- numeric()
+  for(s in 1:nrow(d)){
+    Nab_theta[s] <- fnchypergeo_lpmf_(d$sb[s], d$s1[s], d$s2[s], d$n_site[s], d$theta[s])
+  }
+  return(Nab_theta)
+}
+
 #### similarity ####
 
 ## CJ1 From John Alroy (2020) USED
