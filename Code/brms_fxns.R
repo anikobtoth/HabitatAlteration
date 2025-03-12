@@ -14,9 +14,10 @@ stan_data_fun <- function(df, nD_cut = 5) {
   df$diet.match[df$diet.match=='Related'] <- 'medium' 
   df$diet.match[df$diet.match=='Different'] <- 'low' 
   df$diet.match[df$diet.match=='Same'] <- 'high' 
+  df$diet.match <- factor(df$diet.match, levels = c("low", "medium", "high"))
   df$status[df$status == 'unaltered'] <- 'intact'
   #df <- df[df$diet.match != "Similar",]
-  df$DietGroup <- factor(tolower(df$diet.match))
+  df$DietOvl <- factor(tolower(df$diet.match))
   df$Habitat <- factor(df$status)
   df$DietPair <- factor(df$diet.pair)
   df$Constant <- factor('Constant') # used for model selection
@@ -32,7 +33,7 @@ stan_data_fun <- function(df, nD_cut = 5) {
   df$PhyloD <- tapply(df$D, df$PhyloD, mean)[df$PhyloD]
   df <- df[order(df$occ1, df$occ2, df$N_site),]
   
-  df2 <- df %>% group_by(occ1, occ2, N_site, OccPair, DietGroup, Habitat, 
+  df2 <- df %>% group_by(occ1, occ2, N_site, OccPair, DietOvl, Habitat, 
                          DietPair, PhyloD, sb, Constant) %>% 
     summarise(N_sb = n())
   return(list(df2, df))
@@ -231,54 +232,46 @@ find_best_model <- function(tax, standata){
   
   # Random effects with fixed variance
   re_steps <- character()
-  for(i in c("(1|gr(Habitat:DietPair, by = Constant))",
-             "(1|gr(DietPair, by = Constant))",
+  for(i in c("(1|gr(Habitat:DietPair, ",
+             "(1|gr(DietPair, ",
              "")) {
-    for(j in c("(1|gr(DietPair:PhyloD:Habitat:OccPair, by = Constant))",
-               "(1|gr(DietGroup:PhyloD:Habitat:OccPair, by = Constant))",
-               "(1|gr(DietPair:Habitat:OccPair, by = Constant))",
-               "(1|gr(DietGroup:Habitat:OccPair, by = Constant))",
-               "(1|gr(Habitat:OccPair, by = Constant))","")) {
-      re_steps <- c(re_steps, paste0(c(i, j),collapse='+')) %>% str_replace("\\+$", "") %>% 
-        str_replace("^\\+", "")
+    for(j in c("(1|gr(DietPair:PhyloD:Habitat:OccPair,",
+               "(1|gr(DietOvl:PhyloD:Habitat:OccPair,",
+               "(1|gr(DietPair:Habitat:OccPair,",
+               "(1|gr(DietOvl:Habitat:OccPair,",
+               "(1|gr(Habitat:OccPair,","")) {
+      for(k in c("by = Constant))", "by = Habitat))", "by = DietOvl))", "by = Habitat:DietOvl))")){
+        if(nchar(i) > 0) re1 <- paste(i, k) else re1 <- i
+        if(nchar(j) > 0) re2 <- paste(j, k) else re2 <- j
+        re_steps <- c(re_steps, paste0(c(re1, re2),collapse='+')) %>% str_replace("\\+$", "") %>% 
+          str_replace("^\\+", "")
+      }
     }
   }
-  re_steps[length(re_steps)] <- "1"
+  re_steps <- re_steps[-which(re_steps == "")] # remove empty formulas
+  re_steps <- re_steps[-c(19,20, 26, 28, 30, 32, 34, 36, 38, 40, 42:44, 46, 48, 67, 68)] # remove non-nested variance structures
+  re_steps[length(re_steps)+1] <- "1"
   f00 <- function(x) {sub(' ','0', format(c(99,x)))[-1]}
   names(re_steps) <- paste0('re', f00(seq_along(re_steps)))
   
-  # random effects with variable variance
-  
-  for(i in c("(1|gr(DietPair:PhyloD:Habitat:OccPair",
-             "(1|gr(DietGroup:PhyloD:Habitat:OccPair",
-             "(1|gr(DietPair:Habitat:OccPair",
-             "(1|gr(DietGroup:Habitat:OccPair",
-             "(1|gr(Habitat:OccPair")){
-    for(j in c("Habitat", "DietGroup", "Habitat:DietGroup")){
-      re_steps <- c(re_steps, paste0(i, ", by = ", j, "))"))
-    }
-  }
-  re_steps <- re_steps %>% setNames(paste0('re', f00(seq_along(re_steps))))
-  re_steps <- re_steps[1:31] #last two combinations cannot be calculated
-  
   #Fixed steps
-  fx_steps <- c("PhyloD + DietGroup + Habitat + PhyloD:DietGroup + PhyloD:Habitat + DietGroup:Habitat + PhyloD:DietGroup:Habitat",
-                "PhyloD + DietGroup + Habitat + PhyloD:DietGroup + PhyloD:Habitat + DietGroup:Habitat",
-                "PhyloD + DietGroup + Habitat + PhyloD:Habitat + DietGroup:Habitat",
-                "PhyloD + DietGroup + Habitat + PhyloD:DietGroup + DietGroup:Habitat",
-                "PhyloD + DietGroup + Habitat + DietGroup:Habitat",
-                "DietGroup + Habitat + DietGroup:Habitat",
-                "PhyloD + DietGroup + Habitat + PhyloD:DietGroup + PhyloD:Habitat",
-                "PhyloD + DietGroup + Habitat + PhyloD:Habitat",
+  fx_steps <- c("PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat + DietOvl:Habitat + PhyloD:DietOvl:Habitat",
+                "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat + DietOvl:Habitat",
+                "PhyloD + DietOvl + Habitat + PhyloD:Habitat + DietOvl:Habitat",
+                "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + DietOvl:Habitat",
+                "PhyloD + DietOvl + Habitat + DietOvl:Habitat",
+                "DietOvl + Habitat + DietOvl:Habitat",
+                "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat",
+                "PhyloD + DietOvl + Habitat + PhyloD:Habitat",
                 "PhyloD + Habitat + PhyloD:Habitat",
-                "PhyloD + DietGroup + Habitat + PhyloD:DietGroup",
-                "PhyloD + DietGroup + PhyloD:DietGroup",
-                "PhyloD + DietGroup + Habitat",
-                "DietGroup + Habitat",
+                "PhyloD + DietOvl + Habitat + PhyloD:DietOvl",
+                "PhyloD + DietOvl + PhyloD:DietOvl",
+                "PhyloD + DietOvl + Habitat",
+                "DietOvl + Habitat",
                 "PhyloD + Habitat",
                 "Habitat",
-                "PhyloD + DietGroup",
-                "DietGroup",
+                "PhyloD + DietOvl",
+                "DietOvl",
                 "PhyloD",
                 "1")
   names(fx_steps) <- paste0('fx', f00(seq_along(fx_steps)))
@@ -347,9 +340,59 @@ singlerun <- function(standata, frm, path = NULL){
   stan_fit <- brm(brm_form, family = nch, init = 0, data = standata, 
                   iter = 3e3, warmup = 1e3, thin = 2, cores = 4,
                   stanvars = nch_stanvars(brm_form))
-  if(!is.null(path)) {saveRDS(stan_fit, path)}
+  #if(!is.null(path)) {saveRDS(stan_fit, path)}
   #fx_warnings <- warnings()
-  return(stan_fit)
+  #return(stan_fit)
+  saveRDS(build_loo(stan_fit), path)
 }
+
+## fixed and random effects structures ----
+
+# Random effects with fixed variance
+re_steps <- character()
+for(i in c("(1|gr(Habitat:DietPair, ",
+           "(1|gr(DietPair, ",
+           "")) {
+  for(j in c("(1|gr(DietPair:PhyloD:Habitat:OccPair,",
+             "(1|gr(DietOvl:PhyloD:Habitat:OccPair,",
+             "(1|gr(DietPair:Habitat:OccPair,",
+             "(1|gr(DietOvl:Habitat:OccPair,",
+             "(1|gr(Habitat:OccPair,","")) {
+    for(k in c("by = Constant))", "by = Habitat))", "by = DietOvl))", "by = Habitat:DietOvl))")){
+      if(nchar(i) > 0) re1 <- paste(i, k) else re1 <- i
+      if(nchar(j) > 0) re2 <- paste(j, k) else re2 <- j
+      re_steps <- c(re_steps, paste0(c(re1, re2),collapse='+')) %>% str_replace("\\+$", "") %>% 
+        str_replace("^\\+", "")
+    }
+  }
+}
+re_steps <- re_steps[-which(re_steps == "")] # remove empty formulas
+re_steps <- re_steps[-c(19,20, 26, 28, 30, 32, 34, 36, 38, 40, 42:44, 46, 48, 67, 68)] # remove non-nested variance structures
+re_steps[length(re_steps)+1] <- "1"
+f00 <- function(x) {sub(' ','0', format(c(99,x)))[-1]}
+names(re_steps) <- paste0('re', f00(seq_along(re_steps)))
+
+#Fixed steps
+fx_steps <- c("PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat + DietOvl:Habitat + PhyloD:DietOvl:Habitat",
+              "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat + DietOvl:Habitat",
+              "PhyloD + DietOvl + Habitat + PhyloD:Habitat + DietOvl:Habitat",
+              "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + DietOvl:Habitat",
+              "PhyloD + DietOvl + Habitat + DietOvl:Habitat",
+              "DietOvl + Habitat + DietOvl:Habitat",
+              "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat",
+              "PhyloD + DietOvl + Habitat + PhyloD:Habitat",
+              "PhyloD + Habitat + PhyloD:Habitat",
+              "PhyloD + DietOvl + Habitat + PhyloD:DietOvl",
+              "PhyloD + DietOvl + PhyloD:DietOvl",
+              "PhyloD + DietOvl + Habitat",
+              "DietOvl + Habitat",
+              "PhyloD + Habitat",
+              "Habitat",
+              "PhyloD + DietOvl",
+              "DietOvl",
+              "PhyloD",
+              "1")
+names(fx_steps) <- paste0('fx', f00(seq_along(fx_steps)))
+### end define fixed and random effects structures ----
 
 
