@@ -17,55 +17,33 @@ library(gganimate)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
 ##  MAIN TEXT 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#### Figure 2 #####
+# fnchd lpmf helper functions used
+data <- expand.grid(Na = c(2,8), Nb =c(2,8), N = 50, theta = -2:2, Nab = 0:8) %>% 
+  filter(Na == Nb) %>% arrange(Na, theta) %>%
+  mutate(Nab_theta = exp(fnchypergeo_lpmf(Nab, Na, Nb, N, theta)), 
+         label = ifelse(Na == 2, "italic(N[A])~'='~italic(N[B])~'='~2", "italic(N[A])~'='~italic(N[B])~'='~8")) %>% 
+  na.omit()
 
-colors <- c("#ADADAD", "#525252", "#2F99DC", "#00487C", "#C595CE", "#480355")
+ggplot(data, aes(x = Nab, y = Nab_theta, group = theta, col = theta))+ 
+  geom_point() + geom_line() + 
+  scale_y_log10(labels = trans_format("log", math_format())) + 
+  facet_wrap(~label, labeller = label_parsed, scales= "free") +
+  labs(y = expression('probability, f('~italic(N[AB])~'|'~italic(theta)~')'), 
+       x= expression('number of co-occurrences,'~italic(N[AB])), 
+       col = expression(theta)) + 
+  theme_light() #+ ylim(c(1e-08, 1)) 
 
-# calculate posterior slopes and intercepts
-calc_parameters <- function(post){
-  params <- list()
-  c <- 0
-  coeffs <- grep(names(post), pattern = "^b_", value = TRUE)
-  for(i in c("low", "medium", "high")){
-    for(j in c("altered", "unaltered")){
-      c <- c+1
-      slope <- data.frame(post$`b_PhyloD`,
-                          post[,grep(coeffs, pattern = paste0("PhyloD:DietGroup", i), value = TRUE)],
-                          post[,grep(coeffs, pattern = paste0("PhyloD:Habitat", j), value = TRUE)]) %>%
-        rowSums()
-      
-      intcoeffs <- coeffs[!grepl(coeffs, pattern = "PhyloD")] # remove slope coefficients
-      intercept <- data.frame(post$`b_Intercept`, 
-                              post[,grep(intcoeffs, pattern = paste0("DietGroup", i, "|Habitat", j), value = TRUE)]) %>%
-        rowSums()
-      
-      params[[c]] <- tibble(iteration = 1:nrow(post), DietGroup = i, Habitat = j, slope, intercept)
-    }
-  }
-  params <- bind_rows(params) %>% mutate(Habitat = recode(Habitat, "unaltered" = "intact"), 
-                                         DietGroup = recode(DietGroup, "same" = "intraguild"))
-  return(params)
-}
+# Fig 3 ####
+colors6 <- c("#ADADAD", "#525252", "#C595CE", "#480355", "#2F99DC", "#00487C")
 
-# Calculate credible intervals
-CIcalc <- function(params, plotdata){
-    seq(range(plotdata$D)[1], range(plotdata$D)[2], length.out = 100) %>%
-    map(~params %>% mutate(Dbin = .x, theta = slope*Dbin+intercept)) %>%
-    bind_rows() %>%
-    group_by(DietGroup, Dbin) %>%
-    summarise(theta_025 = quantile(theta, 0.025),
-              theta_975 = quantile(theta, 0.975),
-              theta_mu  = mean(theta)) %>%
-    full_join(plotdata %>% group_by(DietGroup) %>% 
-                summarise(d025 = quantile(D, 0.025), d975 = quantile(D, 0.975))) %>%
-    mutate(D95q = Dbin > d025 & Dbin < d975)
-}
 
 
 # BAT theta posterior mean and CI calculations ----
 tax = "bat"
 bat_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
 data_plot <- stan_data_fun(filter(contables, taxon == tax))[[2]]
-bat_post <- as.data.frame(bat_winner)  
+bat_post <- as.data.frame(bat_FULL_winner)  
 
 bat_data_plot <- bat_post %>% colMeans() %>% 
   data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
@@ -74,29 +52,28 @@ bat_data_plot <- bat_post %>% colMeans() %>%
   mutate(DietGroup =  fct_relevel(DietGroup, "low", "medium", "high"),
          Habitat = recode(Habitat, "unaltered" = "intact"))
 
-CI_df_bat <- bat_post %>% calc_parameters() %>% CIcalc(data_plot) %>% 
-  mutate(DietGroup = recode(DietGroup, "low" = "control", "medium" = "intersecting", "high" = "intraguild") %>% fct_relevel("low", "medium", "high"))
+CI_df_bat <- bat_post %>% calc_parameters() %>% CIcalc(data_plot) 
 
 linefit <- expand.grid(DietGroup = c("high", "medium", "low")) %>% 
-  mutate(intercept = c(mean(bat_post$b_Intercept+bat_post$b_DietGroupsame), 
-                       mean(bat_post$b_Intercept+bat_post$b_DietGroupintersecting),
-                       mean(bat_post$b_Intercept)), 
+  mutate(intercept = c(mean(bat_post$b_Intercept), 
+                       mean(bat_post$b_Intercept+bat_post$b_DietGroupmedium),
+                       mean(bat_post$b_Intercept+bat_post$b_DietGrouphigh)), 
          slope = c(mean(bat_post$b_PhyloD))) 
 
 ## BAT PLOT FIG 2 ####
 # points
-bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietGroup))) + 
-  geom_jitter(alpha = 0.3, width = 0.15, size = 0.5) + 
-  geom_ribbon(data = filter(CI_df_bat, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
-  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
-  geom_abline(data = linefit, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
-  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
-  facet_grid(Habitat~DietGroup) + 
-  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
-  scale_color_manual(values = colors) +
-  theme_light() + theme(legend.position = "none")
+# bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietGroup))) + 
+#   geom_jitter(alpha = 0.3, width = 0.15, size = 0.5) + 
+#   geom_ribbon(data = filter(CI_df_bat, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
+#   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
+#   geom_abline(data = linefit, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
+#   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
+#   facet_grid(Habitat~DietGroup) + 
+#   labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
+#   scale_color_manual(values = colors6) +
+#   theme_light() + theme(legend.position = "none")
 
-# hexbins
+# hexbins DietOvlp by Habitat
 bat_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
   geom_hex() + facet_grid(.~DietGroup) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bat, !D95q, Dbin < 0), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.4) +
@@ -107,14 +84,14 @@ bat_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) +
   scale_color_manual(values = colors) +
   theme_light() 
 
-# hexbin, no habitat dimension
-F2A <- bat_data_plot %>% mutate(DietGroup = recode(DietGroup, "different" = "low", "intersecting" = "medium", "intraguild" = "high")) %>% 
+# FIG. 2A hexbin, no habitat dimension
+F4A <- bat_data_plot %>% #mutate(DietGroup = recode(DietGroup, "different" = "low", "intersecting" = "medium", "intraguild" = "high")) %>% 
   ggplot(aes(x = D, y = theta_vl)) + 
   geom_hex() + facet_grid(.~DietGroup) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bat, !D95q, Dbin < 0), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.4) +
   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
   geom_abline(data = linefit, aes(intercept = intercept, slope = slope),lwd = 0.4) +
-  #geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
+  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
   labs(col = "group") + 
   labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
   scale_color_manual(values = colors) +
@@ -126,16 +103,14 @@ F2A <- bat_data_plot %>% mutate(DietGroup = recode(DietGroup, "different" = "low
 tax = "bird"
 bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
 data_plot <- stan_data_fun(filter(contables, taxon == tax))[[2]]
-bird_post <- as.data.frame(bird_winner)
-CI_df_bird <- bird_post %>% calc_parameters() %>% CIcalc(data_plot) %>%
-  mutate(DietGroup = recode(DietGroup, "low" = "control", "medium" = "intersecting", "high" = "intraguild") %>% fct_relevel("low", "medium", "high"))
+bird_post <- as.data.frame(bird_FULL_winner)
+CI_df_bird_full <- bird_post %>% calc_parameters() %>% CIcalc(data_plot)
 
 bird_data_plot <- bird_post %>% colMeans() %>% 
   data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
   filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = "\\[") %>% 
   pivot_wider() %>% cbind(bird_data) %>% full_join(data_plot) %>% 
-  mutate(DietGroup = recode(DietGroup, "low" = "control", "medium" = "intersecting", "high" = "intraguild") %>% fct_relevel("low", "medium", "high"), 
-         Habitat = recode(Habitat, "unaltered" = "intact"))
+  mutate(DietGroup =  fct_relevel(DietGroup, "low", "medium", "high"))
 
 ## Bird plots FIG 3 ####
 
@@ -147,7 +122,7 @@ linefit_full <- expand.grid(DietGroup = c("high","medium", "low")) %>%
  linefit_nt <- expand.grid(Habitat = c("intact", "altered"), DietGroup = c("high","medium", "low")) %>%
    mutate(intercept = c(0.37, 0.31, 0.37, 0.31, 0.37, 0.31),
           slope  = c(-0.09, -0.1, -0.09, -0.1, -0.09, -0.1))
-
+# points
 bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietGroup))) + 
   geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) + 
   geom_ribbon(data = filter(CI_df_bird_full, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
@@ -156,10 +131,10 @@ bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, Di
   geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
   facet_grid(Habitat~DietGroup) + labs(col = "group") + 
   labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
-  scale_color_manual(values = colors) +
+  scale_color_manual(values = colors6) +
   theme_light() + theme(legend.position = "none")
-
-birdfull <- bird_data_plot_full %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
+# hexbins
+birdfull <- bird_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
   geom_hex() + facet_grid(Habitat~DietGroup) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bird_full, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.5) +
   geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
@@ -167,7 +142,7 @@ birdfull <- bird_data_plot_full %>% ggplot(aes(x = jitter(D), y = theta_vl)) +
   geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
   labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
   theme_light() 
-
+# restricted-pool hexbins
 birdnt <- bird_data_plot_nt %>% ggplot(aes(x = D, y = theta_vl)) + 
   geom_hex() + facet_grid(Habitat~DietGroup) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bird_nt, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
@@ -189,26 +164,26 @@ bird_data_plot %>%
   xlim(c(-1.1, 2.2)) +
   labs(y = "binned standardised phylogenetic distance", x = expression(theta))
 
-#combined bird data NT and FULL
-colours2 <- c("#FF4E33", "#000000")
-bird_data_plot <- list(FULL = bird_data_plot_full, NT = bird_data_plot_nt) %% bind_rows(.id = model)
-bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = model)) + 
-     geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) + 
-     facet_grid(Habitat~DietGroup) +
-     geom_abline(data = linefit_bird, aes(intercept = intercept, slope = slope, col = model), lty = 2,lwd = 0.4) +
-     scale_color_manual(values = colours2) +
-     labs(y = expression(theta), x = "standardised phylogenetic distance")
-
-F2B <-  bird_data_plot_full %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
+#combined bird data NT and FULL ####
+# colours2 <- c("#FF4E33", "#000000")
+# bird_data_plot <- list(FULL = bird_data_plot_full, NT = bird_data_plot_nt) %% bind_rows(.id = model)
+# bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = model)) + 
+#      geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) + 
+#      facet_grid(Habitat~DietGroup) +
+#      geom_abline(data = linefit_bird, aes(intercept = intercept, slope = slope, col = model), lty = 2,lwd = 0.4) +
+#      scale_color_manual(values = colours2) +
+#      labs(y = expression(theta), x = "standardised phylogenetic distance")
+#####
+F4B <-  bird_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
   geom_hex() + facet_grid(.~DietGroup) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bird_full, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.5) +
   geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
   geom_abline(data = linefit_full, aes(intercept = intercept, slope = slope),lwd = 0.4) +
-  #geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
+  geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
   labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
   theme_light() 
 
-plot_grid(F2A, F2B, ncol = 1, align = "v", labels = c("A", "B"))
+plot_grid(F4A, F4B, ncol = 1, align = "v", labels = c("A", "B"))
 #######
 ##### No-Turnover plots #####
 
@@ -216,10 +191,10 @@ plot_grid(F2A, F2B, ncol = 1, align = "v", labels = c("A", "B"))
 tax = "bat"
 bat_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
 data_plot <- stan_data_fun(filter(contables, taxon == tax))[[2]]
-bat_post <- as.data.frame(bat_nt_winner)  
+bat_post <- as.data.frame(bird_RP_winner)  
 CI_df_bat <- bat_post %>% calc_parameters() %>% CIcalc(data_plot)
 
-bat_data_plot <- as.data.frame(bat_nt_winner) %>% colMeans() %>% 
+bat_data_plot <- as.data.frame(bird_RP_winner) %>% colMeans() %>% 
   data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
   filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = "\\[") %>% 
   pivot_wider() %>% cbind(bat_data) %>% full_join(data_plot) %>% 
@@ -247,18 +222,22 @@ bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, Die
 ######
 
 ## SD plot FIG 4 ----
-sd <- list(bat_winner, bat_nt_winner, bird_fx18_re20, bird_nt_winner) %>% 
+sd <- list(bat_FULL_winner, bird_RP_winner, bird_FULL_winner, bird_RP_winner) %>% 
   map(~data.frame(summary(.x)$random) %>% select(1:4) %>% 
         setNames(c("Estimate", "SE", "l-95CI", "u-95CI")) %>% rownames_to_column()) %>% 
-  setNames(c("bat_Full", "bat_No-turnover", "bird_FULL", "bird_No-turnover")) %>% 
+  setNames(c("bat_FULL", "bat_RP", "bird_FULL", "bird_RP")) %>% 
   bind_rows(.id = "model") %>% 
   separate(model, into = c("taxon", "model"), sep = "_") %>% 
-  mutate(Habitat = ifelse(grepl("unaltered", rowname), "intact", ifelse(grepl("altered", rowname), "altered", "")), 
-         DietGroup = ifelse(grepl("same", rowname), "within-guild", ifelse(grepl("intersecting", rowname), "intermediate", ifelse(grepl("different", rowname), "control", "" )))) 
+  mutate(Variance = ifelse(grepl("high", rowname), "high-overlap", 
+                           ifelse(grepl("medium", rowname), "medium-overlap", 
+                                  ifelse(grepl("low", rowname), "low-overlap", 
+                                         ifelse(grepl("altered", rowname), "altered", 
+                                                ifelse(grepl("intact", rowname), "intact", ""))))) %>% 
+           fct_relevel("low-overlap", "medium-overlap", "high-overlap", "intact", "altered")) 
 
-colors <- c("#ADADAD", "#2F99DC", "#C595CE")
+colors <- c("#595959","#B382BE","#0070C0", "darkgreen", "limegreen")
 
-sd %>% ggplot(aes(x = interaction(Habitat, DietGroup, sep = ""), y = Estimate, fill = interaction(Habitat, DietGroup, sep = ""))) + 
+sd %>% ggplot(aes(x = Variance, y = Estimate, fill = Variance)) + 
   geom_bar(stat = "identity", position = "dodge") + 
   geom_errorbar(aes(ymin = `l-95CI`, ymax = `u-95CI`), width = 0.1, lwd = 0.5) +
   facet_wrap(taxon~model, scales = "free") + 
@@ -299,6 +278,8 @@ points(latitude~longitude, coords1.keep$bird, pch = 16, cex=.7, col = "dodgerblu
 points(latitude~longitude, coords2.keep$bird, pch = 16, cex=.7, col = "red")
 mtext("Birds-included sites", side = 3, line = 1)
 box()
+
+
 
 ### Figure S4: PCoA ####
 #ordinations, colored by alteration type
@@ -355,7 +336,15 @@ p2 <- bat_data_plot %>% ggplot(aes(x = log(occ1), y = sqrt(abs(theta_vl-theta_mu
   ylim(c(0, 1.5))+
   labs(y = expression(paste(sqrt(abs(theta-bar(theta))))), 
        x = "logged occupancy of rarer species in pair")
-plot_grid(p2, p1, labels = c("A", "B"), ncol = 1)
+
+p3 <-  bat_data_plot %>% ggplot(aes(x = log(occ2), y = sqrt(abs(theta_vl-theta_mu)))) + 
+  geom_point(size = 0.8, alpha = 0.4) + geom_smooth(method = "loess", se=F) + 
+  facet_grid(status~DietGroup, scales = "free") + 
+  ylim(c(0, 1.5))+
+  labs(y = expression(paste(sqrt(abs(theta-bar(theta))))), 
+       x = "logged occupancy of more common species in pair")
+
+plot_grid(p2, p3, p1, labels = c("A", "B", "C"), ncol = 1)
 
 ## bird bias check
 p1 <- bird_data_plot %>% slice_sample(n = 100000) %>% ggplot(aes(x = log(N_sb), y = sqrt(abs(theta_vl-theta_mu)))) + 
@@ -363,56 +352,67 @@ p1 <- bird_data_plot %>% slice_sample(n = 100000) %>% ggplot(aes(x = log(N_sb), 
   labs(y = expression(paste(sqrt(abs(theta-bar(theta))))), 
        x = expression(ln(N[set])))
 
-p2 <- bird_data_plot %>% slice_sample(n = 50000) %>% ggplot(aes(x = log(occ1), y = sqrt(abs(theta_vl-theta_mu)))) + 
-  geom_point(size = 0.8, alpha = 0.4) + geom_smooth(method = "loess") + facet_grid(status~DietGroup) + 
+p2 <- bird_data_plot %>% slice_sample(n = 50000) %>% ggplot(aes(x = jitter(log(occ1), amount = 0.01), y = sqrt(abs(theta_vl-theta_mu)))) + 
+  geom_point(size = 0.8, alpha = 0.4) + geom_smooth(method = "loess", se = FALSE) + facet_grid(status~DietGroup) + 
   labs(y = expression(paste(sqrt(abs(theta-bar(theta))))), 
        x = "logged occupancy of rarer species in pair")
-plot_grid(p2, p1, labels = c("A", "B"), ncol = 1)
+
+p3 <- bird_data_plot %>% slice_sample(n = 50000) %>% ggplot(aes(x = jitter(log(occ2), amount = 0.01), y = sqrt(abs(theta_vl-theta_mu)))) + 
+  geom_point(size = 0.8, alpha = 0.4) + geom_smooth(method = "loess", se = FALSE) + facet_grid(status~DietGroup) + 
+  labs(y = expression(paste(sqrt(abs(theta-bar(theta))))), 
+       x = "logged occupancy of more common species in pair")
+
+plot_grid(p2, p3, p1, labels = c("A", "B", "C"), ncol = 1)
+
+## Rand distributions 
+plot_grid(
+ggplot(rand_out, aes(x = Estimate)) + geom_histogram(bins = 10) + facet_wrap(taxon~rowname, scales = "free"),
+ggplot(rand_out_RP, aes(x = Estimate)) + geom_histogram(bins = 10) + facet_wrap(taxon~rowname, scales = "free"), 
+ncol = 1, labels = c("A", "B"))
 
 # end model checks----
 
 # model tables for supplement ----
-list(batfull = bat_winner, 
-     batNT = bat_nt_winner, 
-     birdfull = bird_winner, 
-     birdNT = bird_nt_winner) %>% map(~summary(.x)$fixed %>% rownames_to_column("Variable")) %>% 
-  bind_rows(.id = "model") %>% as_tibble() %>% write.csv("./Results/brms_model_coeffs.csv")
+list(`bat FULL` = bat_FULL_winner, 
+     `bat RP` = bat_RP_winner, 
+     `bird FULL` = bird_FULL_winner, 
+     `bird RP` = bird_RP_winner) %>% map(summary) %>% map(summary_effects) %>% 
+  bind_rows(.id = "model") %>% as_tibble() %>% separate(model, into = c("taxon", "model")) %>%
+  full_join(rand_out %>% group_by(taxon, model, Variable) %>% 
+              summarise(`median Rand` = median(Estimate), 
+                        `L-95% CI Rand` = quantile(Estimate, 0.025), 
+                        `U-95% CI Rand` = quantile(Estimate, 0.975))) %>% 
+  select(-Rhat, -Bulk_ESS, -Tail_ESS) %>%
+  write.csv("./Results/brms_model_coeffs.csv")
 
-bloo <- readRDS("./stan/bat_randeff/bat_loo_randeff.rds") # done
-bat_lc_rand <- bloo %>% #setNames(word(names(.), 3, 3, sep = "_")) %>% 
-  loo_compare() %>% data.frame() %>% rownames_to_column() %>%
-  left_join(data.frame(re_steps) %>% rownames_to_column(), by = "rowname") %>%
-  select(random_id = rowname, `random effects structure` = re_steps,elpd_diff, se_diff) %>%
-  mutate(z = elpd_diff/se_diff,
-         p = pnorm(z))
-write_csv(bat_lc_rand, "./Results/bat_lc_rand_table.csv")
+# bat randeff
+readRDS("./stan/bat_loo_randeff.rds") %>% 
+  make_loo_table(FALSE, re_steps, "./Results/bat_lc_rand_table.csv")
 
-bloo <- readRDS("./stan/bird_randeff/bird_loo_randeff.rds")
-bird_lc_rand <- bloo %>% loo_compare() %>% data.frame() %>% rownames_to_column() %>%
-  left_join(data.frame(re_steps) %>% rownames_to_column(), by = "rowname") %>%
-  select(random_id = rowname, `random effects structure` = re_steps,elpd_diff, se_diff) %>%
-  mutate(z = elpd_diff/se_diff,
-         p = pnorm(z))
-write_csv(bird_lc_rand, "./Results/bird_lc_rand_table.csv")
+readRDS("./stan/bat_rp_loo_randeff.rds") %>% 
+  make_loo_table(FALSE, re_steps, "./Results/bat_rp_lc_rand_table.csv")
 
+# bird randeff
+readRDS("./stan/bird_loo_randeff.rds") %>% 
+  make_loo_table(FALSE, re_steps, "./Results/bird_lc_rand_table.csv")
 
-bloo <- readRDS("./stan/bat_fixedeff/bat_loo_fixdeff.rds") #done
-bat_lc_fixd <- bloo %>% setNames(word(names(.), 2, 2, sep = "_")) %>% loo_compare() %>% data.frame() %>% rownames_to_column() %>%
-  left_join(data.frame(fx_steps) %>% rownames_to_column(), by = "rowname") %>%
-  select(fixed_id = rowname, `fixed effects structure` = fx_steps,elpd_diff, se_diff) %>%
-  mutate(z = elpd_diff/se_diff,
-         p = pnorm(z))
-write_csv(bat_lc_fixd, "./Results/bat_lc_fixed_table.csv")
+readRDS("./stan/bird_rp_loo_randeff.rds") %>% 
+  make_loo_table(FALSE, re_steps, "./Results/bird_rp_lc_rand_table.csv")
 
+# bat fixedeff
 
-bloo <- readRDS("./stan/bird_fixedeff/bird_loo_fixedeff.rds") #done
-bird_lc_fixd <- bloo %>% setNames(word(names(.), 2, 2, sep = "_")) %>% loo_compare() %>% data.frame() %>% rownames_to_column() %>%
-  left_join(data.frame(fx_steps) %>% rownames_to_column(), by = "rowname") %>%
-  select(fixed_id = rowname, `fixed effects structure` = fx_steps,elpd_diff, se_diff) %>%
-  mutate(z = elpd_diff/se_diff,
-         p = pnorm(z))
-write_csv(bird_lc_fixd, "./Results/bird_lc_fixed_table.csv")
+readRDS("./stan/bat_loo_fixedeff.rds") %>% 
+  make_loo_table(TRUE, fx_steps, "./Results/bat_lc_fixed_table.csv")
 
+readRDS("./stan/bat_rp_loo_fixedeff.rds") %>% 
+  make_loo_table(TRUE, fx_steps, "./Results/bat_rp_lc_fixed_table.csv")
+
+# bird fixedeff
+readRDS("./stan/bird_loo_fixedeff.rds") %>% 
+  make_loo_table(TRUE , fx_steps, "./Results/bird_lc_fixed_table.csv")
+
+readRDS("./stan/bird_rp_loo_fixedeff.rds") %>% 
+  make_loo_table(TRUE , fx_steps, "./Results/bird_rp_lc_fixed_table.csv")
 
 ## End model tables for supplement ----
 

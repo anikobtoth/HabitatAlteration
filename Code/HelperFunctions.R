@@ -219,6 +219,36 @@ rand_mat <- function(x, method = "curveball", i = 1){
   return(y)
 }
 
+
+### matrix fill
+matfill <- function(m){
+  m <- m/m
+  m[is.na(m)] <- 0
+  return(sum(m)/(nrow(m)*ncol(m)))
+}
+
+# Percent occupancy by guild
+percent.occupancy.by.guild <- function(t, gld, taxon, sitedat){
+  pr <- data.frame(row.names = colnames(t))
+  for(i in 1:length(gld))  {
+    temp <- t[rownames(t) %in% rownames(spp[which(spp$guild == gld[i] & spp$life.form == taxon),]), ] 
+    temp <- colSums(temp)/nrow(temp)
+    pr[,i] <- temp  
+  }
+  
+  colnames(pr) <- gld
+  pr <- merge(pr, sitedat[,c("sample.no", "altered.habitat")], by.x = 0, by.y = "sample.no") %>% namerows
+  
+  prm <- melt(pr, id.vars = "altered.habitat")
+  prm$altered_habitat <- factor(prm$altered.habitat, levels = c("combined", "cropland", "disturbed forest", 
+                                                                "fragment", "inhabited area", "pasture", 
+                                                                "plantation", "secondary forest", 
+                                                                "unaltered")) %>%
+    replace_na("unaltered")
+  
+  return(prm)
+}
+
 ##### ANALYSES ######
 
 ## Single run of FETmP USED
@@ -266,7 +296,7 @@ fnchypergeo_lpmf <- function(sb, s1, s2, n_site, theta){
   return(Nab_theta)
 }
 
-#### similarity ####
+#### SIMILARITY INDICES ####
 
 ## CJ1 From John Alroy (2020) USED
 
@@ -293,128 +323,170 @@ chao1 <- function(n) {
   return(S + (s1^2 / (2*s2)))
 }
 
-# Plotting 
+# POST PROCESSING ####
+# used to make figures
+
+# calculate posterior slopes and intercepts
+calc_parameters <- function(post){
+  params <- list()
+  c <- 0
+  coeffs <- grep(names(post), pattern = "^b_", value = TRUE)
+  for(i in c("low", "medium", "high")){
+    for(j in c("altered", "intact")){
+      c <- c+1
+      slope <- data.frame(post$`b_PhyloD`,
+                          post[,grep(coeffs, pattern = paste0("PhyloD:DietGroup", i), value = TRUE)],
+                          post[,grep(coeffs, pattern = paste0("PhyloD:Habitat", j), value = TRUE)]) %>%
+        rowSums()
+      
+      intcoeffs <- coeffs[!grepl(coeffs, pattern = "PhyloD")] # remove slope coefficients
+      intercept <- data.frame(post$`b_Intercept`, 
+                              post[,grep(intcoeffs, pattern = paste0("DietGroup", i, "|Habitat", j), value = TRUE)]) %>%
+        rowSums()
+      
+      params[[c]] <- tibble(iteration = 1:nrow(post), DietGroup = i, Habitat = j, slope, intercept)
+    }
+  }
+  params <- bind_rows(params) %>% 
+    mutate(#Habitat = recode(Habitat, "unaltered" = "intact"), 
+      DietGroup = #fct_recode(DietGroup, "high-overlap" = "high","medium-overlap" = "medium", "low-overlap" = "low") %>% 
+        fct_relevel(DietGroup, "low", "medium", "high"))
+  return(params)
+}
+
+# Calculate credible intervals
+CIcalc <- function(params, plotdata){
+  seq(range(plotdata$D)[1], range(plotdata$D)[2], length.out = 100) %>%
+    map(~params %>% mutate(Dbin = .x, theta = slope*Dbin+intercept)) %>%
+    bind_rows() %>%
+    group_by(DietGroup, Dbin) %>%
+    summarise(theta_025 = quantile(theta, 0.025),
+              theta_975 = quantile(theta, 0.975),
+              theta_mu  = mean(theta)) %>%
+    full_join(plotdata %>% group_by(DietGroup) %>% 
+                summarise(d025 = quantile(D, 0.025), d975 = quantile(D, 0.975))) %>%
+    mutate(D95q = Dbin > d025 & Dbin < d975)
+}
+
+
+# PLOTTING AND TABLES #####
 library(rstan)
 library(ggridges)
 
-format_stanfit <- function(stanfit, name = "mu"){
-  stanfit %>% rstan::extract() %>% `[[`(name) %>% data.frame() %>% 
-    pivot_longer(names_to = "group", cols = 1:4, values_to = name) %>% 
-    mutate(group = as.factor(group) %>% recode(`X1` = "Intact control", 
-                                               `X2` = "Altered control", 
-                                               `X3` = "Intact intraguild", 
-                                               `X4` = "Altered intraguild")) %>%
-    separate(group, into = c("status", "interaction"), remove = FALSE)
-}  
-plot_stanfit <- function(formattedstanfit){
-  formattedstanfit %>%
-    ggplot(aes(x = mu, y = status, fill = interaction, col = interaction)) + 
-    geom_density_ridges(lwd = 1, alpha = 0.4) +
-    scale_y_discrete(expand = c(0, 0)) +
-    scale_color_manual(values = c("#045FB4", "#2E2E2E")) +
-    scale_fill_manual(values = c("#045FB4", "#2E2E2E")) + 
-    coord_cartesian(clip = "off") +
-    labs(x = "group θ", y = element_blank()) + theme_ridges()
+#Tables
+# make summary table of loo results
+make_loo_table <- function(loolist, fx = TRUE, structures, path){
+  if(fx) {nm <- "fx"}else{nm <- "re"}
+  names(structures) <- paste0(nm, seq_along(structures))
+  
+  bird_lc_fixd <- loolist %>% setNames(strsplit(names(loolist), "_") %>% map_chr(grep, pattern = nm, value= TRUE)) %>% 
+    loo_compare() %>% data.frame() %>% rownames_to_column() %>%
+    left_join(data.frame(structures) %>% rownames_to_column(), by = "rowname") %>%
+    select(id = rowname, structure = structures, elpd_diff, se_diff) %>%
+    mutate(z = elpd_diff/se_diff,
+           p = pnorm(z))
+  write_csv(bird_lc_fixd, path)
+  return(bird_lc_fixd)
 }
+
+# pull fixed and random effects from model summary
+summary_effects <- function(modelsummary){
+  bind_rows(list(fixed = modelsummary$fixed, random = modelsummary$random[[1]]), .id = "effectType") %>% rownames_to_column("Variable")
+}
+
+### OLD FXNS ####
+# format_stanfit <- function(stanfit, name = "mu"){
+#   stanfit %>% rstan::extract() %>% `[[`(name) %>% data.frame() %>% 
+#     pivot_longer(names_to = "group", cols = 1:4, values_to = name) %>% 
+#     mutate(group = as.factor(group) %>% recode(`X1` = "Intact control", 
+#                                                `X2` = "Altered control", 
+#                                                `X3` = "Intact intraguild", 
+#                                                `X4` = "Altered intraguild")) %>%
+#     separate(group, into = c("status", "interaction"), remove = FALSE)
+# }  
+# plot_stanfit <- function(formattedstanfit){
+#   formattedstanfit %>%
+#     ggplot(aes(x = mu, y = status, fill = interaction, col = interaction)) + 
+#     geom_density_ridges(lwd = 1, alpha = 0.4) +
+#     scale_y_discrete(expand = c(0, 0)) +
+#     scale_color_manual(values = c("#045FB4", "#2E2E2E")) +
+#     scale_fill_manual(values = c("#045FB4", "#2E2E2E")) + 
+#     coord_cartesian(clip = "off") +
+#     labs(x = "group θ", y = element_blank()) + theme_ridges()
+# }
 
 # Easy panel labels in base R plot
 # from https://logfc.wordpress.com/2017/03/15/adding-figure-labels-a-b-c-in-the-top-left-corner-of-the-plotting-region/
-fig_label <- function(text, region="figure", pos="topleft", cex=NULL, ...) {
-  
-  region <- match.arg(region, c("figure", "plot", "device"))
-  pos <- match.arg(pos, c("topleft", "top", "topright", 
-                          "left", "center", "right", 
-                          "bottomleft", "bottom", "bottomright"))
-  
-  if(region %in% c("figure", "device")) {
-    ds <- dev.size("in")
-    # xy coordinates of device corners in user coordinates
-    x <- grconvertX(c(0, ds[1]), from="in", to="user")
-    y <- grconvertY(c(0, ds[2]), from="in", to="user")
-    
-    # fragment of the device we use to plot
-    if(region == "figure") {
-      # account for the fragment of the device that 
-      # the figure is using
-      fig <- par("fig")
-      dx <- (x[2] - x[1])
-      dy <- (y[2] - y[1])
-      x <- x[1] + dx * fig[1:2]
-      y <- y[1] + dy * fig[3:4]
-    } 
-  }
-  
-  # much simpler if in plotting region
-  if(region == "plot") {
-    u <- par("usr")
-    x <- u[1:2]
-    y <- u[3:4]
-  }
-  
-  sw <- strwidth(text, cex=cex) * 60/100
-  sh <- strheight(text, cex=cex) * 60/100
-  
-  x1 <- switch(pos,
-               topleft     =x[1] + sw, 
-               left        =x[1] + sw,
-               bottomleft  =x[1] + sw,
-               top         =(x[1] + x[2])/2,
-               center      =(x[1] + x[2])/2,
-               bottom      =(x[1] + x[2])/2,
-               topright    =x[2] - sw,
-               right       =x[2] - sw,
-               bottomright =x[2] - sw)
-  
-  y1 <- switch(pos,
-               topleft     =y[2] - sh,
-               top         =y[2] - sh,
-               topright    =y[2] - sh,
-               left        =(y[1] + y[2])/2,
-               center      =(y[1] + y[2])/2,
-               right       =(y[1] + y[2])/2,
-               bottomleft  =y[1] + sh,
-               bottom      =y[1] + sh,
-               bottomright =y[1] + sh)
-  
-  old.par <- par(xpd=NA)
-  on.exit(par(old.par))
-  
-  text(x1, y1, text, cex=cex, ...)
-  return(invisible(c(x,y)))
-}
+# fig_label <- function(text, region="figure", pos="topleft", cex=NULL, ...) {
+#   
+#   region <- match.arg(region, c("figure", "plot", "device"))
+#   pos <- match.arg(pos, c("topleft", "top", "topright", 
+#                           "left", "center", "right", 
+#                           "bottomleft", "bottom", "bottomright"))
+#   
+#   if(region %in% c("figure", "device")) {
+#     ds <- dev.size("in")
+#     # xy coordinates of device corners in user coordinates
+#     x <- grconvertX(c(0, ds[1]), from="in", to="user")
+#     y <- grconvertY(c(0, ds[2]), from="in", to="user")
+#     
+#     # fragment of the device we use to plot
+#     if(region == "figure") {
+#       # account for the fragment of the device that 
+#       # the figure is using
+#       fig <- par("fig")
+#       dx <- (x[2] - x[1])
+#       dy <- (y[2] - y[1])
+#       x <- x[1] + dx * fig[1:2]
+#       y <- y[1] + dy * fig[3:4]
+#     } 
+#   }
+#   
+#   # much simpler if in plotting region
+#   if(region == "plot") {
+#     u <- par("usr")
+#     x <- u[1:2]
+#     y <- u[3:4]
+#   }
+#   
+#   sw <- strwidth(text, cex=cex) * 60/100
+#   sh <- strheight(text, cex=cex) * 60/100
+#   
+#   x1 <- switch(pos,
+#                topleft     =x[1] + sw, 
+#                left        =x[1] + sw,
+#                bottomleft  =x[1] + sw,
+#                top         =(x[1] + x[2])/2,
+#                center      =(x[1] + x[2])/2,
+#                bottom      =(x[1] + x[2])/2,
+#                topright    =x[2] - sw,
+#                right       =x[2] - sw,
+#                bottomright =x[2] - sw)
+#   
+#   y1 <- switch(pos,
+#                topleft     =y[2] - sh,
+#                top         =y[2] - sh,
+#                topright    =y[2] - sh,
+#                left        =(y[1] + y[2])/2,
+#                center      =(y[1] + y[2])/2,
+#                right       =(y[1] + y[2])/2,
+#                bottomleft  =y[1] + sh,
+#                bottom      =y[1] + sh,
+#                bottomright =y[1] + sh)
+#   
+#   old.par <- par(xpd=NA)
+#   on.exit(par(old.par))
+#   
+#   text(x1, y1, text, cex=cex, ...)
+#   return(invisible(c(x,y)))
+# }
 
-#  Emulate ggplot default colours
-gg_color_hue <- function(n) {
-  hues = seq(15, 375, length = n + 1)
-  hcl(h = hues, l = 65, c = 100)[1:n]
-}
+# #  Emulate ggplot default colours
+# gg_color_hue <- function(n) {
+#   hues = seq(15, 375, length = n + 1)
+#   hcl(h = hues, l = 65, c = 100)[1:n]
+# }
 
-### matrix fill
-matfill <- function(m){
-  m <- m/m
-  m[is.na(m)] <- 0
-  return(sum(m)/(nrow(m)*ncol(m)))
-}
-
-# Percent occupancy by guild
-percent.occupancy.by.guild <- function(t, gld, taxon, sitedat){
-  pr <- data.frame(row.names = colnames(t))
-  for(i in 1:length(gld))  {
-    temp <- t[rownames(t) %in% rownames(spp[which(spp$guild == gld[i] & spp$life.form == taxon),]), ] 
-    temp <- colSums(temp)/nrow(temp)
-    pr[,i] <- temp  
-  }
-  
-  colnames(pr) <- gld
-  pr <- merge(pr, sitedat[,c("sample.no", "altered.habitat")], by.x = 0, by.y = "sample.no") %>% namerows
-  
-  prm <- melt(pr, id.vars = "altered.habitat")
-  prm$altered_habitat <- factor(prm$altered.habitat, levels = c("combined", "cropland", "disturbed forest", 
-                                                                "fragment", "inhabited area", "pasture", 
-                                                                "plantation", "secondary forest", 
-                                                                "unaltered")) %>%
-    replace_na("unaltered")
-  
-  return(prm)
-}
-
+####################
+############
+#######
