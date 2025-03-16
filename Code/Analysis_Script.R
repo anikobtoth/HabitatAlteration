@@ -127,7 +127,7 @@ bat_winner <- find_best_model(tax=tax, bat_data) # runs all models, saves them a
 summary(bat_winner)
 saveRDS(bat_winner, "./Results/bat_winner.rds") # save a copy of best model to results
 
-#bat_winner <- singlerun(bat_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietGroup + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietGroup))')
+#bat_winner <- singlerun(bat_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietOvlp + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp))')
 
 tax <- "bird"
 bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
@@ -153,7 +153,7 @@ bat_nt_winner <- find_best_model(tax, bat_data)
 summary(bat_nt_winner)
 saveRDS(bat_nt_winner, "./Results/bat_nt_winner.rds")
 
-#bat_nt_winner <- singlerun(bat_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietGroup + Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietGroup)) ')
+#bat_nt_winner <- singlerun(bat_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietOvlp + Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp)) ')
 
 
 tax <- "bird"
@@ -162,13 +162,14 @@ bird_nt_winner <- find_best_model(tax, bird_data). # runs all models, saves them
 summary(bird_nt_winner)
 saveRDS(bird_nt_winner, "./Results/bird_nt_winner.rds")
 
-#bird_nt_winner <- singlerun(bird_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + Habitat + PhyloD:Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietGroup)) ')
+#bird_nt_winner <- singlerun(bird_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + Habitat + PhyloD:Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp)) ')
 
 
 ## Randomisations ####
 library(furrr)
 library(future)
 
+# FULL MODELS
 tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
   map(map, ~t(.)) %>% map(map, clean.empty) %>% purrr::map(setNames, c("altered", "unaltered"))
 
@@ -186,7 +187,7 @@ contables_rand <- future_map(tables_rand, map, cont_table) %>%
                       left_join(bind_rows(tax_dist)) %>% na.omit())
 
 
-formulas <- c(bat = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietGroup + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietGroup))',
+formulas <- c(bat = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietOvlp + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp))',
               bird ='sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = Habitat))')
 
 summary <- list()
@@ -195,6 +196,39 @@ for(i in seq_along(contables_rand)){
     map(~stan_data_fun(.x)[[1]]) %>%
     map2(formulas, ~singlerun(.x, .y) %>% summary() %>% `$`(fixed))
 }
+
+rand_out <- summary %>% map(~.x %>% map(rownames_to_column) %>% bind_rows(.id = "taxon")) %>% bind_rows(.id = "rep")
+rand_out %>% group_by(taxon, rowname) %>% summarise(mean = mean(Estimate), median = median(Estimate), lowQ = quantile(Estimate, 0.25), highQ = quantile(Estimate, 0.975))
+
+## RESTRICTED POOL models
+tables <- map2(tables, shared, function(x, y) map(x, function(z) return(z[y,])))
+
+plan(multicore) ## Mac/Linux
+#plan(multisession) ## Windows
+
+tables_rand <- future_map(1:100, function(y) map(tables, ~map(.x, rand_mat, i = y)) %>% 
+                            flatten() %>% setNames(c("bat$altered", "bat$unaltered", "bird$altered", "bird$unaltered")))
+
+# list of 100 randomised contingency tables
+contables_rand <- future_map(tables_rand, map, cont_table) %>% 
+  map(bind_rows, .id = "taxon_status") %>% 
+  map(~.x %>% separate(taxon_status, into = c("taxon", "status"), sep = "$") %>% 
+        diet_cat(pull(spp, guild) %>% setNames(spp$unique_name), related = TRUE) %>%
+        left_join(bind_rows(tax_dist)) %>% na.omit())
+
+formulas <- c(bat = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietOvlp + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp))',
+              bird ='sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp))')
+
+summary <- list()
+for(i in seq_along(contables_rand)){
+  summary[[i]] <- contables_rand[[i]] %>% split(.$taxon) %>% 
+    map(~stan_data_fun(.x)[[1]]) %>%
+    map2(formulas, ~singlerun(.x, .y) %>% summary() %>% `$`(fixed))
+}
+
+rand_out <- summary %>% map(~.x %>% map(rownames_to_column) %>% bind_rows(.id = "taxon")) %>% bind_rows(.id = "rep")
+rand_out %>% group_by(taxon, rowname) %>% summarise(mean = mean(Estimate), median = median(Estimate), lowQ = quantile(Estimate, 0.25), highQ = quantile(Estimate, 0.975))
+
 
 #####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
