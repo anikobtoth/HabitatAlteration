@@ -14,10 +14,8 @@ stan_data_fun <- function(df, nD_cut = 5) {
   df$diet.match[df$diet.match=='Related'] <- 'medium' 
   df$diet.match[df$diet.match=='Different'] <- 'low' 
   df$diet.match[df$diet.match=='Same'] <- 'high' 
-  df$diet.match <- factor(df$diet.match, levels = c("low", "medium", "high"))
   df$status[df$status == 'unaltered'] <- 'intact'
-  #df <- df[df$diet.match != "Similar",]
-  df$DietOvl <- factor(tolower(df$diet.match))
+  df$DietOvlp <- factor(df$diet.match, levels = c("low", "medium", "high"))
   df$Habitat <- factor(df$status)
   df$DietPair <- factor(df$diet.pair)
   df$Constant <- factor('Constant') # used for model selection
@@ -25,19 +23,20 @@ stan_data_fun <- function(df, nD_cut = 5) {
   df$occ2 <- apply(df[c('presSp1', 'presSp2')], 1, max)
   df$N_site <- df$presSp1[1] + df$absSp1[1]
   df$OccPair <- factor(paste(gsub(' ', '0', format(df$occ1)),
-                            gsub(' ', '0', format(df$occ2)),
-                            gsub(' ', '0', format(df$N_site)), sep = '-'))
+                             gsub(' ', '0', format(df$occ2)),
+                             gsub(' ', '0', format(df$N_site)), sep = '-'))
   df$sb <- df$presBoth
   df$D <- scale(log(df$dist))[,1]
   df$PhyloD <- cut(df$D, nD_cut, labels=FALSE)
   df$PhyloD <- tapply(df$D, df$PhyloD, mean)[df$PhyloD]
   df <- df[order(df$occ1, df$occ2, df$N_site),]
   
-  df2 <- df %>% group_by(occ1, occ2, N_site, OccPair, DietOvl, Habitat, 
+  df2 <- df %>% group_by(occ1, occ2, N_site, OccPair, DietOvlp, Habitat, 
                          DietPair, PhyloD, sb, Constant) %>% 
     summarise(N_sb = n())
   return(list(df2, df))
 }
+
 
 # leave-one-out validation
 build_loo <- function(stan_fit) {
@@ -232,50 +231,54 @@ find_best_model <- function(tax, standata){
   
   # Random effects with fixed variance
   re_steps <- character()
-  for(i in c("(1|gr(Habitat:DietPair, ",
-             "(1|gr(DietPair, ",
-             "")) {
-    for(j in c("(1|gr(DietPair:PhyloD:Habitat:OccPair,",
-               "(1|gr(DietOvl:PhyloD:Habitat:OccPair,",
-               "(1|gr(DietPair:Habitat:OccPair,",
-               "(1|gr(DietOvl:Habitat:OccPair,",
-               "(1|gr(Habitat:OccPair,","")) {
-      for(k in c("by = Constant))", "by = Habitat))", "by = DietOvl))", "by = Habitat:DietOvl))")){
-        if(nchar(i) > 0) re1 <- paste(i, k) else re1 <- i
-        if(nchar(j) > 0) re2 <- paste(j, k) else re2 <- j
-        re_steps <- c(re_steps, paste0(c(re1, re2),collapse='+')) %>% str_replace("\\+$", "") %>% 
-          str_replace("^\\+", "")
+  dp <- c("(1|gr(DietPair:Habitat,by=Constant))","(1|gr(DietPair,by=Constant))", "")
+  op <- c("(1|gr(PhyloD:DietPair:Habitat:OccPair,by=xxx))",
+          "(1|gr(PhyloD:DietOvlp:Habitat:OccPair,by=xxx))",
+          "(1|gr(DietPair:Habitat:OccPair,by=xxx))",
+          "(1|gr(DietOvlp:Habitat:OccPair,by=xxx))",
+          "(1|gr(Habitat:OccPair,by=xxx))")
+  vr <- c("Constant","DietOvlp","Habitat")
+  for(i in seq_along(dp)) {
+    for(j in seq_along(op)) {
+      for(k in seq_along(vr)) {
+        if(i %in% c(1,2)) {
+          if(j %in% c(1,3)) {
+            re_steps <- c(re_steps, sub('xxx',vr[k],paste(op[j],dp[i],sep='+')))
+          }
+        } else {
+          re_steps <- c(re_steps, sub('xxx',vr[k],op[j]))
+        }
       }
     }
   }
-  re_steps <- re_steps[-which(re_steps == "")] # remove empty formulas
-  re_steps <- re_steps[-c(19,20, 26, 28, 30, 32, 34, 36, 38, 40, 42:44, 46, 48, 67, 68)] # remove non-nested variance structures
   re_steps[length(re_steps)+1] <- "1"
+  re_steps <- re_steps[-26] # remove non-nested variance combination
   f00 <- function(x) {sub(' ','0', format(c(99,x)))[-1]}
   names(re_steps) <- paste0('re', f00(seq_along(re_steps)))
   
   #Fixed steps
-  fx_steps <- c("PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat + DietOvl:Habitat + PhyloD:DietOvl:Habitat",
-                "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat + DietOvl:Habitat",
-                "PhyloD + DietOvl + Habitat + PhyloD:Habitat + DietOvl:Habitat",
-                "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + DietOvl:Habitat",
-                "PhyloD + DietOvl + Habitat + DietOvl:Habitat",
-                "DietOvl + Habitat + DietOvl:Habitat",
-                "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat",
-                "PhyloD + DietOvl + Habitat + PhyloD:Habitat",
+  fx_steps <- c("PhyloD + DietOvlp+ Habitat + PhyloD:DietOvlp + PhyloD:Habitat + DietOvlp:Habitat + PhyloD:DietOvlp:Habitat",
+                "PhyloD + DietOvlp+ Habitat + PhyloD:DietOvlp+ PhyloD:Habitat + DietOvlp:Habitat",
+                "PhyloD + DietOvlp+ Habitat + PhyloD:Habitat + DietOvlp:Habitat",
+                "PhyloD + DietOvlp+ Habitat + PhyloD:DietOvlp+ DietOvlp:Habitat",
+                "PhyloD + DietOvlp+ Habitat + DietOvlp:Habitat",
+                "DietOvlp+ Habitat + DietOvlp:Habitat",
+                "PhyloD + DietOvlp+ Habitat + PhyloD:DietOvlp+ PhyloD:Habitat",
+                "PhyloD + DietOvlp+ Habitat + PhyloD:Habitat",
                 "PhyloD + Habitat + PhyloD:Habitat",
-                "PhyloD + DietOvl + Habitat + PhyloD:DietOvl",
-                "PhyloD + DietOvl + PhyloD:DietOvl",
-                "PhyloD + DietOvl + Habitat",
-                "DietOvl + Habitat",
+                "PhyloD + DietOvlp+ Habitat + PhyloD:DietOvlp",
+                "PhyloD + DietOvlp+ PhyloD:DietOvlp",
+                "PhyloD + DietOvlp+ Habitat",
+                "DietOvlp+ Habitat",
                 "PhyloD + Habitat",
                 "Habitat",
-                "PhyloD + DietOvl",
-                "DietOvl",
+                "PhyloD + DietOvlp",
+                "DietOvlp",
                 "PhyloD",
                 "1")
   names(fx_steps) <- paste0('fx', f00(seq_along(fx_steps)))
   ### end define fixed and random effects structures ----
+  
   
   # random effects models
   re_warnings <- list()
@@ -350,46 +353,49 @@ singlerun <- function(standata, frm, path = NULL){
 
 # Random effects with fixed variance
 re_steps <- character()
-for(i in c("(1|gr(Habitat:DietPair, ",
-           "(1|gr(DietPair, ",
-           "")) {
-  for(j in c("(1|gr(DietPair:PhyloD:Habitat:OccPair,",
-             "(1|gr(DietOvl:PhyloD:Habitat:OccPair,",
-             "(1|gr(DietPair:Habitat:OccPair,",
-             "(1|gr(DietOvl:Habitat:OccPair,",
-             "(1|gr(Habitat:OccPair,","")) {
-    for(k in c("by = Constant))", "by = Habitat))", "by = DietOvl))", "by = Habitat:DietOvl))")){
-      if(nchar(i) > 0) re1 <- paste(i, k) else re1 <- i
-      if(nchar(j) > 0) re2 <- paste(j, k) else re2 <- j
-      re_steps <- c(re_steps, paste0(c(re1, re2),collapse='+')) %>% str_replace("\\+$", "") %>% 
-        str_replace("^\\+", "")
+dp <- c("(1|gr(DietPair:Habitat,by=Constant))","(1|gr(DietPair,by=Constant))", "")
+op <- c("(1|gr(PhyloD:DietPair:Habitat:OccPair,by=xxx))",
+        "(1|gr(PhyloD:DietOvlp:Habitat:OccPair,by=xxx))",
+        "(1|gr(DietPair:Habitat:OccPair,by=xxx))",
+        "(1|gr(DietOvlp:Habitat:OccPair,by=xxx))",
+        "(1|gr(Habitat:OccPair,by=xxx))")
+vr <- c("Constant","DietOvlp","Habitat")
+for(i in seq_along(dp)) {
+  for(j in seq_along(op)) {
+    for(k in seq_along(vr)) {
+      if(i %in% c(1,2)) {
+        if(j %in% c(1,3)) {
+          re_steps <- c(re_steps, sub('xxx',vr[k],paste(op[j],dp[i],sep='+')))
+        }
+      } else {
+        re_steps <- c(re_steps, sub('xxx',vr[k],op[j]))
+      }
     }
   }
 }
-re_steps <- re_steps[-which(re_steps == "")] # remove empty formulas
-re_steps <- re_steps[-c(19,20, 26, 28, 30, 32, 34, 36, 38, 40, 42:44, 46, 48, 67, 68)] # remove non-nested variance structures
 re_steps[length(re_steps)+1] <- "1"
+re_steps <- re_steps[-26] # remove non-nested variance combination
 f00 <- function(x) {sub(' ','0', format(c(99,x)))[-1]}
 names(re_steps) <- paste0('re', f00(seq_along(re_steps)))
 
 #Fixed steps
-fx_steps <- c("PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat + DietOvl:Habitat + PhyloD:DietOvl:Habitat",
-              "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat + DietOvl:Habitat",
-              "PhyloD + DietOvl + Habitat + PhyloD:Habitat + DietOvl:Habitat",
-              "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + DietOvl:Habitat",
-              "PhyloD + DietOvl + Habitat + DietOvl:Habitat",
-              "DietOvl + Habitat + DietOvl:Habitat",
-              "PhyloD + DietOvl + Habitat + PhyloD:DietOvl + PhyloD:Habitat",
-              "PhyloD + DietOvl + Habitat + PhyloD:Habitat",
+fx_steps <- c("PhyloD + DietOvlp+ Habitat + PhyloD:DietOvlp + PhyloD:Habitat + DietOvlp:Habitat + PhyloD:DietOvlp:Habitat",
+              "PhyloD + DietOvlp+ Habitat + PhyloD:DietOvlp+ PhyloD:Habitat + DietOvlp:Habitat",
+              "PhyloD + DietOvlp+ Habitat + PhyloD:Habitat + DietOvlp:Habitat",
+              "PhyloD + DietOvlp+ Habitat + PhyloD:DietOvlp+ DietOvlp:Habitat",
+              "PhyloD + DietOvlp+ Habitat + DietOvlp:Habitat",
+              "DietOvlp+ Habitat + DietOvlp:Habitat",
+              "PhyloD + DietOvlp+ Habitat + PhyloD:DietOvlp+ PhyloD:Habitat",
+              "PhyloD + DietOvlp+ Habitat + PhyloD:Habitat",
               "PhyloD + Habitat + PhyloD:Habitat",
-              "PhyloD + DietOvl + Habitat + PhyloD:DietOvl",
-              "PhyloD + DietOvl + PhyloD:DietOvl",
-              "PhyloD + DietOvl + Habitat",
-              "DietOvl + Habitat",
+              "PhyloD + DietOvlp+ Habitat + PhyloD:DietOvlp",
+              "PhyloD + DietOvlp+ PhyloD:DietOvlp",
+              "PhyloD + DietOvlp+ Habitat",
+              "DietOvlp+ Habitat",
               "PhyloD + Habitat",
               "Habitat",
-              "PhyloD + DietOvl",
-              "DietOvl",
+              "PhyloD + DietOvlp",
+              "DietOvlp",
               "PhyloD",
               "1")
 names(fx_steps) <- paste0('fx', f00(seq_along(fx_steps)))
