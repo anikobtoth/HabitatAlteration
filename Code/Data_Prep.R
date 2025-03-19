@@ -11,7 +11,7 @@ if(grepl(pattern = "Manuscript", getwd())){
 #file.path(rt, 'Code/HelperFunctions.R') %>% source()  # also sourced from Analysis_script.R
 l <- file.path(rt, "Raw_Data") %>% list.files(".txt", full.names = T)
 dat <- lapply(l, read.delim) %>% setNames(file.path(rt, "Raw_Data") %>% list.files(".txt"))
-
+message("Formatting raw data")
 ### update species/genera that can't be resolved ####
 # Genus misspelled
 dat[[6]]$genus <- dat[[6]]$genus %>% str_replace_all("Cychlaris", replacement = "Cyclarhis")
@@ -103,7 +103,7 @@ rownames(spp) <-  gsub(" ", "_", spp$species)
 spp <- spp %>% mutate_if(is.character, list(~na_if(.,""))) 
 
 ### Get taxonomy and pairwise distances from OTL ####
-
+message("Generating phylogenetic trees")
 tax_otl <- get_otl_taxonomy(spp, lifeform = c("bat", "bird"), contxt = c("Mammals", "Birds"))
 tax_dist <- map2(tax_otl, c("Mammals", "Birds"), get_pairwise_dist)
 # drop subspp.
@@ -140,6 +140,7 @@ waterbirds <- read_csv("./Data/waterbirds.csv")
 spp <- spp %>% filter(!unique_name %in% waterbirds$unique_name) %>% rbind(waterbirds) 
 
 # create guild categories ####
+message("Creating dietary guild categories")
 spp$diet.2[is.na(spp$diet.2)] <- spp$diet.1[is.na(spp$diet.2)]
 guild_table <- spp %>% select(diet.1, diet.2) %>% unique() %>% arrange(diet.1, diet.2) %>% mutate(guild = c("A", "IA", "AO", "PA", "C", "CI", "F", "FG", "FI", "FO", "GA", "FG", "G", "IG", "GO", "IA", "CI", "FI", "IG", "I", "NI", "IO", "NI", "N", "FO", "O", "PA", "PC", "P", "S", NA)) 
 spp <- spp %>% group_by(unique_name, life.form) %>% 
@@ -149,6 +150,7 @@ spp <- spp %>% group_by(unique_name, life.form) %>%
   full_join(guild_table)
 
 #### Occurrences ####
+message("Creating species-by-site matrix")
 PAn <- dat[grep("register", names(dat))] %>% 
   purrr::map2(tax_otl, 
               ~filter(.x,!species %in% c("sp.", "spp.", "sp. l", "indet", "indet.")) %>% 
@@ -189,6 +191,31 @@ cosmo$group[is.na(cosmo$group)] <- "cosmopolitan"
 cosmo$group_abbr <- substr(cosmo$group, start = 1, stop = 5)
 rownames(cosmo) <- cosmo$name
 
+#### Match Biogeography ####
+message("Matching altered and intact biogeography")
+PAnu <- PAn %>% map(~return(.[,colnames(.) %in% unalt_sites])) # separate unaltered
+PAna <- PAn %>% map(~return(.[,!colnames(.) %in% unalt_sites])) # and altered sites
+
+coords <- sitedat %>% select(taxon, p.sample, latitude, longitude) %>% distinct() %>% split(.$taxon)
+
+# Remove unaltered or altered sites that are not near a site of the other type. This is done to ensure the two sets have similar biogoegraphical distributions.
+coords1 <- purrr::map2(coords, PAnu, function(x, y) x[x$p.sample %in% colnames(y),])
+coords2 <- purrr::map2(coords, PAna, function(x, y) x[x$p.sample %in% colnames(y),])
+keep <- map2(coords1, coords2, matchbiogeo) %>% map(unlist)
+
+PAn <- map2(PAn, keep, function(x, y) return(x[,as.character(y)]))
+PAn <- map(PAn, clean.empty, minrow = 1) # remove any species that now have no occurrences
+
+# recalculate alt/unalt split from new PAn
+PAnu <- PAn %>% map(~return(.[,colnames(.) %in% unalt_sites]))
+PAna <- PAn %>% map(~return(.[,!colnames(.) %in% unalt_sites]))
+
+# coords of sites we kept, for plotting later.
+coords1.keep <- purrr::map2(coords, PAnu, function(x, y) x[x$p.sample %in% colnames(y),])
+coords2.keep <- purrr::map2(coords, PAna, function(x, y) x[x$p.sample %in% colnames(y),])
+
+
+################
 #clear unneeded objects
-rm(a, u, dat, l, nsamp, rt, guild_conflicts, hummingbirds, hummgen, waterbirds, missing)
+rm(a, u, dat, l, nsamp, rt, guild_conflicts, hummingbirds, hummgen, waterbirds, missing, keep)
 
