@@ -283,6 +283,9 @@ box()
 
 ### Figure S4: PCoA ####
 #ordinations, colored by alteration type
+PAnu <- PAn %>% map(~return(.[,colnames(.) %in% unalt_sites])) # separate unaltered
+PAna <- PAn %>% map(~return(.[,!colnames(.) %in% unalt_sites])) # and altered sites
+
 altered <- map(PAna, as.matrix) %>% map(cosine) %>% map(as.dist, upper = F) %>% map(~return(1-.)) %>% 
   map(cmdscale) %>% map(data.frame) %>% bind_rows(.id = "taxon")
 intact <- map(PAnu, as.matrix) %>% map(cosine) %>% map(as.dist, upper = F) %>% map(~return(1-.)) %>% 
