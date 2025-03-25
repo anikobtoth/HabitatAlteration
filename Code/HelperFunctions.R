@@ -335,22 +335,22 @@ calc_parameters <- function(post){
     for(j in c("altered", "intact")){
       c <- c+1
       slope <- data.frame(post$`b_PhyloD`,
-                          post[,grep(coeffs, pattern = paste0("PhyloD:DietGroup", i), value = TRUE)],
+                          post[,grep(coeffs, pattern = paste0("PhyloD:DietOvlp", i), value = TRUE)],
                           post[,grep(coeffs, pattern = paste0("PhyloD:Habitat", j), value = TRUE)]) %>%
         rowSums()
       
       intcoeffs <- coeffs[!grepl(coeffs, pattern = "PhyloD")] # remove slope coefficients
       intercept <- data.frame(post$`b_Intercept`, 
-                              post[,grep(intcoeffs, pattern = paste0("DietGroup", i, "|Habitat", j), value = TRUE)]) %>%
+                              post[,grep(intcoeffs, pattern = paste0("DietOvlp", i, "|Habitat", j), value = TRUE)]) %>%
         rowSums()
       
-      params[[c]] <- tibble(iteration = 1:nrow(post), DietGroup = i, Habitat = j, slope, intercept)
+      params[[c]] <- tibble(iteration = 1:nrow(post), DietOvlp = i, Habitat = j, slope, intercept)
     }
   }
   params <- bind_rows(params) %>% 
     mutate(#Habitat = recode(Habitat, "unaltered" = "intact"), 
-      DietGroup = #fct_recode(DietGroup, "high-overlap" = "high","medium-overlap" = "medium", "low-overlap" = "low") %>% 
-        fct_relevel(DietGroup, "low", "medium", "high"))
+      DietOvlp = #fct_recode(DietOvlp, "high-overlap" = "high","medium-overlap" = "medium", "low-overlap" = "low") %>% 
+        fct_relevel(DietOvlp, "low", "medium", "high"))
   return(params)
 }
 
@@ -359,11 +359,11 @@ CIcalc <- function(params, plotdata){
   seq(range(plotdata$D)[1], range(plotdata$D)[2], length.out = 100) %>%
     map(~params %>% mutate(Dbin = .x, theta = slope*Dbin+intercept)) %>%
     bind_rows() %>%
-    group_by(DietGroup, Dbin) %>%
+    group_by(DietOvlp, Dbin) %>%
     summarise(theta_025 = quantile(theta, 0.025),
               theta_975 = quantile(theta, 0.975),
               theta_mu  = mean(theta)) %>%
-    full_join(plotdata %>% group_by(DietGroup) %>% 
+    full_join(plotdata %>% group_by(DietOvlp) %>% 
                 summarise(d025 = quantile(D, 0.025), d975 = quantile(D, 0.975))) %>%
     mutate(D95q = Dbin > d025 & Dbin < d975)
 }

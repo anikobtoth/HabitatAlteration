@@ -31,22 +31,22 @@ data_list <- list(
   A = bind_rows(list(
     low = generate_data(500, -0.6, 1, 0.2),
     high = generate_data(500, -0.4, 0.5, 0.2)
-  ),.id = "Diet group"),
+  ),.id = "Diet overlap"),
   B = bind_rows(list(
     low = generate_data(500, 0.02, 0.5, 0.2),
     high = generate_data(500, 0.022, 1, 0.2)
-  ),.id = "Diet group"),
+  ),.id = "Diet overlap"),
   C = bind_rows(list(
     low = generate_data(500, -0.50, 0.81, 0.2),
     high = generate_data(500, -0.53, 0.8, 0.2)
-  ),.id = "Diet group"),
+  ),.id = "Diet overlap"),
   D =bind_rows(list(
     low = generate_data(500, -0.31, 0.81, 0.2),
     high = generate_data(500, -0.3, 0.8, 0.5)
-  ), .id = "Diet group")
+  ), .id = "Diet overlap")
 ) %>% bind_rows(.id= "panel")
 
-data_list %>% ggplot(aes(x = x, y = y, col = `Diet group`)) + 
+data_list %>% ggplot(aes(x = x, y = y, col = `Diet overlap`)) + 
   geom_point(alpha = 0.5) +
   geom_smooth(method = "lm", se = FALSE, size = 1) + facet_wrap(~panel) +
   geom_text(data = data_list %>% 
@@ -58,7 +58,7 @@ data_list %>% ggplot(aes(x = x, y = y, col = `Diet group`)) +
   theme_bw() +
   theme(axis.text = element_blank(), axis.ticks = element_blank(), panel.grid.major = element_blank(), strip.background = element_blank(),
         strip.text.x = element_blank()) +
-  theme(legend.position = "none") + labs(x = "Standardised phylogenetic distance (D)", y = "Level of co-occurrence")
+  labs(x = "standardised phylogenetic distance (D)", y = "level of co-occurrence")
 
 #### Figure 2 #####
 # fnchd lpmf helper functions used
@@ -68,14 +68,18 @@ data <- expand.grid(Na = c(2,8), Nb =c(2,8), N = 50, theta = -2:2, Nab = 0:8) %>
          label = ifelse(Na == 2, "italic(N[A])~'='~italic(N[B])~'='~2", "italic(N[A])~'='~italic(N[B])~'='~8")) %>% 
   na.omit()
 
+custom_breaks <- c(10e-12, 10e-9, 10e-6, 10e-3, 1)
 ggplot(data, aes(x = Nab, y = Nab_theta, group = theta, col = theta))+ 
-  geom_point() + geom_line() + 
-  scale_y_log10(labels = trans_format("log", math_format())) + 
+  geom_point(size = 2) + geom_line(lwd = 1) + 
+  scale_y_log10(
+     breaks = custom_breaks, 
+     labels = trans_format("log", math_format())) + 
   facet_wrap(~label, labeller = label_parsed, scales= "free") +
   labs(y = expression('probability, f('~italic(N[AB])~'|'~italic(theta)~')'), 
        x= expression('number of co-occurrences,'~italic(N[AB])), 
        col = expression(theta)) + 
-  theme_light() #+ ylim(c(1e-08, 1)) 
+  theme(panel.grid.major = element_line(color = "gray80"))+
+  theme_light() + scale_color_gradientn(colors = c("black", "#480355", "#8C2981FF", "#DE4968FF", "#FE9F6DFF"))
 
 # Fig 3 ####
 colors6 <- c("#ADADAD", "#525252", "#C595CE", "#480355", "#2F99DC", "#00487C")
@@ -92,33 +96,33 @@ bat_data_plot <- bat_post %>% colMeans() %>%
   data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
   filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = "\\[") %>% 
   pivot_wider() %>% cbind(bat_data) %>% full_join(data_plot) %>% 
-  mutate(DietGroup =  fct_relevel(DietGroup, "low", "medium", "high"),
+  mutate(DietOvlp =  fct_relevel(DietOvlp, "low", "medium", "high"),
          Habitat = recode(Habitat, "unaltered" = "intact"))
 
 CI_df_bat <- bat_post %>% calc_parameters() %>% CIcalc(data_plot) 
 
-linefit <- expand.grid(DietGroup = c("high", "medium", "low")) %>% 
+linefit <- expand.grid(DietOvlp = c("high", "medium", "low")) %>% 
   mutate(intercept = c(mean(bat_post$b_Intercept), 
-                       mean(bat_post$b_Intercept+bat_post$b_DietGroupmedium),
-                       mean(bat_post$b_Intercept+bat_post$b_DietGrouphigh)), 
+                       mean(bat_post$b_Intercept+bat_post$b_DietOvlpmedium),
+                       mean(bat_post$b_Intercept+bat_post$b_DietOvlphigh)), 
          slope = c(mean(bat_post$b_PhyloD))) 
 
-## BAT PLOT FIG 2 ####
+## BAT PLOT FIG 4 ####
 # points
-# bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietGroup))) + 
+# bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietOvlp))) + 
 #   geom_jitter(alpha = 0.3, width = 0.15, size = 0.5) + 
 #   geom_ribbon(data = filter(CI_df_bat, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
 #   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
 #   geom_abline(data = linefit, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
 #   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
-#   facet_grid(Habitat~DietGroup) + 
+#   facet_grid(Habitat~DietOvlp) + 
 #   labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
 #   scale_color_manual(values = colors6) +
 #   theme_light() + theme(legend.position = "none")
 
 # hexbins DietOvlp by Habitat
 bat_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
-  geom_hex() + facet_grid(.~DietGroup) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
+  geom_hex() + facet_grid(.~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bat, !D95q, Dbin < 0), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.4) +
   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
   geom_abline(data = linefit, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
@@ -127,10 +131,10 @@ bat_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) +
   scale_color_manual(values = colors) +
   theme_light() 
 
-# FIG. 2A hexbin, no habitat dimension
-F4A <- bat_data_plot %>% #mutate(DietGroup = recode(DietGroup, "different" = "low", "intersecting" = "medium", "intraguild" = "high")) %>% 
+# FIG. 4A hexbin, no habitat dimension
+F4A <- bat_data_plot %>% #mutate(DietOvlp = recode(DietOvlp, "different" = "low", "intersecting" = "medium", "intraguild" = "high")) %>% 
   ggplot(aes(x = D, y = theta_vl)) + 
-  geom_hex() + facet_grid(.~DietGroup) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
+  geom_hex() + facet_grid(.~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bat, !D95q, Dbin < 0), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.4) +
   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
   geom_abline(data = linefit, aes(intercept = intercept, slope = slope),lwd = 0.4) +
@@ -153,32 +157,32 @@ bird_data_plot <- bird_post %>% colMeans() %>%
   data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
   filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = "\\[") %>% 
   pivot_wider() %>% cbind(bird_data) %>% full_join(data_plot) %>% 
-  mutate(DietGroup =  fct_relevel(DietGroup, "low", "medium", "high"))
+  mutate(DietOvlp =  fct_relevel(DietOvlp, "low", "medium", "high"))
 
-## Bird plots FIG 3 ####
+## Bird plots FIG 4 ####
 
-linefit_full <- expand.grid(DietGroup = c("high","medium", "low")) %>%
+linefit_full <- expand.grid(DietOvlp = c("high","medium", "low")) %>%
   mutate(intercept = mean(bird_post$b_Intercept),
          slope  = mean(bird_post$b_PhyloD))
 
 #NT models linefit
- linefit_nt <- expand.grid(Habitat = c("intact", "altered"), DietGroup = c("high","medium", "low")) %>%
+ linefit_nt <- expand.grid(Habitat = c("intact", "altered"), DietOvlp = c("high","medium", "low")) %>%
    mutate(intercept = c(0.37, 0.31, 0.37, 0.31, 0.37, 0.31),
           slope  = c(-0.09, -0.1, -0.09, -0.1, -0.09, -0.1))
 # points
-bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietGroup))) + 
+bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietOvlp))) + 
   geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) + 
   geom_ribbon(data = filter(CI_df_bird_full, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
   geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
   geom_abline(data = linefit_full, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
   geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
-  facet_grid(Habitat~DietGroup) + labs(col = "group") + 
+  facet_grid(Habitat~DietOvlp) + labs(col = "group") + 
   labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
   scale_color_manual(values = colors6) +
   theme_light() + theme(legend.position = "none")
 # hexbins
 birdfull <- bird_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
-  geom_hex() + facet_grid(Habitat~DietGroup) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
+  geom_hex() + facet_grid(Habitat~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bird_full, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.5) +
   geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
   geom_abline(data = linefit_full, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
@@ -187,7 +191,7 @@ birdfull <- bird_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) +
   theme_light() 
 # restricted-pool hexbins
 birdnt <- bird_data_plot_nt %>% ggplot(aes(x = D, y = theta_vl)) + 
-  geom_hex() + facet_grid(Habitat~DietGroup) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
+  geom_hex() + facet_grid(Habitat~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bird_nt, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
   geom_ribbon(data = filter(CI_df_bird_nt, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
   geom_abline(data = linefit_nt, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
@@ -202,7 +206,7 @@ bird_data_plot <- list(retained = bird_data_plot_nt, turnover = bird_data_plot_d
 bird_data_plot %>%
   ggplot(aes(x = theta_vl, y = as.factor(D%/%3), col = status)) + 
   geom_density_ridges(scale = 1, alpha = 0.4, bandwidth = .15, lwd = 1) + 
-  facet_grid(type~DietGroup) +
+  facet_grid(type~DietOvlp) +
   scale_color_manual(values = colors) +
   xlim(c(-1.1, 2.2)) +
   labs(y = "binned standardised phylogenetic distance", x = expression(theta))
@@ -212,13 +216,13 @@ bird_data_plot %>%
 # bird_data_plot <- list(FULL = bird_data_plot_full, NT = bird_data_plot_nt) %% bind_rows(.id = model)
 # bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = model)) + 
 #      geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) + 
-#      facet_grid(Habitat~DietGroup) +
+#      facet_grid(Habitat~DietOvlp) +
 #      geom_abline(data = linefit_bird, aes(intercept = intercept, slope = slope, col = model), lty = 2,lwd = 0.4) +
 #      scale_color_manual(values = colours2) +
 #      labs(y = expression(theta), x = "standardised phylogenetic distance")
 #####
 F4B <-  bird_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
-  geom_hex() + facet_grid(.~DietGroup) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
+  geom_hex() + facet_grid(.~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bird_full, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.5) +
   geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
   geom_abline(data = linefit_full, aes(intercept = intercept, slope = slope),lwd = 0.4) +
@@ -226,7 +230,9 @@ F4B <-  bird_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) +
   labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
   theme_light() 
 
-plot_grid(F4A, F4B, ncol = 1, align = "v", labels = c("A", "B"))
+plot_grid(F4A + theme(plot.margin = unit(c(1,.2,0,.2), "cm")), 
+          F4B + theme(plot.margin = unit(c(1,.2 ,1,.2), "cm")), 
+          ncol = 1, align = "v", labels = c("A-Bats", "B-Birds"))
 #######
 ##### No-Turnover plots #####
 
@@ -241,21 +247,21 @@ bat_data_plot <- as.data.frame(bird_RP_winner) %>% colMeans() %>%
   data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
   filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = "\\[") %>% 
   pivot_wider() %>% cbind(bat_data) %>% full_join(data_plot) %>% 
-  mutate(DietGroup = recode(DietGroup, "different" = "low", "same" = "high"),
+  mutate(DietOvlp = recode(DietOvlp, "different" = "low", "same" = "high"),
          Habitat = recode(Habitat, "unaltered" = "intact"))
 
 # bat plot
-linefit <- expand.grid(Habitat = c("intact", "altered"), DietGroup = c("high", "medium", "low")) %>% 
+linefit <- expand.grid(Habitat = c("intact", "altered"), DietOvlp = c("high", "medium", "low")) %>% 
   mutate(intercept = c(0.41, 0.36, 0.77, 0.72, 0.42, 0.37), 
          slope = c(-0.11, -0.11, -0.11, -0.11, -0.11, -0.11))  
 
-bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietGroup))) + 
+bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietOvlp))) + 
   geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) + 
   geom_ribbon(data = filter(CI_df_bat, !D95q, Dbin < 0), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
   geom_abline(data = linefit, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
-  facet_grid(Habitat~DietGroup) + 
+  facet_grid(Habitat~DietOvlp) + 
   labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
   scale_color_manual(values = colors) +
   theme_light() + theme(legend.position = "none")
@@ -264,11 +270,11 @@ bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, Die
 
 ######
 
-## SD plot FIG 4 ----
+## SD plot FIG 5 ----
 sd <- list(bat_FULL_winner, bird_RP_winner, bird_FULL_winner, bird_RP_winner) %>% 
   map(~data.frame(summary(.x)$random) %>% select(1:4) %>% 
         setNames(c("Estimate", "SE", "l-95CI", "u-95CI")) %>% rownames_to_column()) %>% 
-  setNames(c("bat_FULL", "bat_RP", "bird_FULL", "bird_RP")) %>% 
+  setNames(c("bat_Full", "bat_Restricted-pool", "bird_Full", "bird_Restricted-pool")) %>% 
   bind_rows(.id = "model") %>% 
   separate(model, into = c("taxon", "model"), sep = "_") %>% 
   mutate(Variance = ifelse(grepl("high", rowname), "high-overlap", 
@@ -287,7 +293,7 @@ sd %>% ggplot(aes(x = Variance, y = Estimate, fill = Variance)) +
   theme_light() + labs(fill = "group") +
   scale_fill_manual(values = colors) + 
   theme(legend.position = "none") + 
-  labs(x = "", y = paste('Standard deviation of', expression(theta)))
+  labs(x = "", y = expression('standard deviation of ' * theta))
 # End SD plot ----
 
 
@@ -365,27 +371,27 @@ plot_grid(richdist + theme(legend.position = "none"), ordplot, ncol = 2)
 ## Model checks Figs S5-S7 -----
 library(cowplot)
 ## normality check
-p1 <- bird_data_plot %>% ggplot(aes(x = theta_vl)) + geom_histogram(binwidth = .25) + facet_grid(status~DietGroup) + labs(x = expression(theta~"estimate"))
-p2 <- bat_data_plot %>% ggplot(aes(x = theta_vl)) + geom_histogram(binwidth = .25) + facet_grid(status~DietGroup) + labs(x = expression(theta~"estimate"))
+p1 <- bird_data_plot %>% ggplot(aes(x = theta_vl)) + geom_histogram(binwidth = .25) + facet_grid(status~DietOvlp) + labs(x = expression(theta~"estimate"))
+p2 <- bat_data_plot %>% ggplot(aes(x = theta_vl)) + geom_histogram(binwidth = .25) + facet_grid(status~DietOvlp) + labs(x = expression(theta~"estimate"))
 plot_grid(p2, p1, labels = c("A", "B"), ncol = 2)
 
 ## bat bias check
 p1 <- bat_data_plot %>% ggplot(aes(x = log(N_sb), y = sqrt(abs(theta_vl-theta_mu)))) + 
   geom_point(size = 0.8, alpha = 0.3) + geom_smooth(method = "loess") + 
-  facet_grid(status~DietGroup, scales = "free_y") + 
+  facet_grid(status~DietOvlp, scales = "free_y") + 
   labs(y = expression(paste(sqrt(abs(theta-bar(theta))))), 
        x = expression(ln(N[set])))
 
 p2 <- bat_data_plot %>% ggplot(aes(x = log(occ1), y = sqrt(abs(theta_vl-theta_mu)))) + 
   geom_point(size = 0.8, alpha = 0.4) + geom_smooth(method = "loess", se=F) + 
-  facet_grid(status~DietGroup, scales = "free") + 
+  facet_grid(status~DietOvlp, scales = "free") + 
   ylim(c(0, 1.5))+
   labs(y = expression(paste(sqrt(abs(theta-bar(theta))))), 
        x = "logged occupancy of rarer species in pair")
 
 p3 <-  bat_data_plot %>% ggplot(aes(x = log(occ2), y = sqrt(abs(theta_vl-theta_mu)))) + 
   geom_point(size = 0.8, alpha = 0.4) + geom_smooth(method = "loess", se=F) + 
-  facet_grid(status~DietGroup, scales = "free") + 
+  facet_grid(status~DietOvlp, scales = "free") + 
   ylim(c(0, 1.5))+
   labs(y = expression(paste(sqrt(abs(theta-bar(theta))))), 
        x = "logged occupancy of more common species in pair")
@@ -394,17 +400,17 @@ plot_grid(p2, p3, p1, labels = c("A", "B", "C"), ncol = 1)
 
 ## bird bias check
 p1 <- bird_data_plot %>% slice_sample(n = 100000) %>% ggplot(aes(x = log(N_sb), y = sqrt(abs(theta_vl-theta_mu)))) + 
-  geom_point(size = 0.8, alpha = 0.3) + geom_smooth(method = "loess") + facet_grid(status~DietGroup) + 
+  geom_point(size = 0.8, alpha = 0.3) + geom_smooth(method = "loess") + facet_grid(status~DietOvlp) + 
   labs(y = expression(paste(sqrt(abs(theta-bar(theta))))), 
        x = expression(ln(N[set])))
 
 p2 <- bird_data_plot %>% slice_sample(n = 50000) %>% ggplot(aes(x = jitter(log(occ1), amount = 0.01), y = sqrt(abs(theta_vl-theta_mu)))) + 
-  geom_point(size = 0.8, alpha = 0.4) + geom_smooth(method = "loess", se = FALSE) + facet_grid(status~DietGroup) + 
+  geom_point(size = 0.8, alpha = 0.4) + geom_smooth(method = "loess", se = FALSE) + facet_grid(status~DietOvlp) + 
   labs(y = expression(paste(sqrt(abs(theta-bar(theta))))), 
        x = "logged occupancy of rarer species in pair")
 
 p3 <- bird_data_plot %>% slice_sample(n = 50000) %>% ggplot(aes(x = jitter(log(occ2), amount = 0.01), y = sqrt(abs(theta_vl-theta_mu)))) + 
-  geom_point(size = 0.8, alpha = 0.4) + geom_smooth(method = "loess", se = FALSE) + facet_grid(status~DietGroup) + 
+  geom_point(size = 0.8, alpha = 0.4) + geom_smooth(method = "loess", se = FALSE) + facet_grid(status~DietOvlp) + 
   labs(y = expression(paste(sqrt(abs(theta-bar(theta))))), 
        x = "logged occupancy of more common species in pair")
 
