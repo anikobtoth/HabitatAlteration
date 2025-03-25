@@ -17,6 +17,49 @@ library(gganimate)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
 ##  MAIN TEXT 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+### Figure 1 #########
+
+generate_data <- function(n, slope, intercept, sd) {
+  x <- seq(-2, 2, length.out = n)
+  y <- intercept + slope * x + rnorm(n, sd = sd)
+  data.frame(x, y)
+}
+
+# Generate data for each panel
+set.seed(42)
+data_list <- list(
+  A = bind_rows(list(
+    low = generate_data(500, -0.6, 1, 0.2),
+    high = generate_data(500, -0.4, 0.5, 0.2)
+  ),.id = "Diet group"),
+  B = bind_rows(list(
+    low = generate_data(500, 0.02, 0.5, 0.2),
+    high = generate_data(500, 0.022, 1, 0.2)
+  ),.id = "Diet group"),
+  C = bind_rows(list(
+    low = generate_data(500, -0.51, 0.8, 0.2),
+    high = generate_data(500, -0.53, 0.8, 0.2)
+  ),.id = "Diet group"),
+  D =bind_rows(list(
+    low = generate_data(500, -0.3, 0.8, 0.2),
+    high = generate_data(500, -0.3, 0.8, 0.5)
+  ), .id = "Diet group")
+) %>% bind_rows(.id= "panel")
+
+data_list %>% ggplot(aes(x = x, y = y, col = `Diet group`)) + 
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, size = 1) + facet_wrap(~panel) +
+  geom_text(data = data_list %>% 
+              group_by(panel) %>%
+              slice(1) %>%
+              mutate(label = panel),
+            aes(label = label, x = -1.9, y = 2.6), color = "black", fontface = "bold") +
+  scale_color_manual(values = c("#0070C0", "gray25")) +
+  theme_bw() +
+  theme(axis.text = element_blank(), axis.ticks = element_blank(), panel.grid.major = element_blank(), strip.background = element_blank(),
+        strip.text.x = element_blank()) +
+  theme(legend.position = "none") + labs(x = "Standardised phylogenetic distance (D)", y = "Level of co-occurrence")
+
 #### Figure 2 #####
 # fnchd lpmf helper functions used
 data <- expand.grid(Na = c(2,8), Nb =c(2,8), N = 50, theta = -2:2, Nab = 0:8) %>% 
