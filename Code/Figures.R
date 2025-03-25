@@ -37,11 +37,11 @@ data_list <- list(
     high = generate_data(500, 0.022, 1, 0.2)
   ),.id = "Diet group"),
   C = bind_rows(list(
-    low = generate_data(500, -0.51, 0.8, 0.2),
+    low = generate_data(500, -0.50, 0.81, 0.2),
     high = generate_data(500, -0.53, 0.8, 0.2)
   ),.id = "Diet group"),
   D =bind_rows(list(
-    low = generate_data(500, -0.3, 0.8, 0.2),
+    low = generate_data(500, -0.31, 0.81, 0.2),
     high = generate_data(500, -0.3, 0.8, 0.5)
   ), .id = "Diet group")
 ) %>% bind_rows(.id= "panel")
