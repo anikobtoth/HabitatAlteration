@@ -1,10 +1,14 @@
-##    Habitat alteration reduces food competition and local    ###
-##      functional diversity in Neotropical bats and birds.    ##### 
-##                     Anikó B. Tóth                           ##
-# Submitted 1. Apr 2019 
+### Effects of phylogenetic distance, niche overlap and habitat ###
+### alteration on spatial co-occurrence patterns in Neotropical ###
+### bats and birds.  
+
+### By Aniko B. Toth, John Alroy, S Kathleen Lyons, and Andrew P. Allen
+
+# Submitted 15 July 2024 
+
 # Figures script
 # All figure scripts will run if Analysis_Script.R is run first;
-# Please note warnings about data file sizes. 
+# Please note warnings about computing requirements 
 
 library(ggplot2)
 library(cowplot)
@@ -17,7 +21,7 @@ library(gganimate)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
 ##  MAIN TEXT 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-### Figure 1 #########
+## Figure 1 #########
 
 generate_data <- function(n, slope, intercept, sd) {
   x <- seq(-2, 2, length.out = n)
@@ -60,7 +64,7 @@ data_list %>% ggplot(aes(x = x, y = y, col = `Diet overlap`)) +
         strip.text.x = element_blank()) +
   labs(x = "standardised phylogenetic distance (D)", y = "level of co-occurrence")
 
-#### Figure 2 #####
+## Figure 2 #####
 # fnchd lpmf helper functions used
 data <- expand.grid(Na = c(2,8), Nb =c(2,8), N = 50, theta = -2:2, Nab = 0:8) %>% 
   filter(Na == Nb) %>% arrange(Na, theta) %>%
@@ -81,15 +85,16 @@ ggplot(data, aes(x = Nab, y = Nab_theta, group = theta, col = theta))+
   theme(panel.grid.major = element_line(color = "gray80"))+
   theme_light() + scale_color_gradientn(colors = c("black", "#480355", "#8C2981FF", "#DE4968FF", "#FE9F6DFF"))
 
-# Fig 3 ####
+## Figure 3 ####
+### created in Ppt ###
+
+## Figure 4 ####
 colors6 <- c("#ADADAD", "#525252", "#C595CE", "#480355", "#2F99DC", "#00487C")
 
-
-
-# BAT theta posterior mean and CI calculations ----
+#### BAT theta posterior mean and CI calculations ----
 tax = "bat"
-bat_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
-data_plot <- stan_data_fun(filter(contables, taxon == tax))[[2]]
+bat_data <- stan_data_fun(filter(contables_full, taxon == tax))[[1]]
+data_plot <- stan_data_fun(filter(contables_full, taxon == tax))[[2]]
 bat_post <- as.data.frame(bat_FULL_winner)  
 
 bat_data_plot <- bat_post %>% colMeans() %>% 
@@ -107,30 +112,7 @@ linefit <- expand.grid(DietOvlp = c("high", "medium", "low")) %>%
                        mean(bat_post$b_Intercept+bat_post$b_DietOvlphigh)), 
          slope = c(mean(bat_post$b_PhyloD))) 
 
-## BAT PLOT FIG 4 ####
-# points
-# bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietOvlp))) + 
-#   geom_jitter(alpha = 0.3, width = 0.15, size = 0.5) + 
-#   geom_ribbon(data = filter(CI_df_bat, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
-#   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
-#   geom_abline(data = linefit, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
-#   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
-#   facet_grid(Habitat~DietOvlp) + 
-#   labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
-#   scale_color_manual(values = colors6) +
-#   theme_light() + theme(legend.position = "none")
-
-# hexbins DietOvlp by Habitat
-bat_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
-  geom_hex() + facet_grid(.~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
-  geom_ribbon(data = filter(CI_df_bat, !D95q, Dbin < 0), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.4) +
-  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
-  geom_abline(data = linefit, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
-  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
-  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
-  scale_color_manual(values = colors) +
-  theme_light() 
-
+#### Bat plot FIG 4 ####
 # FIG. 4A hexbin, no habitat dimension
 F4A <- bat_data_plot %>% #mutate(DietOvlp = recode(DietOvlp, "different" = "low", "intersecting" = "medium", "intraguild" = "high")) %>% 
   ggplot(aes(x = D, y = theta_vl)) + 
@@ -143,13 +125,11 @@ F4A <- bat_data_plot %>% #mutate(DietOvlp = recode(DietOvlp, "different" = "low"
   labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
   scale_color_manual(values = colors) +
   theme_light()
-######
-
-# BIRD theta posterior mean and CI calculations ----
+#### BIRD theta posterior mean and CI calculations ----
 # calculate posterior slope (a) and intercept (b) for each of 4 groups
 tax = "bird"
-bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
-data_plot <- stan_data_fun(filter(contables, taxon == tax))[[2]]
+bird_data <- stan_data_fun(filter(contables_full, taxon == tax))[[1]]
+data_plot <- stan_data_fun(filter(contables_full, taxon == tax))[[2]]
 bird_post <- as.data.frame(bird_FULL_winner)
 CI_df_bird_full <- bird_post %>% calc_parameters() %>% CIcalc(data_plot)
 
@@ -159,68 +139,11 @@ bird_data_plot <- bird_post %>% colMeans() %>%
   pivot_wider() %>% cbind(bird_data) %>% full_join(data_plot) %>% 
   mutate(DietOvlp =  fct_relevel(DietOvlp, "low", "medium", "high"))
 
-## Bird plots FIG 4 ####
-
+#### Bird plot FIG 4 ####
 linefit_full <- expand.grid(DietOvlp = c("high","medium", "low")) %>%
   mutate(intercept = mean(bird_post$b_Intercept),
          slope  = mean(bird_post$b_PhyloD))
 
-#NT models linefit
- linefit_nt <- expand.grid(Habitat = c("intact", "altered"), DietOvlp = c("high","medium", "low")) %>%
-   mutate(intercept = c(0.37, 0.31, 0.37, 0.31, 0.37, 0.31),
-          slope  = c(-0.09, -0.1, -0.09, -0.1, -0.09, -0.1))
-# points
-bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietOvlp))) + 
-  geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) + 
-  geom_ribbon(data = filter(CI_df_bird_full, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
-  geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
-  geom_abline(data = linefit_full, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
-  geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
-  facet_grid(Habitat~DietOvlp) + labs(col = "group") + 
-  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
-  scale_color_manual(values = colors6) +
-  theme_light() + theme(legend.position = "none")
-# hexbins
-birdfull <- bird_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
-  geom_hex() + facet_grid(Habitat~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
-  geom_ribbon(data = filter(CI_df_bird_full, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.5) +
-  geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
-  geom_abline(data = linefit_full, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
-  geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
-  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
-  theme_light() 
-# restricted-pool hexbins
-birdnt <- bird_data_plot_nt %>% ggplot(aes(x = D, y = theta_vl)) + 
-  geom_hex() + facet_grid(Habitat~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
-  geom_ribbon(data = filter(CI_df_bird_nt, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
-  geom_ribbon(data = filter(CI_df_bird_nt, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
-  geom_abline(data = linefit_nt, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
-  geom_ribbon(data = filter(CI_df_bird_nt, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
-  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
-  theme_light() 
-
-bird_data_plot_diff <- anti_join(bird_data_plot_full, bird_data_plot_nt)
-bird_data_plot <- list(retained = bird_data_plot_nt, turnover = bird_data_plot_diff) %>% 
-  bind_rows(.id = "type")
-
-bird_data_plot %>%
-  ggplot(aes(x = theta_vl, y = as.factor(D%/%3), col = status)) + 
-  geom_density_ridges(scale = 1, alpha = 0.4, bandwidth = .15, lwd = 1) + 
-  facet_grid(type~DietOvlp) +
-  scale_color_manual(values = colors) +
-  xlim(c(-1.1, 2.2)) +
-  labs(y = "binned standardised phylogenetic distance", x = expression(theta))
-
-#combined bird data NT and FULL ####
-# colours2 <- c("#FF4E33", "#000000")
-# bird_data_plot <- list(FULL = bird_data_plot_full, NT = bird_data_plot_nt) %% bind_rows(.id = model)
-# bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = model)) + 
-#      geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) + 
-#      facet_grid(Habitat~DietOvlp) +
-#      geom_abline(data = linefit_bird, aes(intercept = intercept, slope = slope, col = model), lty = 2,lwd = 0.4) +
-#      scale_color_manual(values = colours2) +
-#      labs(y = expression(theta), x = "standardised phylogenetic distance")
-#####
 F4B <-  bird_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
   geom_hex() + facet_grid(.~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
   geom_ribbon(data = filter(CI_df_bird_full, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.5) +
@@ -233,44 +156,7 @@ F4B <-  bird_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) +
 plot_grid(F4A + theme(plot.margin = unit(c(1,.2,0,.2), "cm")), 
           F4B + theme(plot.margin = unit(c(1,.2 ,1,.2), "cm")), 
           ncol = 1, align = "v", labels = c("A-Bats", "B-Birds"))
-#######
-##### No-Turnover plots #####
-
-## BAT NO TURNOVER PLOT  ####
-tax = "bat"
-bat_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
-data_plot <- stan_data_fun(filter(contables, taxon == tax))[[2]]
-bat_post <- as.data.frame(bird_RP_winner)  
-CI_df_bat <- bat_post %>% calc_parameters() %>% CIcalc(data_plot)
-
-bat_data_plot <- as.data.frame(bird_RP_winner) %>% colMeans() %>% 
-  data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
-  filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = "\\[") %>% 
-  pivot_wider() %>% cbind(bat_data) %>% full_join(data_plot) %>% 
-  mutate(DietOvlp = recode(DietOvlp, "different" = "low", "same" = "high"),
-         Habitat = recode(Habitat, "unaltered" = "intact"))
-
-# bat plot
-linefit <- expand.grid(Habitat = c("intact", "altered"), DietOvlp = c("high", "medium", "low")) %>% 
-  mutate(intercept = c(0.41, 0.36, 0.77, 0.72, 0.42, 0.37), 
-         slope = c(-0.11, -0.11, -0.11, -0.11, -0.11, -0.11))  
-
-bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietOvlp))) + 
-  geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) + 
-  geom_ribbon(data = filter(CI_df_bat, !D95q, Dbin < 0), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
-  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
-  geom_abline(data = linefit, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
-  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
-  facet_grid(Habitat~DietOvlp) + 
-  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
-  scale_color_manual(values = colors) +
-  theme_light() + theme(legend.position = "none")
-
-
-
-######
-
-## SD plot FIG 5 ----
+## Figure 5 SD plot ----
 sd <- list(bat_FULL_winner, bird_RP_winner, bird_FULL_winner, bird_RP_winner) %>% 
   map(~data.frame(summary(.x)$random) %>% select(1:4) %>% 
         setNames(c("Estimate", "SE", "l-95CI", "u-95CI")) %>% rownames_to_column()) %>% 
@@ -294,8 +180,7 @@ sd %>% ggplot(aes(x = Variance, y = Estimate, fill = Variance)) +
   scale_fill_manual(values = colors) + 
   theme(legend.position = "none") + 
   labs(x = "", y = expression('standard deviation of ' * theta))
-# End SD plot ----
-
+# End MAIN TEXT figures ----
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
 ##  SUPPLEMENT 
@@ -330,7 +215,7 @@ box()
 
 
 
-### Figure S4: PCoA ####
+### Figure S2: PCoA ####
 #ordinations, colored by alteration type
 PAnu <- PAn %>% map(~return(.[,colnames(.) %in% unalt_sites])) # separate unaltered
 PAna <- PAn %>% map(~return(.[,!colnames(.) %in% unalt_sites])) # and altered sites
@@ -364,11 +249,11 @@ richdist <- ggplot(rich, aes(x = richness, colour = status, fill = status)) +
   scale_x_log10() + labs(col = "Habitat", fill = "Habitat") +
   theme_light()
 
-plot_grid(richdist + theme(legend.position = "none"), ordplot, ncol = 2) 
+plot_grid(richdist + theme(legend.position = "none"), ordplot, ncol = 2, labels = c("A", "B")) 
 
 ######
 
-## Model checks Figs S5-S7 -----
+## Model checks Figs S4-S6 -----
 library(cowplot)
 ## normality check
 p1 <- bird_data_plot %>% ggplot(aes(x = theta_vl)) + geom_histogram(binwidth = .25) + facet_grid(status~DietOvlp) + labs(x = expression(theta~"estimate"))
@@ -468,3 +353,135 @@ readRDS("./stan/bird_rp_loo_fixedeff.rds") %>%
 
 ## End model tables for supplement ----
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
+##   Alternative plotting formats, UNPUBLISHED
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+#### Bats scatterplot DietOvl by Habitat ####
+bat_data_plot %>% ggplot(aeps(x = D, y = theta_vl, col = interaction(Habitat, DietOvlp))) +
+  geom_jitter(alpha = 0.3, width = 0.15, size = 0.5) +
+  geom_ribbon(data = filter(CI_df_bat, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
+  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
+  geom_abline(data = linefit, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
+  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
+  facet_grid(Habitat~DietOvlp) +
+  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") +
+  scale_color_manual(values = colors6) +
+  theme_light() + theme(legend.position = "none")
+
+#### Bats hexbins DietOvlp by Habitat ####
+bat_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
+  geom_hex() + facet_grid(.~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
+  geom_ribbon(data = filter(CI_df_bat, !D95q, Dbin < 0), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.4) +
+  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
+  geom_abline(data = linefit, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
+  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
+  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
+  scale_color_manual(values = colors) +
+  theme_light() 
+
+#### Birds scatterplot DietOvlp by Habitat ####
+bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietOvlp))) + 
+  geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) + 
+  geom_ribbon(data = filter(CI_df_bird_full, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
+  geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
+  geom_abline(data = linefit_full, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
+  geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
+  facet_grid(Habitat~DietOvlp) + labs(col = "group") + 
+  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
+  scale_color_manual(values = colors6) +
+  theme_light() + theme(legend.position = "none")
+
+#### Birds hexbins DietOvlp by Habitat ####
+birdfull <- bird_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) + 
+  geom_hex() + facet_grid(Habitat~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
+  geom_ribbon(data = filter(CI_df_bird_full, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.5) +
+  geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
+  geom_abline(data = linefit_full, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
+  geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
+  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
+  theme_light() 
+
+#######
+
+## Restricted-Pool plots, not in paper #####
+#### BAT Restricted-Pool PLOT  ####
+tax = "bat"
+bat_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
+data_plot <- stan_data_fun(filter(contables, taxon == tax))[[2]]
+bat_post <- as.data.frame(bird_RP_winner)  
+CI_df_bat <- bat_post %>% calc_parameters() %>% CIcalc(data_plot)
+
+bat_data_plot <- as.data.frame(bird_RP_winner) %>% colMeans() %>% 
+  data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
+  filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = "\\[") %>% 
+  pivot_wider() %>% cbind(bat_data) %>% full_join(data_plot) %>% 
+  mutate(DietOvlp = recode(DietOvlp, "different" = "low", "same" = "high"),
+         Habitat = recode(Habitat, "unaltered" = "intact"))
+
+# bat plot
+linefit <- expand.grid(Habitat = c("intact", "altered"), DietOvlp = c("high", "medium", "low")) %>% 
+  mutate(intercept = c(0.41, 0.36, 0.77, 0.72, 0.42, 0.37), 
+         slope = c(-0.11, -0.11, -0.11, -0.11, -0.11, -0.11))  
+
+bat_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = interaction(Habitat, DietOvlp))) + 
+  geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) + 
+  geom_ribbon(data = filter(CI_df_bat, !D95q, Dbin < 0), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
+  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
+  geom_abline(data = linefit, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
+  geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
+  facet_grid(Habitat~DietOvlp) + 
+  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
+  scale_color_manual(values = colors) +
+  theme_light() + theme(legend.position = "none")
+
+
+
+#### BIRD Restricted-Pool PLOT ####
+tax = "bird"
+bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
+data_plot <- stan_data_fun(filter(contables, taxon == tax))[[2]]
+bird_post <- as.data.frame(bird_RP_winner)
+CI_df_bird_full <- bird_post %>% calc_parameters() %>% CIcalc(data_plot)
+
+bird_data_plot_nt <- bird_post %>% colMeans() %>% 
+  data.frame(names(.)) %>% setNames(c("value", "col")) %>% 
+  filter(grepl('theta', col)) %>% separate(col, into=c("name", "index"), sep = "\\[") %>% 
+  pivot_wider() %>% cbind(bird_data) %>% full_join(data_plot) %>% 
+  mutate(DietOvlp =  fct_relevel(DietOvlp, "low", "medium", "high"))
+
+#Restricted-pool models linefit
+linefit_nt <- expand.grid(Habitat = c("intact", "altered"), DietOvlp = c("high","medium", "low")) %>%
+  mutate(intercept = c(0.37, 0.31, 0.37, 0.31, 0.37, 0.31),
+         slope  = c(-0.09, -0.1, -0.09, -0.1, -0.09, -0.1))
+# restricted-pool hexbins
+birdnt <- bird_data_plot_nt %>% ggplot(aes(x = D, y = theta_vl)) + 
+  geom_hex() + facet_grid(Habitat~DietOvlp) + scale_fill_viridis_c(trans = "log", labels = label_number(accuracy = 1)) + 
+  geom_ribbon(data = filter(CI_df_bird_nt, !D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), inherit.aes = FALSE, fill = "gray50", alpha = 0.25) +
+  geom_ribbon(data = filter(CI_df_bird_nt, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "yellow", alpha = 0.4, inherit.aes = FALSE) +
+  geom_abline(data = linefit_nt, aes(intercept = intercept, slope = slope), lty = 2,lwd = 0.4) +
+  geom_ribbon(data = filter(CI_df_bird_nt, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
+  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
+  theme_light() 
+#### Birds overlay of full and restricted-pool#####
+bird_data_plot_diff <- anti_join(bird_data_plot_full, bird_data_plot_nt)
+bird_data_plot <- list(retained = bird_data_plot_nt, turnover = bird_data_plot_diff) %>% 
+  bind_rows(.id = "type")
+
+bird_data_plot %>%
+  ggplot(aes(x = theta_vl, y = as.factor(D%/%3), col = status)) + 
+  geom_density_ridges(scale = 1, alpha = 0.4, bandwidth = .15, lwd = 1) + 
+  facet_grid(type~DietOvlp) +
+  scale_color_manual(values = colors) +
+  xlim(c(-1.1, 2.2)) +
+  labs(y = "binned standardised phylogenetic distance", x = expression(theta))
+
+#combined bird data NT and FULL 
+colours2 <- c("#FF4E33", "#000000")
+bird_data_plot <- list(FULL = bird_data_plot_full, NT = bird_data_plot_nt) %% bind_rows(.id = model)
+bird_data_plot %>% ggplot(aes(x = D, y = theta_vl, col = model)) +
+  geom_jitter(alpha = 0.2, width = 0.15, size = 0.5) +
+  facet_grid(Habitat~DietOvlp) +
+  geom_abline(data = linefit_bird, aes(intercept = intercept, slope = slope, col = model), lty = 2,lwd = 0.4) +
+  scale_color_manual(values = colours2) +
+  labs(y = expression(theta), x = "standardised phylogenetic distance")
