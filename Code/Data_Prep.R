@@ -1,7 +1,5 @@
 ## Code to prepare raw data in ./Raw_Data folder 
-## Outputs will be placed in ./Data folder and used in Analysis_Script.R
-#library(reshape2)
-library(tidyverse)
+## Outputs will be used in Analysis_Script.R
 
 ## Adjust relative paths to compile environment.
 if(grepl(pattern = "Manuscript", getwd())){
@@ -174,22 +172,22 @@ u = purrr::map(PAn, ~apply(., 1, function(x) names(which(x > 0))) %>%
                  sapply(function(x) length(which(x %in% (unalt_sites))))) 
 a = purrr::map(PAn, ~apply(., 1, function(x) names(which(x > 0))) %>% 
                  sapply(function(x) length(which(!x %in% (unalt_sites)))))
-cosmo <- map2(u, a, data.frame) %>% 
-  purrr::map(~mutate(.,name = rownames(.))) %>% bind_rows(.id = 'taxon') %>% 
-  setNames(c("taxon", "unaltered", "altered", "name")) %>% 
-  mutate(
-    occurrences = unaltered+altered, 
-    Talt = nsamp[taxon,"Altered"],
-    Tunalt = nsamp[taxon, "Unaltered"],
-    cosmopolitan = FETmP_(Talt, Tunalt, altered, unaltered)
-  )
-
-cosmo$group[qnorm(cosmo$cosmopolitan) < -1] <- "restricted"
-cosmo$group[qnorm(cosmo$cosmopolitan) > 1] <- "synanthropic"
-cosmo$group[is.na(cosmo$group)] <- "cosmopolitan"
-
-cosmo$group_abbr <- substr(cosmo$group, start = 1, stop = 5)
-rownames(cosmo) <- cosmo$name
+# cosmo <- map2(u, a, data.frame) %>% 
+#   purrr::map(~mutate(.,name = rownames(.))) %>% bind_rows(.id = 'taxon') %>% 
+#   setNames(c("taxon", "unaltered", "altered", "name")) %>% 
+#   mutate(
+#     occurrences = unaltered+altered, 
+#     Talt = nsamp[taxon,"Altered"],
+#     Tunalt = nsamp[taxon, "Unaltered"],
+#     cosmopolitan = FETmP_(Talt, Tunalt, altered, unaltered)
+#   )
+# 
+# cosmo$group[qnorm(cosmo$cosmopolitan) < -1] <- "restricted"
+# cosmo$group[qnorm(cosmo$cosmopolitan) > 1] <- "synanthropic"
+# cosmo$group[is.na(cosmo$group)] <- "cosmopolitan"
+# 
+# cosmo$group_abbr <- substr(cosmo$group, start = 1, stop = 5)
+# rownames(cosmo) <- cosmo$name
 
 #### Match Biogeography ####
 message("Matching altered and intact biogeography")

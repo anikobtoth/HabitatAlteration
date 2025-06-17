@@ -1,7 +1,19 @@
-##   Effects of habitat alteration and phylogenetic distance on    ###
-## spatial patterns of co-occurrence in Neotropical bats and birds.### 
+### Effects of phylogenetic distance, niche overlap and habitat ###
+### alteration on spatial co-occurrence patterns in Neotropical ###
+### bats and birds.  
+
+### By Aniko B. Toth, John Alroy, S Kathleen Lyons, and Andrew P. Allen
 
 # Submitted 15 July 2024 
+
+# Instructions #
+# Create a working directory. 
+# In your working directory, create the following folders:
+# Raw_Data (place raw data files from Dryad in here)
+# Code (place script files in here)
+# Results (leave empty)
+# stan (leave empty)
+
 # Analysis script 
 
 library(tidyverse) 
@@ -9,16 +21,25 @@ library(vegan)
 library(stringi) 
 library(parallel)
 library(lsa) 
+library(rstan)
+
 ## Load helper functions
+library(sp)
+library(rlang)
+library(ape)
+library(rotl)
 source('./Code/HelperFunctions.R')
 
 ## Prep raw data
 source('./Code/Data_Prep.R')
 
-PAnb<- tobinary(PAn)
-
 #### Interaction Co-occurrence analysis #####
+library(brms)
+library(loo)
 source('./Code/brms_fxns.R')
+
+# remove abundance data
+PAnb<- tobinary(PAn)
 
 # Format data (full)
 tables <- PAnb %>% map(~t(.)) %>% map(as.data.frame) %>% map(~split(., f = rownames(.) %in% unalt_sites)) %>% 
@@ -40,24 +61,24 @@ contables %>% group_by(taxon, status) %>%
   summarise(nsite = first(samples), npairs = n())
 
 ### Model fitting code #####
-### Computing requirements: ~32GB of RAM and 4 cores.
+### Minimum Computing requirements: ~32GB of RAM and 4 cores.
 
 # fit bat data
 tax <- "bat"
 bat_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
-bat_winner <- find_best_model(tax=tax, bat_data) # runs all models, saves them and saves the loo object in current wd
-summary(bat_winner)
-saveRDS(bat_winner, "./Results/bat_winner.rds") # save a copy of best model to results
+bat_FULL_winner <- find_best_model(tax=tax, bat_data) # runs all models, saves them and saves the loo object in current wd
+summary(bat_FULL_winner)
+saveRDS(bat_FULL_winner, "./Results/bat_FULL_winner.rds") # save a copy of best model to results
 
-#bat_winner <- singlerun(bat_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietOvlp + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp))')
+#bat_FULL_winner <- singlerun(bat_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietOvlp + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp))')
 
 tax <- "bird"
 bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
-bird_winner <- find_best_model(tax= tax, bird_data)
-summary(bird_winner)
-saveRDS(bird_winner, "./Results/bird_winner.rds")
+bird_FULL_winner <- find_best_model(tax= tax, bird_data)
+summary(bird_FULL_winner)
+saveRDS(bird_FULL_winner, "./Results/bird_FULL_winner.rds")
 
-#bird_winner <- singlerun(bird_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = Habitat))')
+#bird_FULL_winner <- singlerun(bird_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = Habitat))')
 
 ## No-turnover models ####
 shared <- tables %>% map(~.x %>% map(rownames) %>% reduce(intersect))
@@ -71,20 +92,20 @@ contables <- map(tables, map, cont_table) %>% map(bind_rows, .id = "status") %>%
 # same code as above with new data shared tables.
 tax <- "bat"
 bat_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
-bat_nt_winner <- find_best_model(tax, bat_data)
-summary(bat_nt_winner)
-saveRDS(bat_nt_winner, "./Results/bat_nt_winner.rds")
+bat_RP_winner <- find_best_model(tax, bat_data)
+summary(bat_RP_winner)
+saveRDS(bat_RP_winner, "./Results/bat_RP_winner.rds")
 
-#bat_nt_winner <- singlerun(bat_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietOvlp + Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp)) ')
+#bat_RP_winner <- singlerun(bat_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietOvlp + Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp)) ')
 
 
 tax <- "bird"
 bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]
-bird_nt_winner <- find_best_model(tax, bird_data). # runs all models, saves them and saves the loo object in current wd.
-summary(bird_nt_winner)
-saveRDS(bird_nt_winner, "./Results/bird_nt_winner.rds")
+bird_RP_winner <- find_best_model(tax, bird_data). # runs all models, saves them and saves the loo object in current wd.
+summary(bird_RP_winner)
+saveRDS(bird_RP_winner, "./Results/bird_RP_winner.rds")
 
-#bird_nt_winner <- singlerun(bird_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + Habitat + PhyloD:Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp)) ')
+#bird_RP_winner <- singlerun(bird_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + Habitat + PhyloD:Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp)) ')
 
 
 ## Randomisations ####
