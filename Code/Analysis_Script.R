@@ -61,7 +61,8 @@ contables %>% group_by(taxon, status) %>%
   summarise(nsite = first(samples), npairs = n())
 
 ### Model fitting code #####
-### Minimum Computing requirements: ~32GB of RAM and 4 cores.
+### Minimum Computing requirements: ~64GB of RAM and 4 cores.
+### Please note that this code may take a long time to run, particularly for the birds. 
 
 # fit bat data
 tax <- "bat"
@@ -97,7 +98,6 @@ summary(bat_RP_winner)
 saveRDS(bat_RP_winner, "./Results/bat_RP_winner.rds")
 
 #bat_RP_winner <- singlerun(bat_data, frm = 'sb | vint(occ1, occ2, N_site) + weights(N_sb) ~ PhyloD + DietOvlp + Habitat + (1 | gr(DietPair:PhyloD:Habitat:OccPair, by = DietOvlp)) ')
-
 
 tax <- "bird"
 bird_data <- stan_data_fun(filter(contables, taxon == tax))[[1]]

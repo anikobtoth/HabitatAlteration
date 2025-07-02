@@ -153,7 +153,7 @@ PAn <- dat[grep("register", names(dat))] %>%
   purrr::map2(tax_otl, 
               ~filter(.x,!species %in% c("sp.", "spp.", "sp. l", "indet", "indet.")) %>% 
                 mutate(name = paste(genus, species, sep = " ")) %>% 
-                left_join(sitedat, by = c("sample.no", "sample.name", "country", "ecozone")) %>%
+                left_join(sitedat, by = c("sample.no", "sample.name")) %>%
                 left_join(.y, by = c("name"="search_string")) %>%
                 filter(!is.na(species_name)) %>%
                 pivot_wider(id_cols = "species_name", names_from = "p.sample", 
