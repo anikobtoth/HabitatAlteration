@@ -17,6 +17,7 @@ library(reshape2)
 library(hexbin)
 library(viridis)
 library(gganimate)
+library(latex2exp)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#####
 ##  MAIN TEXT 
@@ -61,26 +62,25 @@ data_list %>% ggplot(aes(x = x, y = y, col = `Diet overlap`)) +
   scale_color_manual(values = c("#0070C0", "gray25")) +
   theme_bw() +
   theme(axis.text = element_blank(), axis.ticks = element_blank(), panel.grid.major = element_blank(), strip.background = element_blank(),
-        strip.text.x = element_blank()) +
-  labs(x = "standardised phylogenetic distance (D)", y = "level of co-occurrence")
+        strip.text.x = element_blank(), text = element_text(family = "Times New Roman")) +
+  labs(x = expression("standardized phylogenetic distance ("*italic(D)*")"), y = TeX("$\\theta$"))
 
 ## Figure 2 #####
 # fnchd lpmf helper functions used
 data <- expand.grid(Na = c(2,8), Nb =c(2,8), N = 50, theta = -2:2, Nab = 0:8) %>% 
   filter(Na == Nb) %>% arrange(Na, theta) %>%
   mutate(Nab_theta = exp(fnchypergeo_lpmf(Nab, Na, Nb, N, theta)), 
-         label = ifelse(Na == 2, "italic(N[A])~'='~italic(N[B])~'='~2", "italic(N[A])~'='~italic(N[B])~'='~8")) %>% 
+         label = ifelse(Na == 2, "italic(N)[A]~'='~italic(N)[B]~'='~2", "italic(N)[A]~'='~italic(N)[B]~'='~8")) %>% 
   na.omit()
 
-custom_breaks <- c(10e-12, 10e-9, 10e-6, 10e-3, 1)
+custom_breaks <- c(10e-12, 10e-8, 10e-5, 10e-2, 1)
 ggplot(data, aes(x = Nab, y = Nab_theta, group = theta, col = theta))+ 
   geom_point(size = 2) + geom_line(lwd = 1) + 
   scale_y_log10(
-     breaks = custom_breaks, 
-     labels = trans_format("log", math_format())) + 
+     breaks = custom_breaks) +
   facet_wrap(~label, labeller = label_parsed, scales= "free") +
-  labs(y = expression('probability, f('~italic(N[AB])~'|'~italic(theta)~')'), 
-       x= expression('number of co-occurrences,'~italic(N[AB])), 
+  labs(y = expression('probability,'~italic(f)*'('~italic(N)[AB]~'|'~italic(theta)~')'), 
+       x= expression('number of co-occurrences,'~italic(N)[AB]), 
        col = expression(theta)) + 
   theme(panel.grid.major = element_line(color = "gray80"))+
   theme_light() + scale_color_gradientn(colors = c("black", "#480355", "#8C2981FF", "#DE4968FF", "#FE9F6DFF"))
@@ -122,7 +122,7 @@ F4A <- bat_data_plot %>% #mutate(DietOvlp = recode(DietOvlp, "different" = "low"
   geom_abline(data = linefit, aes(intercept = intercept, slope = slope),lwd = 0.4) +
   geom_ribbon(data = filter(CI_df_bat, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
   labs(col = "group") + 
-  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
+  labs(col = "group", y = expression(theta), x = expression("standardized phylogenetic distance ("*italic(D)*")")) + 
   scale_color_manual(values = colors) +
   theme_light()
 #### BIRD theta posterior mean and CI calculations ----
@@ -150,12 +150,12 @@ F4B <-  bird_data_plot %>% ggplot(aes(x = jitter(D), y = theta_vl)) +
   geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_025, ymax = theta_975), fill = "orange", alpha = 0.4, inherit.aes = FALSE) +
   geom_abline(data = linefit_full, aes(intercept = intercept, slope = slope),lwd = 0.4) +
   geom_ribbon(data = filter(CI_df_bird_full, D95q), aes(x = Dbin, ymin = theta_mu, ymax = theta_mu), col = "black", inherit.aes = FALSE) +
-  labs(col = "group", y = expression(theta), x = "standardised phylogenetic distance") + 
+  labs(col = "group", y = expression(theta), x = expression("standardized phylogenetic distance ("*italic(D)*")")) + 
   theme_light() 
 
 plot_grid(F4A + theme(plot.margin = unit(c(1,.2,0,.2), "cm")), 
           F4B + theme(plot.margin = unit(c(1,.2 ,1,.2), "cm")), 
-          ncol = 1, align = "v", labels = c("A-Bats", "B-Birds"))
+          ncol = 1, align = "v", labels = c("A Bats", "B Birds"))
 ## Figure 5 SD plot ----
 sd <- list(bat_FULL_winner, bird_RP_winner, bird_FULL_winner, bird_RP_winner) %>% 
   map(~data.frame(summary(.x)$random) %>% select(1:4) %>% 
